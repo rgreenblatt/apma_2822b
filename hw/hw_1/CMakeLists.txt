@@ -6,6 +6,7 @@ PROJECT(lecture_1 C CXX)
 cmake_minimum_required(VERSION 3.1)
 
 add_definitions(-std=c++14 -Wall -Wextra -Wconversion)
+add_definitions(-Ofast)
 
 find_package(OpenMP)
 if (OPENMP_FOUND)
