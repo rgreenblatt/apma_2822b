@@ -3,11 +3,13 @@
 #include <omp.h>
 #include <sched.h>
 
+//bsub -p apma2822
+
 using h_clock = std::chrono::high_resolution_clock;
 
 int main() {
     int n_vals[2] = {512*1024*1024/8,  1024};
-    int m_vals[2] = {10,  1000000};
+    int m_vals[2] = {10,  10000000};
     for(int run = 0; run < 2; run++) {
         int n = n_vals[run];
         int m = m_vals[run];
