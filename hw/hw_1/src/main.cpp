@@ -3,13 +3,11 @@
 #include <omp.h>
 #include <sched.h>
 
-//bsub -p apma2822
-
 using h_clock = std::chrono::high_resolution_clock;
 
 int main() {
     int n_vals[2] = {512*1024*1024/8,  1024};
-    int m_vals[2] = {10,  10000000};
+    int m_vals[2] = {10,  1000000};
     for(int run = 0; run < 2; run++) {
         int n = n_vals[run];
         int m = m_vals[run];
@@ -78,9 +76,9 @@ int main() {
 
         std::cout << "======  N: " << n << " ======" << std::endl;
         std::cout << "For a, total time per N: " << time_span_a.count() / m << " gigabyte per s: "
-            << (n * m * sizeof(double) * 2) / (time_span_a.count() * (1024 * 1024 * 1024)) << std::endl;
+            << (n * m * sizeof(double) * 3) / (time_span_a.count() * (1024 * 1024 * 1024)) << std::endl;
         std::cout << "For b, total time per N: " << time_span_b.count() / m << " gigabyte per s: "
-            << (n * m * sizeof(double) * 3) / (time_span_b.count() * (1024 * 1024 * 1024)) << std::endl;
+            << (n * m * sizeof(double) * 5) / (time_span_b.count() * (1024 * 1024 * 1024)) << std::endl;
 
         delete[] a;
         delete[] x;
