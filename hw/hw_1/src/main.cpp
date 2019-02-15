@@ -1,7 +1,8 @@
 #include <iostream>
 #include <chrono>
 #include <omp.h>
-#include <sched.h>
+
+//compile with g++ main.cpp -std=c++11 -fopenmp -O3
 
 using h_clock = std::chrono::high_resolution_clock;
 
@@ -41,6 +42,7 @@ int main() {
             }
         }
 
+        //a
         auto t1_a = h_clock::now();
         #pragma omp parallel
         {
@@ -57,6 +59,7 @@ int main() {
 
         auto time_span_a = std::chrono::duration_cast<std::chrono::duration<double>>(t2_a - t1_a);
 
+        //b
         auto t1_b = h_clock::now();
         #pragma omp parallel
         {
