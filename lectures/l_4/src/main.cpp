@@ -92,8 +92,6 @@ int main() {
 
     int chunk_size_x = 500;
     int chunk_size_y = 100;
-    int n_b_x = (n_x - 4) / chunk_size_x;
-    int n_b_y = (n_y - 4) / chunk_size_y;
 
     t1 = h_clock::now();
 
@@ -101,22 +99,19 @@ int main() {
     #pragma omp parallel
     {
         #pragma omp for collapse(2)
-        for(int b_i = 0; b_i < n_b_x; b_i++) {
-            for(int b_j = 0; b_j < n_b_y; b_j++) {
-                for(int i = b_i * chunk_size_x; i < b_i * chunk_size_x + chunk_size_x; i++) {
-                    for(int j = b_j * chunk_size_y; j < b_j * chunk_size_y + chunk_size_y; 
-                            j++) {
-                        int i_ = i + 2;
-                        int j_ = j + 2;
-                        B[i_-2][j_-2] = (cm2 * A[i_-2][j_] +
-                                       cm1 * A[i_-1][j_] +
-                                       c_0 * A[i_][j_] +
-                                       cp1 * A[i_+1][j_] +
-                                       cp2 * A[i_+2][j_] +
-                                       dm2 * A[i_][j_-2] +
-                                       dm1 * A[i_][j_-1] +
-                                       dp1 * A[i_][j_+1] +
-                                       dp2 * A[i_][j_+2]) / 12;
+        for(int b_i = 2; b_i < n_x; b_i+=chunk_size_x) {
+            for(int b_j = 2; b_j < n_y; b_j+=chunk_size_y) {
+                for(int i = b_i; i < std::min(n_x - 2, b_i + chunk_size_x); i++) {
+                    for(int j = b_j; j < std::min(n_y - 2, b_j + chunk_size_y); j++) {
+                        B[i-2][j-2] = (cm2 * A[i-2][j] +
+                                       cm1 * A[i-1][j] +
+                                       c_0 * A[i][j] +
+                                       cp1 * A[i+1][j] +
+                                       cp2 * A[i+2][j] +
+                                       dm2 * A[i][j-2] +
+                                       dm1 * A[i][j-1] +
+                                       dp1 * A[i][j+1] +
+                                       dp2 * A[i][j+2]) / 12;
                     }
                 }
             }
