@@ -18,8 +18,8 @@ int main() {
         std::cout << s.str();
     }
 
-    int n_x = 20004;
-    int n_y = 20004;
+    int n_x = 2004;
+    int n_y = 2004;
 
     double **A = new double*[n_x];
     double **B = new double*[n_x - 4];
@@ -90,8 +90,8 @@ int main() {
     std::cout << "|| standard || time per stencil: " << time.count() / iters * 1e6 << " micro sec  | GiB/s: " << 
         total_bytes / time.count() / 1024 / 1024 / 1024 << " | total: " << total << std::endl;
 
-    int chunk_size_x = 500;
-    int chunk_size_y = 100;
+    int chunk_size_x = 128;
+    int chunk_size_y = 400;
 
     t1 = h_clock::now();
 
