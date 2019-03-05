@@ -1,10 +1,11 @@
 #include <iostream>
-#include <chrono>
 #include <omp.h>
 #include <sched.h>
 #include <sstream>
+#include <chrono>
 
 using h_clock = std::chrono::high_resolution_clock;
+
 double f(double x, double y) {
     return x * x + y * y;
 }

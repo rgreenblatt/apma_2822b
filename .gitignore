@@ -1,6 +1,8 @@
 **/tags
 **/latex_out_dir/main_file.*
 *.swp
+.ccls
+.ccls-cache/
 
 **/build/
 **/bin/
