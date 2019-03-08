@@ -13,7 +13,6 @@ using h_clock = std::chrono::high_resolution_clock;
 
 int main() {
     int n_vals[3] = {512, 1024, 2048};
-    //int inner_block_sizes[3] = {256, 512, 256};
     for(int run = 0; run < 3; run++) {
         int n = n_vals[run];
 
@@ -95,6 +94,9 @@ int main() {
             }
         }
 
+        //Note: this code  assumes that the size of the matrix is a multiple
+        //of 256. It can easily be modified so that this isn't the case, but this
+        //wasn't done because the effect on performance is insignificant.
         int outer_block_size = 16;
         int middle_block_size = 32;
         int inner_block_size = 256;
@@ -149,9 +151,7 @@ int main() {
         method_times.push_back(time_e);
         #endif
 
-
-
-            
+        //print out results
         std::cout << "======  N: " << n << " ======" << std::endl;
 
         for(int i = 0; i < method_times.size(); i++) {

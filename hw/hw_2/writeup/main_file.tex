@@ -12,7 +12,7 @@
 \usepackage{relsize}
 \usepackage{color}
 
-\title{APMA 2822b Homework 1}
+\title{APMA 2822b Homework 2}
 \author{Ryan Greenblatt}
 \date{February 2019}
 
@@ -24,53 +24,72 @@
 
 \maketitle
 
-\stepcounter{section}
+\section{}
+
+Code is attached in the email.
 
 \section{}
 
-The CPU has a peak FLOP rate of 500 GFLOPS\footnote{Within this report, I am assuming
-1 GFLOPS is $1024^3$ FLOPS.} and 
-an achievable bandwidth of 100 GiB/s. Thus, memory will
-be the bottleneck unless the task has an operational intensity of 5 FLOPS per byte or higher.
 
-\subsection{}
-
-For task a, each iteration requires 3 FLOPS (the compiler may optimize it to just 2 FLOPS) and the transfer 
-of 3 doubles.
-Each double is 8 bytes, so the FLOPS per byte is only $\frac{3}{24} = \frac{1}{8} = 0.125$. The task will 
-be memory limited and
-the total amount of memory transfer is $\frac{512*1024*1024}{8} * 8 * 3$ which is 1.5 GiB.
-It will take $\frac{3}{200} = 0.015$ seconds. The total number of FLOPS is $\frac{512*1024*1024}{8} * 3$ 
-and the FLOP rate  will be $\frac{25}{2} = 12.5$ GFLOPS.
-
-
-\subsection{}
-
-For task b, each iteration requires 4 FLOPS and the transfer of 5 doubles.
-Each double is 8 bytes, so the FLOPS per byte is only $\frac{1}{10} = 0.1$. The task will be memory 
-limited and
-the total amount of memory transfer is $\frac{512*1024*1024}{8} * 8 * 5$ which is 2.5 GiB.
-It will take $\frac{5}{200} = \frac{1}{40} = 0.025$ seconds. The total number of FLOPS 
-is $\frac{512*1024*1024}{8} * 4$ and the
-FLOP rate will be $10$ GFLOPS.
+The total number of FLOPS for Matrix-Matrix multiplication with matrices of size $n$ is $2 n^3$. The 
+total data in bytes that must be transfered (assuming the use of doubles) is 
+$8 * 3 n^2 = 24 n^2$. The arithmetic intensity for this task is 
+$\frac{2n^3}{24n^2} = \frac1{12} n = \frac{4096}{12} = 341.3$. This is well above the ratio of
+peak FLOPS to peak memory bandwidth for this system $(\frac{300}{55} = 5.5)$. Thus, the 
+computation can be expected to ideally be FLOP bounded. However, poor cache utilization
+or other bottlenecks could result in the computation not being FLOP bounded.
 
 \section{}
 
-I ran my code on the CCV using the login node.
-Both tasks were memory limited for both sizes. Running the tasks with reduced size increased speed
-substantially because the data could remain entirely in the cache.
+I implemented an algorithm which utilizes 3 levels of blocking. The outer most level of blocking is
+split between threads. In addition to tuning the block size parameters, I tested aligning
+threads side by side on the outer level instead of the 3rd level of blocking. This greatly reduced
+performance. I also tested transposing the blocks of the A matrix and copying the blocks from the
+B matrix to allow for the data access to be more sequential during the final operation; however, 
+this reduced performance.  The Eigen linear algebra library was also benchmarked for comparison
+(by default the code is run without benchmarking Eigen).  I tested with and without the '-march=native'
+compiler flag to determine how much of a speed up each method is obtaining from the use of optimized 
+SIMD instructions. The naive approach appears to obtain no benefit from SIMD, the optimized 
+algorithm obtains a sizeable benefit from SIMD, and Eigen gains an even larger benefit from SIMD.
 
-\begin{table}[h!]
+\begin{table}[]
+\begin{centering}
 \begin{tabular}{|l|l|l|l|}
 \hline
-Task & N                                      & Seconds  & GiB/s \\ \hline
-a    & $\frac{512*1024*1024}8$ & 0.0380   & 40   \\ \hline
-b    & $\frac{512*1024*1024}8$ & 0.0674   & 37   \\ \hline
-a    & 1024                                   & 2.22e-07 & 103   \\ \hline
-b    & 1024                                   & 3.16e-07 & 121   \\ \hline
+Implementation & n    & Seconds   & GLOPS   \\ \hline
+Naive          & 512  & 0.0249    & 10.5    \\ \hline
+Optimized      & 512  & 0.00427   & 60.0    \\ \hline
+Eigen          & 512  & 0.00333   & 75.1    \\ \hline
+Naive          & 1024 & 0.181     & 11.0    \\ \hline
+Optimized      & 1024 & 0.0335    & 59.6    \\ \hline
+Eigen          & 1024 & 0.0127    & 158.1   \\ \hline
+Naive          & 2048 & 11.9      & 1.3     \\ \hline
+Optimized      & 2048 & 0.338     & 47.4    \\ \hline
+Eigen          & 2048 & 0.0805    & 198.7   \\ \hline
 \end{tabular}
+\caption{Performance with the '-march=native' compiler argument}
+\end{centering}
 \end{table}
 
+
+\begin{table}[]
+\begin{centering}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Implementation & n    & Seconds   & GLOPS   \\ \hline
+Naive          & 512  & 0.0244    & 10.2    \\ \hline
+Optimized      & 512  & 0.00797   & 31.4    \\ \hline
+Eigen          & 512  & 0.00403   & 62.0    \\ \hline
+Naive          & 1024 & 0.221     & 9.04    \\ \hline
+Optimized      & 1024 & 0.0642    & 31.1    \\ \hline
+Eigen          & 1024 & 0.0199    & 100.6   \\ \hline
+Naive          & 2048 & 12.2      & 1.3     \\ \hline
+Optimized      & 2048 & 0.675     & 23.7    \\ \hline
+Eigen          & 2048 & 0.243     & 65.9    \\ \hline
+\end{tabular}
+\caption{Performance without '-march=native'}
+\end{centering}
+\end{table}
 
 \end{document}
 
