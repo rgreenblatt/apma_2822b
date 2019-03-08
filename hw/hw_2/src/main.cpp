@@ -1,7 +1,9 @@
 #include <iostream>
 #include <chrono>
 #include <omp.h>
+#ifdef EIGEN
 #include <Eigen/Dense>
+#endif
 #include <vector>
 #include <math.h>
 
@@ -19,9 +21,12 @@ int main() {
         double **B = new double*[n];
         double **C = new double*[n];
 
+
+        #ifdef EIGEN
         Eigen::MatrixXd mat_A(n, n);
         Eigen::MatrixXd mat_B(n, n);
         Eigen::MatrixXd mat_C(n, n);
+        #endif
 
         A[0] = new double[n * n];
         B[0] = new double[n * n];
@@ -44,9 +49,11 @@ int main() {
                     B[i][j] = i * 0.5 - j * 0.3;
                     C[i][j] = 0;
 
+                    #ifdef EIGEN
                     mat_A(i, j) = i * 0.3 + j * 0.4;
                     mat_B(i, j) = i * 0.5 - j * 0.3;
                     mat_C(i, j) = 0;
+                    #endif
                 }
             }
         }
@@ -126,6 +133,10 @@ int main() {
 
         std::cout << "num: " << num_specific << std::endl;
 
+        std::vector<std::string> method_names {"Naive", "Optimized"};
+        std::vector<double> method_times {time_n, time_c_2};
+                    
+        #ifdef EIGEN
         //eigen3 baseline
         auto t1_e = h_clock::now();
         for (int iter = 0; iter < m; iter++) {
@@ -133,18 +144,22 @@ int main() {
         }
         auto t2_e = h_clock::now();
 
-        //check that the computation is valid
-        for(int i = 100; i < 110; i++) {
-            for(int j = 10; j < 12; j++) {
+        //check that the computation is valid using eigen
+        //only a few values are checked, but that should be sufficient
+        for(int i = n-4; i < n; i++) {
+            for(int j = n-4; j < n; j++) {
                 assert(abs(C[i][j] - mat_C(i, j)) < 1e0);
             }
         }
 
-
         double time_e = std::chrono::duration_cast<std::chrono::duration<double>>(t2_e - t1_e).count();
 
-        std::vector<std::string> method_names {"Naive", "Optimized", "Eigen3"};
-        std::vector<double> method_times {time_n, time_c_2, time_e};
+        method_names.push_back("Eigen3");
+        method_times.push_back(time_e);
+        #endif
+
+
+
             
         std::cout << "======  N: " << n << " ======" << std::endl;
 
