@@ -13,6 +13,7 @@ using h_clock = std::chrono::high_resolution_clock;
 
 int main() {
     int n_vals[3] = {512, 1024, 2048};
+    //int inner_block_sizes[3] = {256, 512, 256};
     int m = 1;
     for(int run = 0; run < 3; run++) {
         int n = n_vals[run];
@@ -99,7 +100,7 @@ int main() {
 
         int outer_block_size = 16;
         int middle_block_size = 32;
-        int inner_block_size = 512;
+        int inner_block_size = 256;
         int num_outer_per_thread = ceil(((double) n) / (outer_block_size * num_threads));
         int num_blocks_middle = ceil(((double) n) / (middle_block_size));
         int num_blocks_inner = ceil(((double) n) / (inner_block_size));

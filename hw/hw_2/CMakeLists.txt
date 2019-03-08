@@ -8,8 +8,6 @@ cmake_minimum_required(VERSION 2.8)
 add_definitions(-std=c++11 -Wall -Wextra -Wconversion)
 add_definitions(-O3 -march=native -DEIGEN)
 
-find_package (Eigen3 3.3 REQUIRED NO_MODULE)
-
 find_package(OpenMP)
 if (OPENMP_FOUND)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -23,10 +21,8 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 # The following folder will be included
-include_directories("${PROJECT_SOURCE_DIR}/include" "/usr/local/include/eigen3")
+include_directories("${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/eigen/")
 
 add_executable(app 
     "${PROJECT_SOURCE_DIR}/src/main.cpp"
 )
-
-target_link_libraries(app Eigen3::Eigen)
