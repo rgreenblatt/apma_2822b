@@ -14,7 +14,7 @@ using h_clock = std::chrono::high_resolution_clock;
 int main() {
     int n_vals[3] = {512, 1024, 2048};
     //int inner_block_sizes[3] = {256, 512, 256};
-    int m = 1;
+    int m = 3;
     for(int run = 0; run < 3; run++) {
         int n = n_vals[run];
 
@@ -104,7 +104,6 @@ int main() {
         int num_outer_per_thread = ceil(((double) n) / (outer_block_size * num_threads));
         int num_blocks_middle = ceil(((double) n) / (middle_block_size));
         int num_blocks_inner = ceil(((double) n) / (inner_block_size));
-        int num_specific = 0;
         #pragma omp parallel
         {
             for (int iter = 0; iter < m; iter++) {
@@ -131,8 +130,6 @@ int main() {
         auto t2_c_2 = h_clock::now();
 
         double time_c_2 = std::chrono::duration_cast<std::chrono::duration<double>>(t2_c_2 - t1_c_2).count();
-
-        std::cout << "num: " << num_specific << std::endl;
 
         std::vector<std::string> method_names {"Naive", "Optimized"};
         std::vector<double> method_times {time_n, time_c_2};
