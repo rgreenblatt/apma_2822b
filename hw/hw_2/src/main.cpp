@@ -14,7 +14,6 @@ using h_clock = std::chrono::high_resolution_clock;
 int main() {
     int n_vals[3] = {512, 1024, 2048};
     //int inner_block_sizes[3] = {256, 512, 256};
-    int m = 3;
     for(int run = 0; run < 3; run++) {
         int n = n_vals[run];
 
@@ -61,14 +60,12 @@ int main() {
 
         //naive
         auto t1_n = h_clock::now();
-        for (int iter = 0; iter < m; iter++) {
-            #pragma omp parallel for
-            for(int i = 0; i < n; i++) {
-                int flop_num_per_thread = 0;
-                for(int j = 0; j < n; j++) {
-                    for(int k = 0; k < n; k++) {
-                        C[i][j] += A[i][k] * B[k][j];
-                    }
+        #pragma omp parallel for
+        for(int i = 0; i < n; i++) {
+            int flop_num_per_thread = 0;
+            for(int j = 0; j < n; j++) {
+                for(int k = 0; k < n; k++) {
+                    C[i][j] += A[i][k] * B[k][j];
                 }
             }
         }
@@ -106,20 +103,18 @@ int main() {
         int num_blocks_inner = ceil(((double) n) / (inner_block_size));
         #pragma omp parallel
         {
-            for (int iter = 0; iter < m; iter++) {
-                int thread = omp_get_thread_num();
-                for(int b_outer = thread * num_outer_per_thread; b_outer < (thread + 1) * 
-                            num_outer_per_thread; b_outer++) {
-                    for(int b_middle = 0;  b_middle < num_blocks_middle; b_middle++) {
-                        for(int b_inner = 0;  b_inner < num_blocks_inner; b_inner++) {
-                            for(int i = 0; i < outer_block_size; i++) {
-                                for(int j = 0; j < middle_block_size; j++) {
-                                    for(int k = 0; k < inner_block_size; k++) {
-                                        int i_ = i + b_outer * outer_block_size;
-                                        int j_ = j + b_middle * middle_block_size;
-                                        int k_ = k + b_inner * inner_block_size;
-                                        C[i_][k_] += A[i_][j_] * B[j_][k_];
-                                    }
+            int thread = omp_get_thread_num();
+            for(int b_outer = thread * num_outer_per_thread; b_outer < (thread + 1) * 
+                    num_outer_per_thread; b_outer++) {
+                for(int b_middle = 0;  b_middle < num_blocks_middle; b_middle++) {
+                    for(int b_inner = 0;  b_inner < num_blocks_inner; b_inner++) {
+                        for(int i = 0; i < outer_block_size; i++) {
+                            for(int j = 0; j < middle_block_size; j++) {
+                                for(int k = 0; k < inner_block_size; k++) {
+                                    int i_ = i + b_outer * outer_block_size;
+                                    int j_ = j + b_middle * middle_block_size;
+                                    int k_ = k + b_inner * inner_block_size;
+                                    C[i_][k_] += A[i_][j_] * B[j_][k_];
                                 }
                             }
                         }
@@ -137,9 +132,7 @@ int main() {
         #ifdef EIGEN
         //eigen3 baseline
         auto t1_e = h_clock::now();
-        for (int iter = 0; iter < m; iter++) {
-            mat_C = mat_A * mat_B;
-        }
+        mat_C = mat_A * mat_B;
         auto t2_e = h_clock::now();
 
         //check that the computation is valid using eigen
@@ -163,10 +156,10 @@ int main() {
 
         for(int i = 0; i < method_times.size(); i++) {
             //arithmetic is done this way to avoid issues with int overflow
-            std::cout << method_names[i] << " implementation, total time per N: " << method_times[i] / m << 
-                " gigabyte per s: " << (n / 1024.) * (n / 1024.) * (m / 1024.) * 
+            std::cout << method_names[i] << " implementation, total time: " << method_times[i] << 
+                " gigabyte per s: " << (n / 1024.) * (n / 1024.) / 1024. * 
                 sizeof(double) * (3 / method_times[i])  << " gflops per s: " << (n / 1024.) * (n / 1024.) * 
-                (n / 1024.) * m * (2 / method_times[i]) << std::endl;
+                (n / 1024.) * (2 / method_times[i]) << std::endl;
         }
 
         delete[] A;
