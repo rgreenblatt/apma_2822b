@@ -7,7 +7,7 @@
 #include <vector>
 #include <math.h>
 
-//compile with g++ main.cpp -std=c++11 -fopenmp -O3
+//compile with g++ main.cpp -std=c++11 -fopenmp -O3 -march=native
 
 using h_clock = std::chrono::high_resolution_clock;
 
