@@ -41,16 +41,21 @@ or other bottlenecks could result in the computation not being FLOP bounded.
 
 \section{}
 
-I implemented an algorithm which utilizes 3 levels of blocking. The outer most level of blocking is
-split between threads. In addition to tuning the block size parameters, I tested aligning
-threads side by side on the outer level instead of the 3rd level of blocking. This greatly reduced
-performance. I also tested transposing the blocks of the A matrix and copying the blocks from the
-B matrix to allow for the data access to be more sequential during the final operation; however, 
-this reduced performance.  The Eigen linear algebra library was also benchmarked for comparison
-(by default the code is run without benchmarking Eigen).  I tested with and without the '-march=native'
-compiler flag to determine how much of a speed up each method is obtaining from the use of optimized 
-SIMD instructions. The naive approach appears to obtain no benefit from SIMD, the optimized 
-algorithm obtains a sizeable benefit from SIMD, and Eigen gains an even larger benefit from SIMD.
+I implemented an algorithm which utilizes 3 levels of blocking. The outer most level 
+of blocking is split between threads and loops over the first dimension of the A 
+and C matrices.  The middle level loops over the last dimension of the A matrix 
+and the first dimension of the B matrix.  The inner level loops over the last dimensions 
+of the C and B matrices. In addition to tuning the block size parameters, I tested 
+aligning threads side by side on the outer level instead of the 3rd level of blocking. 
+This greatly reduced performance. I also tested transposing the blocks of the A 
+matrix and copying the blocks from the B matrix to allow for the data access to 
+be more sequential during the final operation; however, this reduced performance.  
+The Eigen linear algebra library was also benchmarked for comparison (by default 
+the code is run without benchmarking Eigen).  I tested with and without the '-march=native' 
+compiler flag to determine how much of a speed up each method is obtaining from 
+the use of optimized SIMD instructions. The naive approach appears to obtain no 
+benefit from SIMD, the optimized algorithm obtains a sizeable benefit from SIMD, 
+and Eigen gains an even larger benefit from SIMD.
 
 \begin{table}[]
 \begin{centering}
