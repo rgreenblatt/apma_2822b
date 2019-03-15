@@ -10,9 +10,9 @@ void triad_kernel(int N, double *x, double *y, double *z) {
 }
 
 int main() {
-    printf("dkfjdkfj");
     int N = 100;
     double *x, *y, *z, *x_d, *y_d, *z_d;
+    x = new double[N]; y = new double[N]; z = new double[N];
     cudaMalloc((void**) &x_d, N*sizeof(double));
     cudaMalloc((void**) &y_d, N*sizeof(double));
     cudaMalloc((void**) &z_d, N*sizeof(double));
