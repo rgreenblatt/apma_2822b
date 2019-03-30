@@ -6,7 +6,8 @@
 
 # Use 2 nodes with 8 tasks each, for 16 MPI tasks:
 #SBATCH --nodes=2
-#SBATCH --tasks-per-node=8
+#SBATCH --tasks-per-node=1
+#SBATCH -c 8
 
 # Specify a job name:
 #SBATCH -J hw_3

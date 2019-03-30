@@ -59,44 +59,77 @@ void dgemm(double **A, double **B, int leading_dimension_a,
   }
 }
 
+//source: 
+//https://stackoverflow.com/questions/101439/the-most-efficient-way-to-implement-an-integer-based-power-function-powint-int
+int ipow(int base, int exp)
+{
+  int result = 1;
+  for (;;)
+  {
+    if (exp & 1)
+      result *= base;
+    exp >>= 1;
+    if (!exp)
+      break;
+    base *= base;
+  }
+
+  return result;
+}
+
 int main(int argc, char **argv) {
 
   MPI_Init(&argc, &argv);
+
   int world_size, world_rank;
+
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+  
+  int power_of = (int) log2(world_size);
+  
+  //assumption is that the world size is a power of 2
+  assert(world_size ==  ipow(2, power_of))
 
-  int n_vals[3] = {2048, 4096, 8192};
+  //corresponds to second dimension of A and first dimesion of B
+  block_dim_j = ipow(2, power_of / 2)
+  //corresponds to first dimension of A and second dimesion of B
+  block_dim_i_k = ipow(2, power_of / 2 + power_of % 2)
 
-  /**
-   * assumptions:
-   * - number of ranks can be square rooted
-   * - n is divisible by the square root of the number of ranks
-   */
+  int n_i_vals[3] = {2048, 4096, 8192};
+  int n_j_vals[3] = {2048, 4096, 8192};
+  int n_k_vals[3] = {2048, 4096, 8192};
+
+
   for (int run = 0; run < 3; run++) {
-    // don't let any process start until the previous benchmark is finished
-    MPI_Barrier(MPI_COMM_WORLD);
+    int n_i = n_i_vals[run];
+    int n_j = n_j_vals[run];
+    int n_k = n_k_vals[run];
 
-    int n = n_vals[run];
+    // assumption is that matrix size is divisible by block dimensions
+    assert(n_i % block_dim_i_k == 0)
+    assert(n_j % block_dim_j ==   0)
+    assert(n_k % block_dim_i_k == 0)
 
-    int block_dim = (int)sqrt(world_size);
-    int n_block = n / block_dim;
+    int n_block_i = n_i / block_dim_i_k;
+    int n_block_j = n_j / block_dim_j;
+    int n_block_k = n_k / block_dim_i_k;
 
-    double **A = new double *[n_block];
-    double **B = new double *[n_block];
-    double **C = new double *[n_block];
+    double **A = new double *[n_block_i];
+    double **B = new double *[n_block_j];
+    double **C = new double *[n_block_i];
 
-    double **working_A = new double *[n_block];  
-    double **working_B = new double *[n_block];
+    double **working_A = new double *[n_block_i];  
+    double **working_B = new double *[n_block_j];
 
-    A[0] = new double[n_block * n_block];
-    B[0] = new double[n_block * n_block];
-    C[0] = new double[n_block * n_block];
-    working_A[0] = new double[n_block * n_block];
-    working_B[0] = new double[n_block * n_block];
+    A[0] = new double[block_dim_i * block_dim_j];
+    B[0] = new double[block_dim_j * block_dim_k];
+    C[0] = new double[block_dim_i * block_dim_k];
+    working_A[0] = new double[block_dim_i * block_dim_j];
+    working_B[0] = new double[block_dim_j * block_dim_k];
 
-    int rank_column = world_rank / block_dim;
-    int rank_row = world_rank % block_dim;
+    int rank_j = world_rank / block_dim_j;
+    int rank_i_k = world_rank % block_dim_j;
 
     // Initialize values:
     int num_threads;
@@ -106,19 +139,23 @@ int main(int argc, char **argv) {
           num_threads = omp_get_num_threads();
       }
       #pragma omp for
-      for (int i = 0; i < n_block; i++) {
-        A[i] = A[0] + i * n_block;
-        B[i] = B[0] + i * n_block;
-        C[i] = C[0] + i * n_block;
-        working_A[i] = working_A[0] + i * n_block;
-        working_B[i] = working_B[0] + i * n_block;
+      for (int i = 0; i < n_block_j; i++) {
+        B[i] = B[0] + i * n_block_outer;
+        working_B[i] = working_B[0] + i * n_block_outer;
       }
 
+      for (int i = 0; i < n_block_outer; i++) {
+        A[i] = A[0] + i * n_block_outer;
+        C[i] = C[0] + i * n_block_outer;
+        working_A[i] = working_A[0] + i * n_block_outer;
+      }
+      
+
       #pragma omp for
-      for (int i = 0; i < n_block; i++) {
-        for (int j = 0; j < n_block; j++) {
-          int ii = i + n_block * rank_column;
-          int jj = j + n_block * rank_row;
+      for (int i = 0; i < n_block_j; i++) {
+        for (int j = 0; j < n_block_outer; j++) {
+          int ii = i + n_block * rank_row;
+          int jj = j + n_block * rank_column;
           A[i][j] = ii * 0.3 + jj * 0.4;
           B[i][j] = ii * 0.5 - jj * 0.3;
           C[i][j] = 0;
@@ -128,35 +165,38 @@ int main(int argc, char **argv) {
 
     auto t1 = h_clock::now();
 
-    MPI_Comm row_comm, column_comm;
+    /* MPI_Comm row_comm, column_comm; */
 
-    if (block_dim > 1) {
-      MPI_Comm_split(MPI_COMM_WORLD, rank_row, rank_column, &row_comm);
-      MPI_Comm_split(MPI_COMM_WORLD, rank_column, rank_row, &column_comm);
-    }
+    /* if (block_dim > 1) { */
+    /*   MPI_Comm_split(MPI_COMM_WORLD, rank_row, world_rank, &row_comm); */
+    /*   MPI_Comm_split(MPI_COMM_WORLD, rank_column, world_rank, &column_comm); */
+    /* } */
 
-    std::cout << "after split " << std::endl;
     for (int i = 0; i < block_dim; i++) {
       // async send/receive: send to the next rank and recieve from the
       // previous rank in each column/row
       MPI_Request send_req_A, send_req_B, rec_req_A, rec_req_B;
 
       if (block_dim > 1) {
-        int rank_send_A = (rank_column + 1) % block_dim;
-        int rank_send_B = (rank_row + 1) % block_dim;
-        int rank_rec_A = (rank_column - 1 + block_dim) % block_dim; 
-        int rank_rec_B = (rank_row - 1 + block_dim) % block_dim;
+        int rank_send_A = ((rank_row + 1) % block_dim_row) * block_dim_col + 
+          rank_column;
+        int rank_send_B = ((rank_column + 1) % block_dim_col) + rank_row * 
+          block_dim_col;
+        int rank_rec_A = ((rank_row - 1 + block_dim_row) % block_dim_row) * 
+          block_dim_col + rank_column;
+        int rank_send_B = ((rank_column - 1 + block_dim_col) % block_dim_col) + 
+          rank_row * block_dim_col;
         std::cout << "rank:" << world_rank << " s A: " << rank_send_A << 
           " s B: " << rank_send_B << " r A: " << rank_rec_A << " r B: " << 
           rank_rec_B << std::endl;
         MPI_Isend(A[0], n_block * n_block, MPI_DOUBLE, rank_send_A, 0,
-                  column_comm, &send_req_A);
+                  MPI_COMM_WORLD, &send_req_A);
         MPI_Isend(B[0], n_block * n_block, MPI_DOUBLE, rank_send_B, 1,
-                  row_comm, &send_req_B);
+                  MPI_COMM_WORLD, &send_req_B);
         MPI_Irecv(working_A[0], n_block * n_block, MPI_DOUBLE, 
-                  rank_rec_A, 0, column_comm, &rec_req_A);
+                  rank_rec_A, 0, MPI_COMM_WORLD, &rec_req_A);
         MPI_Irecv(working_B[0], n_block * n_block, MPI_DOUBLE,
-                  rank_rec_B, 1, row_comm, &rec_req_B);
+                  rank_rec_B, 1, MPI_COMM_WORLD, &rec_req_B);
       }
 
       std::cout << "after send" << std::endl;
@@ -170,7 +210,7 @@ int main(int argc, char **argv) {
         MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
         std::cout << "after wait -1" << std::endl;
         MPI_Wait(&send_req_A, &send_status_A);
-        std::cout << "after wait 0" << std::endl;
+        std::cout << "after wait 0: " << world_rank << std::endl;
         MPI_Wait(&rec_req_A, &rec_status_A);
         std::cout << "after wait 1" << std::endl;
         matrix_copy(working_A, A, n_block, n_block);
@@ -181,6 +221,8 @@ int main(int argc, char **argv) {
       }
       std::cout << "after loop" << std::endl;
     }
+    // don't measure the time until all processes finish
+    MPI_Barrier(MPI_COMM_WORLD);
     auto t2 = h_clock::now();
 
     double time =
