@@ -59,15 +59,15 @@ int main() {
 
         //naive
         auto t1_n = h_clock::now();
-        #pragma omp parallel for
-        for(int i = 0; i < n; i++) {
-            int flop_num_per_thread = 0;
-            for(int j = 0; j < n; j++) {
-                for(int k = 0; k < n; k++) {
-                    C[i][j] += A[i][k] * B[k][j];
-                }
-            }
-        }
+        /* #pragma omp parallel for */
+        /* for(int i = 0; i < n; i++) { */
+        /*     int flop_num_per_thread = 0; */
+        /*     for(int j = 0; j < n; j++) { */
+        /*         for(int k = 0; k < n; k++) { */
+        /*             C[i][j] += A[i][k] * B[k][j]; */
+        /*         } */
+        /*     } */
+        /* } */
         auto t2_n = h_clock::now();
 
         double time_n = std::chrono::duration_cast<std::chrono::duration<double>>(t2_n - t1_n).count();
@@ -94,12 +94,9 @@ int main() {
             }
         }
 
-        //Note: this code  assumes that the size of the matrix is a multiple
-        //of 256. It can easily be modified so that this isn't the case, but this
-        //wasn't done because the effect on performance is insignificant.
-        int outer_block_size = 16;
-        int middle_block_size = 32;
-        int inner_block_size = 256;
+        int outer_block_size = n / 16;
+        int middle_block_size = n / 8;
+        int inner_block_size =  n;
         int num_outer_per_thread = ceil(((double) n) / (outer_block_size * num_threads));
         int num_blocks_middle = ceil(((double) n) / (middle_block_size));
         int num_blocks_inner = ceil(((double) n) / (inner_block_size));
@@ -108,15 +105,15 @@ int main() {
             int thread = omp_get_thread_num();
             for(int b_outer = thread * num_outer_per_thread; b_outer < (thread + 1) * 
                     num_outer_per_thread; b_outer++) {
+                int i_max = std::min(n, (b_outer + 1) * outer_block_size);
                 for(int b_middle = 0;  b_middle < num_blocks_middle; b_middle++) {
+                    int j_max = std::min(n, (b_middle + 1) * middle_block_size);
                     for(int b_inner = 0;  b_inner < num_blocks_inner; b_inner++) {
-                        for(int i = 0; i < outer_block_size; i++) {
-                            for(int j = 0; j < middle_block_size; j++) {
-                                for(int k = 0; k < inner_block_size; k++) {
-                                    int i_ = i + b_outer * outer_block_size;
-                                    int j_ = j + b_middle * middle_block_size;
-                                    int k_ = k + b_inner * inner_block_size;
-                                    C[i_][k_] += A[i_][j_] * B[j_][k_];
+                        int k_max = std::min(n, (b_inner + 1) * inner_block_size);
+                        for(int i = b_outer * outer_block_size; i < i_max; i++) {
+                            for(int j =  b_middle * middle_block_size; j < j_max; j++) {
+                                for(int k =  b_middle * middle_block_size; k < k_max; k++) {
+                                        C[i][k] += A[i][j] * B[j][k];
                                 }
                             }
                         }

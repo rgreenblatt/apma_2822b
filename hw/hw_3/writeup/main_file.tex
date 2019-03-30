@@ -1,0 +1,100 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amssymb}
+\usepackage{upgreek}
+\usepackage[colorlinks = true,
+            linkcolor = black,
+            urlcolor  = blue]{hyperref}
+
+\usepackage[margin=1.5in]{geometry}
+\usepackage{relsize}
+\usepackage{color}
+
+\title{APMA 2822b Homework 2}
+\author{Ryan Greenblatt}
+\date{February 2019}
+
+\begin{document}
+
+\setlength\parindent{0pt}
+
+\renewcommand{\thesubsection}{\alph{subsection}}
+
+\maketitle
+
+\section{}
+
+Code is attached in the email.
+
+\section{}
+
+
+The total number of FLOPS for Matrix-Matrix multiplication with matrices of size $n$ is $2 n^3$. The 
+total data in bytes that must be transfered (assuming the use of doubles) is 
+$8 * 3 n^2 = 24 n^2$. The arithmetic intensity for this task is 
+$\frac{2n^3}{24n^2} = \frac1{12} n = \frac{4096}{12} = 341.3$. This is well above the ratio of
+peak FLOPS to peak memory bandwidth for this system $(\frac{300}{55} = 5.5)$. Thus, the 
+computation can be expected to ideally be FLOP bounded. However, poor cache utilization
+or other bottlenecks could result in the computation not being FLOP bounded.
+
+\section{}
+
+I implemented an algorithm which utilizes 3 levels of blocking. The outer most level 
+of blocking is split between threads and loops over the first dimension of the A 
+and C matrices.  The middle level loops over the last dimension of the A matrix 
+and the first dimension of the B matrix.  The inner level loops over the last dimensions 
+of the C and B matrices. In addition to tuning the block size parameters, I tested 
+aligning threads side by side on the outer level instead of the 3rd level of blocking. 
+This greatly reduced performance. I also tested transposing the blocks of the A 
+matrix and copying the blocks from the B matrix to allow for the data access to 
+be more sequential during the final operation; however, this reduced performance.  
+The Eigen linear algebra library was also benchmarked for comparison (by default 
+the code is run without benchmarking Eigen).  I tested with and without the '-march=native' 
+compiler flag to determine how much of a speed up each method is obtaining from 
+the use of optimized SIMD instructions. The naive approach appears to obtain no 
+benefit from SIMD, the optimized algorithm obtains a sizeable benefit from SIMD, 
+and Eigen gains an even larger benefit from SIMD.
+
+\begin{table}[]
+\begin{centering}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Implementation & n    & Seconds   & GLOPS   \\ \hline
+Naive          & 512  & 0.0249    & 10.5    \\ \hline
+Optimized      & 512  & 0.00427   & 60.0    \\ \hline
+Eigen          & 512  & 0.00333   & 75.1    \\ \hline
+Naive          & 1024 & 0.181     & 11.0    \\ \hline
+Optimized      & 1024 & 0.0335    & 59.6    \\ \hline
+Eigen          & 1024 & 0.0127    & 158.1   \\ \hline
+Naive          & 2048 & 11.9      & 1.3     \\ \hline
+Optimized      & 2048 & 0.338     & 47.4    \\ \hline
+Eigen          & 2048 & 0.0805    & 198.7   \\ \hline
+\end{tabular}
+\caption{Performance with the '-march=native' compiler argument}
+\end{centering}
+\end{table}
+
+
+\begin{table}[]
+\begin{centering}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Implementation & n    & Seconds   & GLOPS   \\ \hline
+Naive          & 512  & 0.0244    & 10.2    \\ \hline
+Optimized      & 512  & 0.00797   & 31.4    \\ \hline
+Eigen          & 512  & 0.00403   & 62.0    \\ \hline
+Naive          & 1024 & 0.221     & 9.04    \\ \hline
+Optimized      & 1024 & 0.0642    & 31.1    \\ \hline
+Eigen          & 1024 & 0.0199    & 100.6   \\ \hline
+Naive          & 2048 & 12.2      & 1.3     \\ \hline
+Optimized      & 2048 & 0.675     & 23.7    \\ \hline
+Eigen          & 2048 & 0.243     & 65.9    \\ \hline
+\end{tabular}
+\caption{Performance without '-march=native'}
+\end{centering}
+\end{table}
+
+\end{document}
+
