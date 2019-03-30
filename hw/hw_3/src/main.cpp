@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
           num_threads = omp_get_num_threads();
       }
       #pragma omp for
-      for (int i = 0; i < n; i++) {
+      for (int i = 0; i < n_block; i++) {
         A[i] = A[0] + i * n_block;
         B[i] = B[0] + i * n_block;
         C[i] = C[0] + i * n_block;
@@ -135,40 +135,51 @@ int main(int argc, char **argv) {
       MPI_Comm_split(MPI_COMM_WORLD, rank_column, rank_row, &column_comm);
     }
 
+    std::cout << "after split " << std::endl;
     for (int i = 0; i < block_dim; i++) {
       // async send/receive: send to the next rank and recieve from the
       // previous rank in each column/row
       MPI_Request send_req_A, send_req_B, rec_req_A, rec_req_B;
+
       if (block_dim > 1) {
-        MPI_Isend(A, n_block * n_block, MPI_DOUBLE,
-                  ((rank_column + 1) % block_dim) * block_dim + rank_row, 0,
+        int rank_send_A = (rank_column + 1) % block_dim;
+        int rank_send_B = (rank_row + 1) % block_dim;
+        int rank_rec_A = (rank_column - 1 + block_dim) % block_dim; 
+        int rank_rec_B = (rank_row - 1 + block_dim) % block_dim;
+        std::cout << "rank:" << world_rank << " s A: " << rank_send_A << 
+          " s B: " << rank_send_B << " r A: " << rank_rec_A << " r B: " << 
+          rank_rec_B << std::endl;
+        MPI_Isend(A[0], n_block * n_block, MPI_DOUBLE, rank_send_A, 0,
                   column_comm, &send_req_A);
-        MPI_Isend(B, n_block * n_block, MPI_DOUBLE,
-                  ((rank_row + 1) % block_dim) + block_dim * rank_column, 0,
+        MPI_Isend(B[0], n_block * n_block, MPI_DOUBLE, rank_send_B, 1,
                   row_comm, &send_req_B);
-        MPI_Irecv(working_A, n_block * n_block, MPI_DOUBLE,
-                  ((rank_column - 1 + block_dim) % block_dim) * block_dim +
-                      rank_row,
-                  0, column_comm, &rec_req_A);
-        MPI_Irecv(working_B, n_block * n_block, MPI_DOUBLE,
-                  ((rank_row - 1 + block_dim) % block_dim) +
-                      block_dim * rank_column,
-                  0, row_comm, &rec_req_B);
+        MPI_Irecv(working_A[0], n_block * n_block, MPI_DOUBLE, 
+                  rank_rec_A, 0, column_comm, &rec_req_A);
+        MPI_Irecv(working_B[0], n_block * n_block, MPI_DOUBLE,
+                  rank_rec_B, 1, row_comm, &rec_req_B);
       }
+
+      std::cout << "after send" << std::endl;
 
       // perform matrix matrix multiplication on the process data
       dgemm(A, B, n_block, n_block, n_block, num_threads, C);
 
+      std::cout << "after dgemm" << std::endl;
       if (block_dim > 1) {
         // wait for async send/rec so A/B can be copied into
         MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
+        std::cout << "after wait -1" << std::endl;
         MPI_Wait(&send_req_A, &send_status_A);
+        std::cout << "after wait 0" << std::endl;
         MPI_Wait(&rec_req_A, &rec_status_A);
+        std::cout << "after wait 1" << std::endl;
         matrix_copy(working_A, A, n_block, n_block);
+        std::cout << "after copy" << std::endl;
         MPI_Wait(&send_req_B, &send_status_B);
         MPI_Wait(&rec_req_B, &rec_status_B);
         matrix_copy(working_B, B, n_block, n_block);
       }
+      std::cout << "after loop" << std::endl;
     }
     auto t2 = h_clock::now();
 

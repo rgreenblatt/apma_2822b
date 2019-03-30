@@ -15,7 +15,7 @@ endif()
 add_definitions(-std=c++11 -Wall -Wextra -Wconversion -O3)
 
 add_executable(app 
-    "${PROJECT_SOURCE_DIR}/src/main.cpp"
+    "${PROJECT_SOURCE_DIR}/src/hello.cpp"
 )
 
 target_link_libraries(app ${MPI_LIBRARIES})
