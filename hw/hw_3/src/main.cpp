@@ -15,7 +15,6 @@ void matrix_copy(double **from, double **to, int leading_dimension,
   #pragma omp parallel for
   for (int i = 0; i < leading_dimension; i++) {
     for (int j = 0; j < other_dimension; j++) {
-      to[i][j] = 2;
       to[i][j] = from[i][j];
     }
   }
