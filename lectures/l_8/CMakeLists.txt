@@ -3,7 +3,6 @@ PROJECT(lecture_1 C CXX)
 
 # Specify the minimum version for CMake
 
-cmake_minimum_required(VERSION 2.8)
 find_package(CUDA REQUIRED)
 
 set(CUDA_NVCC_FLAGS "-std=c++11 -O3")
