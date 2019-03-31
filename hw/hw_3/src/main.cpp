@@ -6,6 +6,7 @@
 #include <utility>
 #include <vector>
 #include <assert.h>
+#include <cmath>
 
 // compile with g++ main.cpp -std=c++11 -fopenmp -O3 -march=native
 
@@ -28,6 +29,9 @@ void dgemm(double **A, double **B, int leading_dimension_a,
   int outer_block_size = leading_dimension_a / 16;
   int middle_block_size = shared_dimension / 8;
   int inner_block_size = other_dimension_b;
+  /* int outer_block_size = 16; */
+  /* int middle_block_size = 32; */
+  /* int inner_block_size = 256; */
   int num_outer_per_thread = (int)ceil(((double)leading_dimension_a) /
                                        (outer_block_size * num_threads));
   int num_blocks_middle =
@@ -37,6 +41,7 @@ void dgemm(double **A, double **B, int leading_dimension_a,
   #pragma omp parallel
   {
     int thread = omp_get_thread_num();
+    std::cout << "in thread: " << thread << std::endl;
     for (int b_outer = thread * num_outer_per_thread;
          b_outer < (thread + 1) * num_outer_per_thread; b_outer++) {
       int i_max =
@@ -96,7 +101,7 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
   
   int block_dim_row, block_dim_col;
-  closest_factors(world_size, block_dim_row, block_dim_col);
+  closest_factors(world_size, block_dim_col, block_dim_row);
 
   assert(world_size ==  block_dim_row * block_dim_col);
   assert(block_dim_row <= block_dim_col);
@@ -122,7 +127,7 @@ int main(int argc, char **argv) {
 
   assert(num_blocks_before_B_j[block_dim_row] == block_dim_j);
 
-  int rank_row = world_rank / block_dim_row;
+  int rank_row = world_rank / block_dim_col;
   int rank_col = world_rank % block_dim_col;
 
   int num_blocks_B_j =
@@ -175,6 +180,8 @@ int main(int argc, char **argv) {
           num_threads = omp_get_num_threads();
       }
     }
+
+    std::cout << "running with: " << num_threads << std::endl;
 
     #pragma omp parallel
     {
@@ -242,9 +249,14 @@ int main(int argc, char **argv) {
         int rank_rec_B = ((rank_row - 1 + block_dim_row) % block_dim_row) * 
           block_dim_row + rank_col;
 
-        std::cout << "rank:" << world_rank << " s A: " << rank_send_A << 
-          " s B: " << rank_send_B << " r A: " << rank_rec_A << " r B: " << 
-          rank_rec_B << std::endl;
+        /* std::cout << */ 
+        /*   "rank_col:" << rank_col << " block_dim_col: " << block_dim_col << */ 
+        /*   "rank_row:" << rank_row << " block_dim_row: " << block_dim_row << */ 
+        /*    std::endl; */
+
+        /* std::cout << "rank:" << world_rank << " s A: " << rank_send_A << */ 
+        /*   " s B: " << rank_send_B << " r A: " << rank_rec_A << " r B: " << */ 
+        /*   rank_rec_B << std::endl; */
 
         //A can always be sent as entire blocks
         MPI_Isend(A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_send_A, 0,
@@ -258,22 +270,22 @@ int main(int argc, char **argv) {
                   rank_rec_B, 1, MPI_COMM_WORLD, &rec_req_B);
       }
 
-      std::cout << "after send" << std::endl;
+      std::cout << "after send: " << world_rank << std::endl;
 
       // perform matrix matrix multiplication on the process data
       dgemm(A, all_B[0], n_block_i, n_block_j, n_block_k, num_threads, C);
 
-      std::cout << "after dgemm" << std::endl;
+      std::cout << "after dgemm: " << world_rank << std::endl;
       if (block_dim_j > 1) {
         // wait for async send/rec so A/B can be copied into
         MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
-        std::cout << "after wait -1" << std::endl;
+        /* std::cout << "after wait -1:" << world_rank << std::endl; */
         MPI_Wait(&send_req_A, &send_status_A);
-        std::cout << "after wait 0: " << world_rank << std::endl;
+        /* std::cout << "after wait 0: " << world_rank << std::endl; */
         MPI_Wait(&rec_req_A, &rec_status_A);
-        std::cout << "after wait 1" << std::endl;
+        /* std::cout << "after wait 1: " << world_rank << std::endl; */
         matrix_copy(working_A, A, n_block_i, n_block_j);
-        std::cout << "after copy" << std::endl;
+        /* std::cout << "after copy: " << world_rank << std::endl; */
         MPI_Wait(&send_req_B, &send_status_B);
         for (int which_block = 1; which_block < num_blocks_B_j; ++which_block) {
           matrix_copy(all_B[which_block - 1], all_B[which_block], n_block_j,
@@ -284,6 +296,7 @@ int main(int argc, char **argv) {
       }
       std::cout << "after loop" << std::endl;
     }
+
     // don't measure the time until all processes finish
     MPI_Barrier(MPI_COMM_WORLD);
     auto t2 = h_clock::now();

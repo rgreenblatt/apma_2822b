@@ -6,7 +6,6 @@
 
 # Use 2 nodes with 8 tasks each, for 16 MPI tasks:
 #SBATCH --nodes=2
-#SBATCH --tasks-per-node=1
 #SBATCH -c 8
 
 # Specify a job name:
@@ -18,4 +17,4 @@
 
 # Run a command
 
-srun --mpi=pmi2 ./bin/app
+srun --mpi=pmi2 ./bin/app -threads 8
