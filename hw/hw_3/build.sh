@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cmake -H. -Bbuild
+CXX=icc cmake -H. -Bbuild
 
-cmake --build build -- -j3
+CXX=icc cmake --build build -- -j3

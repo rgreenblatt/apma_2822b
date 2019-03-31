@@ -7,6 +7,14 @@
 #include <vector>
 #include <assert.h>
 #include <cmath>
+#include "mkl.h"
+
+extern "C" void cblas_dgemm (const CBLAS_LAYOUT Layout, 
+    const CBLAS_TRANSPOSE transa, const CBLAS_TRANSPOSE transb, 
+    const MKL_INT m, const MKL_INT n, const MKL_INT k, const double alpha, 
+    const double *a, const MKL_INT lda, const double *b, const MKL_INT ldb, 
+    const double beta, double *c, const MKL_INT ldc);
+
 
 // compile with g++ main.cpp -std=c++11 -fopenmp -O3 -march=native
 
@@ -24,14 +32,12 @@ void matrix_copy(double **from, double **to, int leading_dimension,
 
 void dgemm(double **A, double **B, int leading_dimension_a,
            int shared_dimension, int other_dimension_b, int num_threads,
-           double **C) {
+           double **C, bool use_mkl=false) {
 
+  /* if(use_mkl) { */
   int outer_block_size = leading_dimension_a / 16;
   int middle_block_size = shared_dimension / 8;
   int inner_block_size = other_dimension_b;
-  /* int outer_block_size = 16; */
-  /* int middle_block_size = 32; */
-  /* int inner_block_size = 256; */
   int num_outer_per_thread = (int)ceil(((double)leading_dimension_a) /
                                        (outer_block_size * num_threads));
   int num_blocks_middle =
@@ -240,6 +246,7 @@ int main(int argc, char **argv) {
       MPI_Request send_req_A, send_req_B, rec_req_A, rec_req_B;
 
       if (block_dim_j > 1) {
+        std::cout << "multiple nodes, sending" << std::endl;
         int rank_send_A = ((rank_col + 1) % block_dim_col) + rank_row * 
           block_dim_row;
         int rank_rec_A = ((rank_col - 1 + block_dim_col) % block_dim_col) + 
