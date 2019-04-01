@@ -8,6 +8,11 @@
 #include <mpi.h>
 #include <omp.h>
 #include <sstream>
+#include <chrono>
+
+namespace  chr = std::chrono;
+using h_clock = chr::high_resolution_clock;
+using h_timepoint = chr::time_point<h_clock>;
 
 /**
  * used for computing grid dimensions
@@ -114,26 +119,17 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   assert(size_j % block_dim_row == 0);
   assert(size_k % block_dim_col == 0);
 
-  MPI_Comm row_comm, col_comm;
+  MPI_Comm comm_row, comm_col;
 
   MPI_Comm_split(MPI_COMM_WORLD, world_rank / block_dim_col, world_rank, 
-      &row_comm);
+      &comm_row);
   MPI_Comm_split(MPI_COMM_WORLD, world_rank % block_dim_col, world_rank, 
-      &col_comm);
+      &comm_col);
 
   int rank_row, rank_col;
 
-  MPI_Comm_rank(row_comm, &rank_row);
-  MPI_Comm_rank(row_comm, &rank_col);
-
-  //determine which rank each process sends data to
-  int rank_send_A = ((rank_col + 1) % block_dim_col) + rank_row * block_dim_col;
-  int rank_rec_A = ((rank_col - 1 + block_dim_col) % block_dim_col) +
-                   rank_row * block_dim_col;
-  int rank_send_B = ((rank_row + 1) % block_dim_row) * block_dim_col + rank_col;
-  int rank_rec_B =
-      ((rank_row - 1 + block_dim_row) % block_dim_row) * block_dim_col +
-      rank_col;
+  MPI_Comm_rank(comm_row, &rank_row);
+  MPI_Comm_rank(comm_col, &rank_col);
 
   int n_block_i = size_i / block_dim_row;
   int n_block_j = size_j / block_dim_col;
@@ -165,6 +161,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
       C[i][k] = 0;
     }
   }
+
   for (int which_block = 0; which_block < num_blocks_B_j; ++which_block) {
     for (int j = 0; j < n_block_j; j++) {
       int jj =
@@ -178,21 +175,60 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     }
   }
 
+  //determine which rank each process sends data to
+  int rank_send_A = (rank_col + 1) % block_dim_col;
+  int rank_rec_A = (rank_col - 1 + block_dim_col) % block_dim_col;
+  int rank_send_B = (rank_row + 1) % block_dim_row;
+  int rank_rec_B = (rank_row - 1 + block_dim_row) % block_dim_row;
+
+  #ifdef TIME_DATA_TRANSFER
+    //timing
+    double total_comm_setup_time = 0;
+    double total_comm_wait_time = 0;
+    double total_local_copy_time = 0;
+    h_timepoint t1_setup, t1_wait, t1_copy;
+    auto comm_setup_start_timer = [&t1_setup]() { t1_setup = h_clock::now(); };
+    auto comm_setup_end_timer = [&t1_setup, &total_comm_setup_time]() {
+      total_comm_setup_time +=
+          chr::duration_cast<chr::duration<double>>(h_clock::now() - t1_setup)
+              .count();
+    };
+    auto comm_wait_start_timer = [&t1_wait]() { t1_wait = h_clock::now(); };
+    auto comm_wait_end_timer = [&t1_wait, &total_comm_wait_time]() {
+      total_comm_wait_time +=
+          chr::duration_cast<chr::duration<double>>(h_clock::now() - t1_wait)
+              .count();
+    };
+    auto local_copy_time_start_timer = [&t1_copy]() { t1_copy = h_clock::now(); };
+    auto local_copy_time_end_timer = [&t1_copy, &total_local_copy_time]() {
+      total_local_copy_time +=
+          chr::duration_cast<chr::duration<double>>(h_clock::now() - t1_copy)
+              .count();
+    };
+  #endif
+
   for (int j = 0; j < block_dim_col; j++) {
     // async send/receive: send to the next rank and recieve from the
     // previous rank in each column/row
     MPI_Request send_req_A, send_req_B, rec_req_A, rec_req_B;
 
-    if (block_dim_col > 1 && j < block_dim_col - 1) {
-      MPI_Isend(A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_send_A, 0,
-                MPI_COMM_WORLD, &send_req_A);
-      MPI_Irecv(working_A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_rec_A, 0,
-                MPI_COMM_WORLD, &rec_req_A);
 
-      MPI_Isend(all_B[num_blocks_B_j - 1][0], n_block_j * n_block_k, MPI_DOUBLE,
-                rank_send_B, 1, MPI_COMM_WORLD, &send_req_B);
-      MPI_Irecv(working_B[0], n_block_j * n_block_k, MPI_DOUBLE, rank_rec_B, 1,
-                MPI_COMM_WORLD, &rec_req_B);
+    if (block_dim_col > 1 && j < block_dim_col - 1) {
+      #ifdef TIME_DATA_TRANSFER
+        comm_setup_start_timer();
+      #endif
+      MPI_Isend(A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_send_A, 0,
+                comm_row, &send_req_A);
+      MPI_Irecv(working_A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_rec_A,
+                0, comm_row, &rec_req_A);
+
+      MPI_Isend(all_B[num_blocks_B_j - 1][0], n_block_j * n_block_k,
+                MPI_DOUBLE, rank_send_B, 1, comm_col, &send_req_B);
+      MPI_Irecv(working_B[0], n_block_j * n_block_k, MPI_DOUBLE, rank_rec_B,
+                1, comm_col, &rec_req_B);
+      #ifdef TIME_DATA_TRANSFER
+        comm_setup_end_timer();
+      #endif
     }
 
     // perform matrix matrix multiplication on the process data
@@ -200,26 +236,72 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                           num_threads, use_blas);
 
     if (block_dim_col > 1 && j < block_dim_col - 1) {
-      // wait for async send/rec so A/B can be copied into
+      #ifdef TIME_DATA_TRANSFER
+        comm_wait_start_timer();
+      #endif
       MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
+      // wait for async send/rec so A/B can be copied into
       MPI_Wait(&send_req_A, &send_status_A);
       MPI_Wait(&rec_req_A, &rec_status_A);
+      #ifdef TIME_DATA_TRANSFER
+        comm_wait_end_timer();
+        local_copy_time_start_timer();
+      #endif
       matrix_copy(working_A, A, n_block_i, n_block_j);
+      #ifdef TIME_DATA_TRANSFER
+        local_copy_time_end_timer();
+        comm_wait_start_timer();
+      #endif
       MPI_Wait(&send_req_B, &send_status_B);
+      #ifdef TIME_DATA_TRANSFER
+        comm_wait_end_timer();
+        local_copy_time_start_timer();
+      #endif
       for (int which_block = num_blocks_B_j - 1; which_block > 0;
            --which_block) {
         matrix_copy(all_B[which_block - 1], all_B[which_block], n_block_j,
                     n_block_k);
       }
+      #ifdef TIME_DATA_TRANSFER
+        local_copy_time_end_timer();
+        comm_wait_start_timer();
+      #endif
       MPI_Wait(&rec_req_B, &rec_status_B);
+      #ifdef TIME_DATA_TRANSFER
+        comm_wait_end_timer();
+        local_copy_time_start_timer();
+      #endif
       matrix_copy(working_B, all_B[0], n_block_j, n_block_k);
+      #ifdef TIME_DATA_TRANSFER
+        local_copy_time_end_timer();
+      #endif
     }
   }
+
+  #ifdef TIME_DATA_TRANSFER
+    if (world_rank == 0) {
+      std::stringstream buf_time;
+      std::string name;
+      if(use_blas) {
+        name = "with blas";
+      } else {
+        name = "with mine";
+      }
+
+      buf_time << "------data transfer timings for " << name << "------"
+               << std::endl
+               << "setup time: " << total_comm_setup_time
+               << " wait time: " << total_comm_wait_time
+               << " local copy time: " << total_local_copy_time << std::endl;
+      std::cout << buf_time.str();
+    }
+  #endif
 
   delete[] A;
   for (int which_block = 1; which_block < num_blocks_B_j; ++which_block) {
     delete[] all_B[which_block];
   }
+
   if (verify_results) {
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -257,7 +339,9 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
         assert(std::abs(C[i][k] - C_test[ii][kk]) < 1e-6);
       }
     }
-    std::cout << "verified" << std::endl;
+    std::stringstream buf;
+    buf << "verified" << std::endl;
+    std::cout << buf.str();
   }
   delete[] C;
 }
