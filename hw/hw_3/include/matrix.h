@@ -114,9 +114,17 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   assert(size_j % block_dim_row == 0);
   assert(size_k % block_dim_col == 0);
 
+  MPI_Comm row_comm, col_comm;
 
-  int rank_row = world_rank / block_dim_col;
-  int rank_col = world_rank % block_dim_col;
+  MPI_Comm_split(MPI_COMM_WORLD, world_rank / block_dim_col, world_rank, 
+      &row_comm);
+  MPI_Comm_split(MPI_COMM_WORLD, world_rank % block_dim_col, world_rank, 
+      &col_comm);
+
+  int rank_row, rank_col;
+
+  MPI_Comm_rank(row_comm, &rank_row);
+  MPI_Comm_rank(row_comm, &rank_col);
 
   //determine which rank each process sends data to
   int rank_send_A = ((rank_col + 1) % block_dim_col) + rank_row * block_dim_col;
