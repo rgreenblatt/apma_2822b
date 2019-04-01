@@ -34,34 +34,40 @@ void dgemm(double **A, double **B, int leading_dimension_a,
            int shared_dimension, int other_dimension_b, int num_threads,
            double **C, bool use_mkl=false) {
 
-  /* if(use_mkl) { */
-  int outer_block_size = leading_dimension_a / 16;
-  int middle_block_size = shared_dimension / 8;
-  int inner_block_size = other_dimension_b;
-  int num_outer_per_thread = (int)ceil(((double)leading_dimension_a) /
-                                       (outer_block_size * num_threads));
-  int num_blocks_middle =
+  if(use_mkl) {
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,  
+        leading_dimension_a, shared_dimension, other_dimension_b, 1., 
+        A[0], shared_dimension, B[0], other_dimension_b, 0., C[0], 
+        other_dimension_b);
+  } else {
+    int outer_block_size = leading_dimension_a / 16;
+    int middle_block_size = shared_dimension / 8;
+    int inner_block_size = other_dimension_b;
+    int num_outer_per_thread = (int)ceil(((double)leading_dimension_a) /
+        (outer_block_size * num_threads));
+    int num_blocks_middle =
       (int)ceil(((double)shared_dimension) / (middle_block_size));
-  int num_blocks_inner =
+    int num_blocks_inner =
       (int)ceil(((double)other_dimension_b) / (inner_block_size));
-  #pragma omp parallel
-  {
-    int thread = omp_get_thread_num();
-    std::cout << "in thread: " << thread << std::endl;
-    for (int b_outer = thread * num_outer_per_thread;
-         b_outer < (thread + 1) * num_outer_per_thread; b_outer++) {
-      int i_max =
+#pragma omp parallel
+    {
+      int thread = omp_get_thread_num();
+      std::cout << "in thread: " << thread << std::endl;
+      for (int b_outer = thread * num_outer_per_thread;
+          b_outer < (thread + 1) * num_outer_per_thread; b_outer++) {
+        int i_max =
           std::min(leading_dimension_a, (b_outer + 1) * outer_block_size);
-      for (int b_middle = 0; b_middle < num_blocks_middle; b_middle++) {
-        int j_max =
+        for (int b_middle = 0; b_middle < num_blocks_middle; b_middle++) {
+          int j_max =
             std::min(shared_dimension, (b_middle + 1) * middle_block_size);
-        for (int b_inner = 0; b_inner < num_blocks_inner; b_inner++) {
-          int k_max =
+          for (int b_inner = 0; b_inner < num_blocks_inner; b_inner++) {
+            int k_max =
               std::min(other_dimension_b, (b_inner + 1) * inner_block_size);
-          for (int i = b_outer * outer_block_size; i < i_max; i++) {
-            for (int j = b_middle * middle_block_size; j < j_max; j++) {
-              for (int k = b_middle * middle_block_size; k < k_max; k++) {
-                C[i][k] += A[i][j] * B[j][k];
+            for (int i = b_outer * outer_block_size; i < i_max; i++) {
+              for (int j = b_middle * middle_block_size; j < j_max; j++) {
+                for (int k = b_middle * middle_block_size; k < k_max; k++) {
+                  C[i][k] += A[i][j] * B[j][k];
+                }
               }
             }
           }
@@ -280,7 +286,7 @@ int main(int argc, char **argv) {
       std::cout << "after send: " << world_rank << std::endl;
 
       // perform matrix matrix multiplication on the process data
-      dgemm(A, all_B[0], n_block_i, n_block_j, n_block_k, num_threads, C);
+      dgemm(A, all_B[0], n_block_i, n_block_j, n_block_k, num_threads, C, true);
 
       std::cout << "after dgemm: " << world_rank << std::endl;
       if (block_dim_j > 1) {
