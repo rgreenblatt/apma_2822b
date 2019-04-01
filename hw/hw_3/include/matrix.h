@@ -1,6 +1,6 @@
 #pragma once
 
-/* #include "mkl.h" */
+#include "mkl.h"
 #include <assert.h>
 #include <cmath>
 #include <functional>
@@ -8,6 +8,7 @@
 #include <omp.h>
 #include <sstream>
 #include <chrono>
+#include <iostream>
 
 void closest_factors(int product, int &out_a, int &out_b) {
   out_b = (int)floor(sqrt(product));
@@ -17,12 +18,12 @@ void closest_factors(int product, int &out_a, int &out_b) {
   out_a = product / out_b;
 }
 
-/* extern "C" void */
-/* cblas_dgemm(const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa, */
-/*             const CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n, */
-/*             const MKL_INT k, const double alpha, const double *a, */
-/*             const MKL_INT lda, const double *b, const MKL_INT ldb, */
-/*             const double beta, double *c, const MKL_INT ldc); */
+extern "C" void
+cblas_dgemm(const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa,
+            const CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n,
+            const MKL_INT k, const double alpha, const double *a,
+            const MKL_INT lda, const double *b, const MKL_INT ldb,
+            const double beta, double *c, const MKL_INT ldc);
 
 using h_clock = std::chrono::high_resolution_clock;
 
@@ -36,13 +37,14 @@ void matrix_copy(double **from, double **to, int leading_dimension,
   }
 }
 
+inline
 void dense_matrix_multiply(double **A, double **B, double **C, int size_i,
                            int size_j, int size_k, int num_threads,
                            bool use_mkl = false) {
 
   if (use_mkl) {
-    /* cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size_i, size_k, */
-    /*             size_j, 1, A[0], size_j, B[0], size_k, 1, C[0], size_k); */
+    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size_i, size_k,
+                size_j, 1, A[0], size_j, B[0], size_k, 1, C[0], size_k);
   } else {
     /* int outer_block_size = (size_i + 32) / 32; */
     /* int middle_block_size = (size_j + 16) / 16; */
@@ -87,6 +89,7 @@ void allocate_matrix(double **&A, int n, int m) {
   }
 }
 
+inline
 void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                                  int world_rank, int world_size,
                                  int num_threads,

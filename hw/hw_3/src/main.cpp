@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 #include "matrix.h"
+#include "mkl.h"
 
 // compile with g++ main.cpp -std=c++11 -fopenmp -O3 -march=native
 
@@ -13,13 +14,13 @@ using h_clock = std::chrono::high_resolution_clock;
 int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   int omp_num_threads = omp_get_max_threads();
-  /* int mkl_num_threads = mkl_get_max_threads(); */
+  int mkl_num_threads = mkl_get_max_threads();
   int world_size, world_rank;
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
   if (world_rank == 0) {
     std::cout << "num threads found by omp: " << omp_num_threads
-              /* << " num threads found by mkl: " << mkl_num_threads */
+              << " num threads found by mkl: " << mkl_num_threads
               << " mpi nodes: " << world_size << std::endl << std::endl;
   }
 
@@ -39,10 +40,10 @@ int main(int argc, char **argv) {
 
     //testing with mkl dgemm
     auto t1 = h_clock::now();
-    /* distributed_matrix_multiply(size_i, size_j, size_k, world_rank, */
-    /*                             world_size, omp_num_threads, f_a, f_b, true); */
+    distributed_matrix_multiply(size_i, size_j, size_k, world_rank,
+                                world_size, omp_num_threads, f_a, f_b, true);
 
-    /* MPI_Barrier(MPI_COMM_WORLD); */
+    MPI_Barrier(MPI_COMM_WORLD);
     auto t2 = h_clock::now();
 
     double time_mkl =
