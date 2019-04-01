@@ -9,9 +9,11 @@ add_definitions(-std=c++11 -Wall -Wextra -Wconversion -DTEST)
 # add_definitions(-g)
 add_definitions(-O3 -march=native)
 
+set (OpenBLAS_DIR "/gpfs/runtime/opt/openblas/0.2.19/lib/cmake/openblas/")
+
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
-find_package(BLAS REQUIRED )
+find_package(OpenBLAS REQUIRED )
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -23,7 +25,7 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 # The following folder will be included
-include_directories(${BLAS_INCLUDE_DIRS} ${MPI_INCLUDE_PATH} "${PROJECT_SOURCE_DIR}/include")
+include_directories(${OpenBLAS_INCLUDE_DIRS} ${MPI_INCLUDE_PATH} "${PROJECT_SOURCE_DIR}/include")
 
 add_executable(app 
     "${PROJECT_SOURCE_DIR}/src/main.cpp"
@@ -47,7 +49,7 @@ if(MPI_LINK_FLAGS)
     LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
   
-target_link_libraries(app ${MPI_LIBRARIES} ${BLAS_LIBRARIES} )
+target_link_libraries(app ${MPI_LIBRARIES} ${OpenBLAS_LIBRARIES} )
 
 
 if(MPI_COMPILE_FLAGS)
@@ -60,7 +62,7 @@ set_target_properties(bench PROPERTIES
 LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
  
-target_link_libraries(bench ${MPI_LIBRARIES} ${BLAS_LIBRARIES} )
+target_link_libraries(bench ${MPI_LIBRARIES} ${OpenBLAS_LIBRARIES} )
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(test PROPERTIES
@@ -72,4 +74,4 @@ if(MPI_LINK_FLAGS)
     LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
   
-target_link_libraries(test ${MPI_LIBRARIES} ${BLAS_LIBRARIES} )
+target_link_libraries(test ${MPI_LIBRARIES} ${OpenBLAS_LIBRARIES} )
