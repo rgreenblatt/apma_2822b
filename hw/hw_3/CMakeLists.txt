@@ -40,4 +40,6 @@ if(MPI_LINK_FLAGS)
     LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
   
-target_link_libraries(app ${MPI_LIBRARIES} ${MKL_LIBRARIES})
+message(AUTHOR_WARNING ${MKL_LIBRARIES})
+#target_link_libraries(app ${MPI_LIBRARIES} ${MKL_LIBRARIES})
+target_link_libraries(app ${MPI_LIBRARIES} "mkl_intel_lp64" "mkl_intel_thread" "mkl_core")

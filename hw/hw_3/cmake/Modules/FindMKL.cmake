@@ -14,7 +14,6 @@
 #  MKL_INCLUDE_DIRS - MKL include files directories
 #  MKL_LIBRARIES - The MKL libraries
 #  MKL_INTERFACE_LIBRARY - MKL interface library
-#  MKL_SEQUENTIAL_LAYER_LIBRARY - MKL sequential layer library
 #  MKL_CORE_LIBRARY - MKL core library
 #
 #  The environment variables MKLROOT and INTEL are used to find the library.
@@ -30,18 +29,16 @@
 
 # If already in cache, be silent
 if (MKL_INCLUDE_DIRS AND MKL_LIBRARIES AND MKL_INTERFACE_LIBRARY AND
-    MKL_SEQUENTIAL_LAYER_LIBRARY AND MKL_CORE_LIBRARY)
+    MKL_CORE_LIBRARY)
   set (MKL_FIND_QUIETLY TRUE)
 endif()
 
 if(NOT BUILD_SHARED_LIBS)
   set(INT_LIB "libmkl_intel_ilp64.a")
-  set(SEQ_LIB "libmkl_sequential.a")
   set(THR_LIB "libmkl_intel_thread.a")
   set(COR_LIB "libmkl_core.a")
 else()
   set(INT_LIB "mkl_intel_ilp64")
-  set(SEQ_LIB "mkl_sequential")
   set(THR_LIB "mkl_intel_thread")
   set(COR_LIB "mkl_core")
 endif()
@@ -55,8 +52,8 @@ find_library(MKL_INTERFACE_LIBRARY
                    $ENV{INTEL}/mkl/lib/intel64
              NO_DEFAULT_PATH)
 
-find_library(MKL_SEQUENTIAL_LAYER_LIBRARY
-             NAMES ${SEQ_LIB}
+find_library(MKL_THR_LIBRARY
+             NAMES ${THR_LIB}
              PATHS $ENV{MKLROOT}/lib
                    $ENV{MKLROOT}/lib/intel64
                    $ENV{INTEL}/mkl/lib/intel64
@@ -70,11 +67,11 @@ find_library(MKL_CORE_LIBRARY
              NO_DEFAULT_PATH)
 
 set(MKL_INCLUDE_DIRS ${MKL_INCLUDE_DIR})
-set(MKL_LIBRARIES ${MKL_INTERFACE_LIBRARY} ${MKL_SEQUENTIAL_LAYER_LIBRARY} ${MKL_CORE_LIBRARY})
+set(MKL_LIBRARIES ${MKL_INTERFACE_LIBRARY} ${MKL_THR_LIBRARY} ${MKL_CORE_LIBRARY})
 
 if (MKL_INCLUDE_DIR AND
     MKL_INTERFACE_LIBRARY AND
-    MKL_SEQUENTIAL_LAYER_LIBRARY AND
+    MKL_THR_LIBRARY AND
     MKL_CORE_LIBRARY)
 
     if (NOT DEFINED ENV{CRAY_PRGENVPGI} AND
@@ -92,7 +89,7 @@ else()
   set(MKL_INCLUDE_DIRS "")
   set(MKL_LIBRARIES "")
   set(MKL_INTERFACE_LIBRARY "")
-  set(MKL_SEQUENTIAL_LAYER_LIBRARY "")
+  set(MKL_THR_LIBRARY "")
   set(MKL_CORE_LIBRARY "")
 
 endif()
@@ -100,6 +97,6 @@ endif()
 # Handle the QUIETLY and REQUIRED arguments and set MKL_FOUND to TRUE if
 # all listed variables are TRUE.
 INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(MKL DEFAULT_MSG MKL_LIBRARIES MKL_INCLUDE_DIRS MKL_INTERFACE_LIBRARY MKL_SEQUENTIAL_LAYER_LIBRARY MKL_CORE_LIBRARY)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(MKL DEFAULT_MSG MKL_LIBRARIES MKL_INCLUDE_DIRS MKL_INTERFACE_LIBRARY MKL_CORE_LIBRARY)
 
-MARK_AS_ADVANCED(MKL_INCLUDE_DIRS MKL_LIBRARIES MKL_INTERFACE_LIBRARY MKL_SEQUENTIAL_LAYER_LIBRARY MKL_CORE_LIBRARY)
+MARK_AS_ADVANCED(MKL_INCLUDE_DIRS MKL_LIBRARIES MKL_INTERFACE_LIBRARY MKL_CORE_LIBRARY)

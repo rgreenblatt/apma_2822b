@@ -35,9 +35,11 @@ void dgemm(double **A, double **B, int leading_dimension_a,
            double **C, bool use_mkl=false) {
 
   if(use_mkl) {
+    omp_set_num_threads(num_threads);
+    mkl_set_num_threads(num_threads);
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans,  
-        leading_dimension_a, shared_dimension, other_dimension_b, 1., 
-        A[0], shared_dimension, B[0], other_dimension_b, 0., C[0], 
+        leading_dimension_a, shared_dimension, other_dimension_b, 1, 
+        A[0], shared_dimension, B[0], other_dimension_b, 0, C[0], 
         other_dimension_b);
   } else {
     int outer_block_size = leading_dimension_a / 16;
@@ -52,7 +54,7 @@ void dgemm(double **A, double **B, int leading_dimension_a,
 #pragma omp parallel
     {
       int thread = omp_get_thread_num();
-      std::cout << "in thread: " << thread << std::endl;
+      /* std::cout << "in thread: " << thread << std::endl; */
       for (int b_outer = thread * num_outer_per_thread;
           b_outer < (thread + 1) * num_outer_per_thread; b_outer++) {
         int i_max =
@@ -193,7 +195,7 @@ int main(int argc, char **argv) {
       }
     }
 
-    std::cout << "running with: " << num_threads << std::endl;
+    /* std::cout << "running with: " << num_threads << std::endl; */
 
     #pragma omp parallel
     {
@@ -252,7 +254,7 @@ int main(int argc, char **argv) {
       MPI_Request send_req_A, send_req_B, rec_req_A, rec_req_B;
 
       if (block_dim_j > 1) {
-        std::cout << "multiple nodes, sending" << std::endl;
+        /* std::cout << "multiple nodes, sending" << std::endl; */
         int rank_send_A = ((rank_col + 1) % block_dim_col) + rank_row * 
           block_dim_row;
         int rank_rec_A = ((rank_col - 1 + block_dim_col) % block_dim_col) + 
@@ -283,12 +285,12 @@ int main(int argc, char **argv) {
                   rank_rec_B, 1, MPI_COMM_WORLD, &rec_req_B);
       }
 
-      std::cout << "after send: " << world_rank << std::endl;
+      /* std::cout << "after send: " << world_rank << std::endl; */
 
       // perform matrix matrix multiplication on the process data
       dgemm(A, all_B[0], n_block_i, n_block_j, n_block_k, num_threads, C, true);
 
-      std::cout << "after dgemm: " << world_rank << std::endl;
+      /* std::cout << "after dgemm: " << world_rank << std::endl; */
       if (block_dim_j > 1) {
         // wait for async send/rec so A/B can be copied into
         MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
@@ -307,7 +309,7 @@ int main(int argc, char **argv) {
         MPI_Wait(&rec_req_B, &rec_status_B);
         matrix_copy(working_B, all_B[0], n_block_j, n_block_k);
       }
-      std::cout << "after loop" << std::endl;
+      /* std::cout << "after loop" << std::endl; */
     }
 
     // don't measure the time until all processes finish
