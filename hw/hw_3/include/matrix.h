@@ -1,14 +1,14 @@
 #pragma once
 
-#include "mkl.h"
 #include <assert.h>
 #include <cmath>
 #include <functional>
 #include <mpi.h>
 #include <omp.h>
-#include <sstream>
-#include <chrono>
 #include <iostream>
+#include <sstream>
+#include <iostream>
+#include <cblas.h>
 
 void closest_factors(int product, int &out_a, int &out_b) {
   out_b = (int)floor(sqrt(product));
@@ -17,15 +17,6 @@ void closest_factors(int product, int &out_a, int &out_b) {
   }
   out_a = product / out_b;
 }
-
-extern "C" void
-cblas_dgemm(const CBLAS_LAYOUT Layout, const CBLAS_TRANSPOSE transa,
-            const CBLAS_TRANSPOSE transb, const MKL_INT m, const MKL_INT n,
-            const MKL_INT k, const double alpha, const double *a,
-            const MKL_INT lda, const double *b, const MKL_INT ldb,
-            const double beta, double *c, const MKL_INT ldc);
-
-using h_clock = std::chrono::high_resolution_clock;
 
 void matrix_copy(double **from, double **to, int leading_dimension,
                  int other_dimension) {
@@ -37,26 +28,21 @@ void matrix_copy(double **from, double **to, int leading_dimension,
   }
 }
 
-inline
 void dense_matrix_multiply(double **A, double **B, double **C, int size_i,
                            int size_j, int size_k, int num_threads,
-                           bool use_mkl = false) {
+                           bool use_openblas = false) {
 
-  if (use_mkl) {
-    cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size_i, size_k,
+  if (use_openblas) {
+      cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size_i, size_k,
                 size_j, 1, A[0], size_j, B[0], size_k, 1, C[0], size_k);
   } else {
-    /* int outer_block_size = (size_i + 32) / 32; */
-    /* int middle_block_size = (size_j + 16) / 16; */
-    /* int inner_block_size = (size_k + 8) / 8; */
-    int outer_block_size = 16;
-    int middle_block_size = 32;
-    int inner_block_size = 256;
+    int outer_block_size = (size_i + 32) / 32;
+    int middle_block_size = (size_j + 16) / 16;
+    int inner_block_size = (size_k + 8) / 8;
     int num_outer_per_thread =
         (int)ceil(((double)size_i) / (outer_block_size * num_threads));
     int num_blocks_middle = (int)ceil(((double)size_j) / (middle_block_size));
     int num_blocks_inner = (int)ceil(((double)size_k) / (inner_block_size));
-    std::cout << num_threads << std::endl;
 #pragma omp parallel
     {
       int thread = omp_get_thread_num();
@@ -89,13 +75,12 @@ void allocate_matrix(double **&A, int n, int m) {
   }
 }
 
-inline
 void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                                  int world_rank, int world_size,
                                  int num_threads,
                                  std::function<double(int, int)> f_a,
                                  std::function<double(int, int)> f_b,
-                                 bool use_mkl = false,
+                                 bool use_openblas = false,
                                  bool verify_results = false) {
   int block_dim_row, block_dim_col;
   closest_factors(world_size, block_dim_col, block_dim_row);
@@ -152,7 +137,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     for (int i = 0; i < n_block_i; i++) {
       for (int j = 0; j < n_block_j; j++) {
         int ii = i + n_block_i * rank_row;
-        int jj = (j + num_blocks_before_B_j[rank_row] * n_block_j) % size_j;
+        int jj = (j + (num_blocks_before_B_j[rank_row] + rank_col) * n_block_j) % size_j;
         A[i][j] = f_a(ii, jj);
       }
       for (int k = 0; k < n_block_k; k++) {
@@ -163,7 +148,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
 #pragma omp for
       for (int j = 0; j < n_block_j; j++) {
         int jj =
-            j + n_block_j * (which_block + num_blocks_before_B_j[rank_row]);
+            j + n_block_j * ((which_block + num_blocks_before_B_j[rank_row] + rank_col) % block_dim_col);
         for (int k = 0; k < n_block_k; k++) {
           int kk = k + n_block_k * rank_col;
           all_B[which_block][j][k] = f_b(jj, kk);
@@ -177,18 +162,17 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     // previous rank in each column/row
     MPI_Request send_req_A, send_req_B, rec_req_A, rec_req_B;
 
-    if (block_dim_col > 1) {
+    if (block_dim_col > 1 && j < block_dim_col - 1) {
       int rank_send_A =
           ((rank_col + 1) % block_dim_col) + rank_row * block_dim_row;
       int rank_rec_A = ((rank_col - 1 + block_dim_col) % block_dim_col) +
                        rank_row * block_dim_row;
       int rank_send_B =
-          ((rank_row + 1) % block_dim_row) * block_dim_row + rank_col;
+          ((rank_row + 1) % block_dim_row) * block_dim_col + rank_col;
       int rank_rec_B =
-          ((rank_row - 1 + block_dim_row) % block_dim_row) * block_dim_row +
+          ((rank_row - 1 + block_dim_row) % block_dim_row) * block_dim_col +
           rank_col;
 
-      // A can always be sent as entire blocks
       MPI_Isend(A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_send_A, 0,
                 MPI_COMM_WORLD, &send_req_A);
       MPI_Irecv(working_A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_rec_A, 0,
@@ -201,17 +185,11 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     }
 
 
-    auto t1 = h_clock::now();
     // perform matrix matrix multiplication on the process data
     dense_matrix_multiply(A, all_B[0], C, n_block_i, n_block_j, n_block_k,
-                          num_threads, use_mkl);
-    auto t2 = h_clock::now();
-    double time_test =
-        std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
-            .count();
-    std::cout << "time: " << time_test << std::endl;
+                          num_threads, use_openblas);
 
-    if (block_dim_col > 1) {
+    if (block_dim_col > 1 && j < block_dim_col - 1) {
       // wait for async send/rec so A/B can be copied into
       MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
       MPI_Wait(&send_req_A, &send_status_A);
@@ -232,6 +210,9 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     delete[] all_B[which_block];
   }
   if (verify_results) {
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
     double **A_test, **B_test, **C_test;
     allocate_matrix(A_test, size_i, size_j);
     allocate_matrix(B_test, size_j, size_k);

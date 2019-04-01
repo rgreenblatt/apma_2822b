@@ -97,9 +97,9 @@ int main() {
         int outer_block_size = 16;
         int middle_block_size = 32;
         int inner_block_size = 256;
-        int num_outer_per_thread = ceil(((double) n) / (outer_block_size * num_threads));
-        int num_blocks_middle = ceil(((double) n) / (middle_block_size));
-        int num_blocks_inner = ceil(((double) n) / (inner_block_size));
+        int num_outer_per_thread = (int)ceil(((double) n) / (outer_block_size * num_threads));
+        int num_blocks_middle = (int)ceil(((double) n) / (middle_block_size));
+        int num_blocks_inner = (int)ceil(((double) n) / (inner_block_size));
         #pragma omp parallel
         {
             int thread = omp_get_thread_num();
@@ -151,7 +151,7 @@ int main() {
         //print out results
         std::cout << "======  N: " << n << " ======" << std::endl;
 
-        for(int i = 0; i < method_times.size(); i++) {
+        for(size_t i = 0; i < method_times.size(); i++) {
             //arithmetic is done this way to avoid issues with int overflow
             std::cout << method_names[i] << " implementation, total time: " << method_times[i] << 
                 " gigabyte per s: " << (n / 1024.) * (n / 1024.) / 1024. * 

@@ -5,8 +5,8 @@
 #SBATCH -p apma2822
 
 # Use 2 nodes with 8 tasks each, for 16 MPI tasks:
-#SBATCH --nodes=2
-#SBATCH -c 8
+#SBATCH --nodes=1
+#SBATCH -n 4
 
 # Specify a job name:
 #SBATCH -J hw_3
@@ -17,4 +17,4 @@
 
 # Run a command
 
-srun --mpi=pmi2 ./bin/app -threads 8
+srun --mpi=pmi2 ./bin/test
