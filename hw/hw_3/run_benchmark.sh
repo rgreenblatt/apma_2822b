@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH --time=0:10:00
-#SBATCH -p apma2822
+#SBATCH -p batch
 
 # Run a command
 
