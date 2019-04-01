@@ -109,11 +109,20 @@ int main(int argc, char **argv) {
 
   MPI_Init(&argc, &argv);
 
+  int omp_num_threads = omp_get_max_threads();
+  int mkl_num_threads = mkl_get_max_threads();
+
   int world_size, world_rank;
 
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
   
+  if(world_rank == 0) {
+    std::cout << "num threads found by omp: " << omp_num_threads << 
+      " num threads found by mkl: " << mkl_num_threads << " mpi nodes: " 
+      << world_size << std::endl;
+  }
+
   int block_dim_row, block_dim_col;
   closest_factors(world_size, block_dim_col, block_dim_row);
 
