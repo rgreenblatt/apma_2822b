@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <omp.h>
+#include "matrix.h"
 #ifdef EIGEN
 #include <Eigen/Dense>
 #endif
@@ -94,9 +95,9 @@ int main() {
             }
         }
 
-        int outer_block_size = n / 16;
-        int middle_block_size = n / 8;
-        int inner_block_size =  n;
+        int outer_block_size = 16;
+        int middle_block_size = 32;
+        int inner_block_size = 256;
         int num_outer_per_thread = ceil(((double) n) / (outer_block_size * num_threads));
         int num_blocks_middle = ceil(((double) n) / (middle_block_size));
         int num_blocks_inner = ceil(((double) n) / (inner_block_size));
@@ -112,7 +113,7 @@ int main() {
                         int k_max = std::min(n, (b_inner + 1) * inner_block_size);
                         for(int i = b_outer * outer_block_size; i < i_max; i++) {
                             for(int j =  b_middle * middle_block_size; j < j_max; j++) {
-                                for(int k =  b_middle * middle_block_size; k < k_max; k++) {
+                                for(int k =  b_inner * inner_block_size; k < k_max; k++) {
                                         C[i][k] += A[i][j] * B[j][k];
                                 }
                             }
