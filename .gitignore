@@ -1,3 +1,8 @@
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.gz
 compile_commands.json
 eigen
 **/latex_out_dir/main_file.*
