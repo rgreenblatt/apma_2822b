@@ -1,51 +1,51 @@
 ## SLURM PROLOG ###############################################################
-##    Job ID : 3374322
+##    Job ID : 3374916
 ##  Job Name : hw_3_64_1
-##  Nodelist : node[954,958,965-966]
+##  Nodelist : node[651,819,824-825]
 ##      CPUs : 64
 ##   Mem/CPU : 2800 MB
 ## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_3
-##   Started : Mon Apr  1 22:35:25 EDT 2019
+##   Started : Tue Apr  2 00:12:42 EDT 2019
 ###############################################################################
-num threads found by omp: 15 mpi world size: 64
+num threads found by omp: 20 mpi world size: 64
 
 ------data transfer timings with blas------
-setup time: 0.000250879 wait time: 2.75534 local copy time: 0.870277 dgemm time: 0.917449
+setup time: 0.000858813 wait time: 2.02787 local copy time: 0.874364 dgemm time: 1.63681
 
 ------data transfer timings with mine------
-setup time: 0.000152869 wait time: 1.24249 local copy time: 0.395267 dgemm time: 0.303017
+setup time: 0.0452747 wait time: 0.476482 local copy time: 0.761887 dgemm time: 0.299881
 
 ======  size i: 2048 size j: 2048 size k: 2048 ======
-algorithm: openblas local, mine distributed total time: 5.53675 gflops per s: 2.88978
-algorithm: mine local, mine distributed total time: 2.4383 gflops per s: 6.56194
+algorithm: openblas local, mine distributed total time: 4.65087 gflops per s: 3.44022
+algorithm: mine local, mine distributed total time: 2.13116 gflops per s: 7.50764
 
 ------data transfer timings with blas------
-setup time: 0.000347072 wait time: 2.13681 local copy time: 0.951364 dgemm time: 1.86415
+setup time: 0.000193663 wait time: 1.46668 local copy time: 0.993756 dgemm time: 1.63706
 
 ------data transfer timings with mine------
-setup time: 0.000150205 wait time: 1.09431 local copy time: 0.59742 dgemm time: 0.790375
+setup time: 0.000315995 wait time: 0.294509 local copy time: 1.19871 dgemm time: 0.718232
 
 ======  size i: 4096 size j: 4096 size k: 4096 ======
-algorithm: openblas local, mine distributed total time: 5.37445 gflops per s: 23.8164
-algorithm: mine local, mine distributed total time: 3.3096 gflops per s: 38.6754
+algorithm: openblas local, mine distributed total time: 4.60473 gflops per s: 27.7975
+algorithm: mine local, mine distributed total time: 2.4419 gflops per s: 52.4181
 
 ------data transfer timings with blas------
-setup time: 0.000179657 wait time: 2.0524 local copy time: 1.00062 dgemm time: 2.84279
+setup time: 0.000170699 wait time: 1.8775 local copy time: 0.861384 dgemm time: 2.49915
 
 ------data transfer timings with mine------
-setup time: 0.000171773 wait time: 2.27736 local copy time: 0.658542 dgemm time: 4.9369
+setup time: 0.000183126 wait time: 1.77825 local copy time: 0.531122 dgemm time: 3.81381
 
 ======  size i: 8192 size j: 8192 size k: 8192 ======
-algorithm: openblas local, mine distributed total time: 6.92914 gflops per s: 147.782
-algorithm: mine local, mine distributed total time: 8.59196 gflops per s: 119.181
+algorithm: openblas local, mine distributed total time: 6.06851 gflops per s: 168.74
+algorithm: mine local, mine distributed total time: 6.836 gflops per s: 149.795
 
 ------data transfer timings with blas------
-setup time: 0.000173999 wait time: 4.75224 local copy time: 0.913014 dgemm time: 9.52633
+setup time: 0.000256883 wait time: 3.16026 local copy time: 0.91117 dgemm time: 8.81494
 
 ------data transfer timings with mine------
-setup time: 0.000190511 wait time: 2.43494 local copy time: 0.781859 dgemm time: 42.2944
+setup time: 0.000364729 wait time: 3.5987 local copy time: 0.920173 dgemm time: 37.6115
 
 ======  size i: 16384 size j: 16384 size k: 16384 ======
-algorithm: openblas local, mine distributed total time: 17.1378 gflops per s: 478.009
-algorithm: mine local, mine distributed total time: 46.1567 gflops per s: 177.482
+algorithm: openblas local, mine distributed total time: 13.4395 gflops per s: 609.544
+algorithm: mine local, mine distributed total time: 43.0139 gflops per s: 190.45
 

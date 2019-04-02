@@ -1,9 +1,0 @@
-app: /users/guest287/Documents/apma_2822b/hw/hw_3/include/matrix.h:119: void distributed_matrix_multiply(int, int, int, int, int, int, std::function<double(int, int)>, std::function<double(int, int)>, bool, bool): Assertion `size_j % block_dim_col == 0' failed.
-app: /users/guest287/Documents/apma_2822b/hw/hw_3/include/matrix.h:119: void distributed_matrix_multiply(int, int, int, int, int, int, std::function<double(int, int)>, std::function<double(int, int)>, bool, bool): Assertion `size_j % block_dim_col == 0' failed.
-[node1105.oscar.ccv.brown.edu:mpi_rank_0][error_sighandler] Caught error: Aborted (signal 6)
-app: /users/guest287/Documents/apma_2822b/hw/hw_3/include/matrix.h:119: void distributed_matrix_multiply(int, int, int, int, int, int, std::function<double(int, int)>, std::function<double(int, int)>, bool, bool): Assertion `size_j % block_dim_col == 0' failed.
-[node1122.oscar.ccv.brown.edu:mpi_rank_2][error_sighandler] Caught error: Aborted (signal 6)
-[node1117.oscar.ccv.brown.edu:mpi_rank_1][error_sighandler] Caught error: Aborted (signal 6)
-srun: error: node1105: task 0: Aborted (core dumped)
-srun: error: node1122: task 2: Aborted (core dumped)
-srun: error: node1117: task 1: Aborted (core dumped)
