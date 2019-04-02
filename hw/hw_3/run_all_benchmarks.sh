@@ -4,6 +4,8 @@ sbatch -J hw_3_16_1 -n 16  --nodes=1 -o 16_1.out  -e 16_1_error.out  run_benchma
 sbatch -J hw_3_32_1 -n 32  --nodes=2 -o 32_1.out  -e 32_1_error.out  run_benchmark.sh
 sbatch -J hw_3_64_1 -n 64  --nodes=4 -o 64_1.out  -e 64_1_error.out  run_benchmark.sh
 
+sbatch -J hw_3_1_1  -c 1   --nodes=1 -o 1_1.out   -e 1_1_error.out   run_benchmark.sh
+
 sbatch -J hw_3_1_8  -c 8   --nodes=1 -o 1_8.out   -e 1_8_error.out   run_benchmark.sh
 sbatch -J hw_3_1_16 -c 16  --nodes=1 -o 1_16.out  -e 1_16_error.out  run_benchmark.sh
 sbatch -J hw_3_2_8  -c 8   --nodes=2 -o 2_8.out   -e 2_8_error.out   run_benchmark.sh
