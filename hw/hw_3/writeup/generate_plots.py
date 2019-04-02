@@ -149,21 +149,11 @@ plt.clf()
 print("mine max:", max(df.loc[df['used'] == 'mine']['gflops'].values))
 print("mine blas:", max(df.loc[df['used'] == 'blas']['gflops'].values))
 
-weak_scaling_mine = list(map(lambda x: x['gflops'].values[0], [
-    df.loc[(df['used'] == 'mine') & (df['threads'] == 8) & (df['processes'] == 1) & (df['n'] == 2048)],
-    df.loc[(df['used'] == 'mine') & (df['threads'] == 16) & (df['processes'] == 1) & (df['n'] == 4096)],
-    df.loc[(df['used'] == 'mine') & (df['threads'] == 16) & (df['nodes'] == 2) & (df['n'] == 8192)],
-    df.loc[(df['used'] == 'mine') & (df['threads'] == 16) & (df['nodes'] == 4) & (df['n'] == 16384)]
-]))
+weak_scaling_mine = [4.19393, 4.27199, 5.49029]
 
-weak_scaling_blas = list(map(lambda x: x['gflops'].values[0], [
-    df.loc[(df['used'] == 'blas') & (df['threads'] == 8) & (df['processes'] == 1) & (df['n'] == 2048)],
-    df.loc[(df['used'] == 'blas') & (df['threads'] == 16) & (df['processes'] == 1) & (df['n'] == 4096)],
-    df.loc[(df['used'] == 'blas') & (df['threads'] == 16) & (df['nodes'] == 2) & (df['n'] == 8192)],
-    df.loc[(df['used'] == 'blas') & (df['threads'] == 16) & (df['nodes'] == 4) & (df['n'] == 16384)]
-]))
+weak_scaling_blas = [1.10788, 3.3129, 2.24377]
 
-weak_scaling_cores = [8, 16, 32, 64]
+weak_scaling_cores = [1, 8, 64]
 
 plt.plot(weak_scaling_cores, weak_scaling_mine)
 plt.plot(weak_scaling_cores, weak_scaling_blas)
@@ -171,6 +161,9 @@ plt.plot(weak_scaling_cores, weak_scaling_blas)
 plt.title('Weak Scaling')
 plt.xlabel('number of cores')
 plt.ylabel('time (s)')
+
+plt.legend(['mine',
+            'blas'])
 
 plt.savefig('weak_scaling')
 plt.clf()

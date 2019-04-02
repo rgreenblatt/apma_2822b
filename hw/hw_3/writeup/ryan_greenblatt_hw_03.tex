@@ -139,40 +139,37 @@ using 1 MPI rank per CPU and a thread for each core. The maximum FLOP rate I ach
 865 GFLOPS using BLAS and 194 GFLOPS using my shared memory matrix multiplication implementation.
 Strong scaling can be seen in the plots which display node/process count vs GFLOPS.
 
-\begin{figure}[]
+\begin{figure}[h!]
     \centering
-    \caption{The first value is using 8 threads and 1 node. Other values use increasing numbers 
-    of nodes and 16 threads}
     \includegraphics[width=0.8\linewidth]{weak_scaling.png}
+    \caption{The first, second, and third values use 1 thread and 1 node, 8 threads and 1 nodes, 
+        and 8 threads and 4 nodes respectively. To keep the problem size per core constant, the
+    cores must increase by a factor of 8 for every factor of 2 the total data size increases.}
 \end{figure}
 
-\begin{figure}[]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\linewidth]{gflops_nodes_16_threads.png}
 \end{figure}
 
-\begin{figure}[]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\linewidth]{time_nodes_16_threads.png}
 \end{figure}
 
 
-\begin{figure}[]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\linewidth]{gflops_processes_1_thread.png}
 \end{figure}
 
-\begin{figure}[]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=0.8\linewidth]{time_nodes_1_threads.png}
 \end{figure}
 
-
-
-
 \appendix
 
-\newpage
 \section{Additional data}
 
 The full data can be seen in the below two tables. The column used refers to which shared memory matrix
@@ -283,6 +280,8 @@ threads & processes & nodes & n     & used & gflops  & setup       & wait       
 8       & 8         & 4     & 8192  & mine & 171.819 & 0.000945103 & 0.328512   & 0.0548389   & 5.34775   \\ \hline
 8       & 8         & 4     & 16384 & blas & 535.082 & 0.0752286   & 0.546276   & 0.151114    & 13.0185   \\ \hline
 8       & 8         & 4     & 16384 & mine & 173.633 & 0.0423695   & 2.96215    & 0.183347    & 43.419    \\ \hline
+1       & 1         & 1     & 2048 & blas & 14.442 & 0 & 0 & 0 & 1.00556  \\ \hline
+1       & 1         & 1     & 2048 & mine & 3.81504 & 0 & 0 & 0 & 4.01677 \\ \hline
 \end{tabular}%
 }
 \end{table}
