@@ -31,6 +31,10 @@ add_executable(app
     "${PROJECT_SOURCE_DIR}/src/main.cpp"
 )
 
+add_executable(statistics 
+    "${PROJECT_SOURCE_DIR}/src/measure_statistics.cpp"
+)
+
 add_executable(test 
     "${PROJECT_SOURCE_DIR}/src/test.cpp"
 )
@@ -46,6 +50,19 @@ if(MPI_LINK_FLAGS)
 endif()
   
 target_link_libraries(app ${MPI_LIBRARIES} ${OpenBLAS_LIBRARIES} )
+
+
+if(MPI_COMPILE_FLAGS)
+  set_target_properties(measure_statistics PROPERTIES
+    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+endif()
+
+if(MPI_LINK_FLAGS)
+  set_target_properties(measure_statistics PROPERTIES
+    LINK_FLAGS "${MPI_LINK_FLAGS}")
+endif()
+  
+target_link_libraries(measure_statistics ${MPI_LIBRARIES} ${OpenBLAS_LIBRARIES} )
 
 if(MPI_COMPILE_FLAGS)
   set_target_properties(test PROPERTIES
