@@ -30,8 +30,8 @@
 \section{}
 
 Code is attached in the email. I have included a CMakeLists.txt file which can be used to compile
-the code on the ccv. The MPI must be loaded. Note that there is a hard coded path to the OpenBLAS library because
-cmake did not automatically find the library. I also added the SLURM scripts I used.
+the code on the CCV. The MPI module must be loaded. Note that there is a hard coded path to the OpenBLAS library 
+because CMake did not automatically find the library. I also added the SLURM scripts I used.
 There are 3 executables in the project, one which tests the code, one which times the matrix
 multiplication, and one which times MPI message passing.
 
@@ -43,19 +43,19 @@ integer factors of the MPI world size are used. The code doesn't handle the case
 dimension isn't divisible by the corresponding grid dimension, but this would be simple to implement
 use padding and would have a negligible effect on performance. Figures 1 and 2 show the decomposition
 for different grid dimensions. The approach of the algorithm is to loop over the blocks 
-in the shared dimension between A and B. At each step, each process adds to its section of matrix C the 
+in the dimension shared between A and B. At each step, each process adds to its section of matrix C the 
 product of the sections of A and B which it currently possesses. Then, each row of matrix A rotates
 and each column of matrix B rotates. This allows each process to only send data to the same two other
 processes each step. Because matrix multiplication is performed at each step, 3 level blocking techniques
 can be used to improve cache utilization. The intuition behind this algorithm is that the value of the top
 left block of C is computed by multiplying the first row of A by the first column of B. This operation can
-be decomposed into the multiplication of the top left block of A and the top left block B as well as 
+be decomposed into the multiplication of the top left block of A and the top left block of B as well as 
 every remaining block in the top row of A with its corresponding block in the left most column of B.
 A similar decomposition can be done for every block in C. Note that the data in row and columns other than the 
-first must start rotated in order for the data to be multiplied by the correct other block. The grid
-pattern will not always be square, so it is potentially necessary further divide the shorter dimension.
+first must start rotated in order for the data to be multiplied by the correct other block at each step. 
+The grid pattern will not always be square, so it is potentially necessary further divide the shorter dimension.
 In my implementation, there are always more column blocks. Multiple approaches can be used for further 
-dividing the data. I assigned the additional  divisions as blocks in matrix B (they are always in matrix B
+dividing the data. I assigned the additional divisions as blocks in matrix B (they are always in matrix B
 because there are always more column blocks) that some process contains but aren't used
 in that iteration. This can be seen in figure 2. Note these blocks require extra rotations of the next
 row in A. This can be seen in the bottom row of A in figure 2. This approach has the advantage of being
@@ -79,7 +79,9 @@ been rotated once.}
 
 I evaluated this algorithm with OpenBLAS as well as the matrix multiplication implementation that I did for 
 the last homework. This is so the efficacy of the distributed matrix multiplication algorithm can
-be assessed independently from the shared memory matrix multiplication algorithm used. I used only the
+be assessed independently from the shared memory matrix multiplication algorithm used. I attempted to use
+MKL, but I had issues with linking, MKL using threads, and icc substantially slowed down my shared
+memory matrix multiplication. I used only the
 non-blocking MPI functions for both send and receive. Both are started before the matrix multiplication
 each step, and the wait for completion happens after the multiplication. Additional memory
 is required to do this. In the case where there is just one process in the data communication ring,
@@ -110,8 +112,9 @@ is approximately $(\frac{652.8}{100} = 6.528)$. So long as $\frac{n}{12 * (d + 1
 than 6.528, the computation will ideally be FLOP limited. For values of $n$ in the range
 2,048 to 16,384 and $d$ between 1 and 64, the computation should be FLOP limited. \\
 
-This previous computation doesn't factor in that MPI message passing will be substantially slower than
-the peak memory bandwidth. The total MPI memory bandwidth is $24 * (\sqrt{d} - 1)  * n^2$. I attempted to test the 
+This previous computation doesn't factor in that MPI message passing bandwidth will be substantially 
+lower than the peak memory bandwidth. The total MPI memory bandwidth is $24 * (\sqrt{d} - 1)  * n^2$. 
+I attempted to test the 
 between process memory bandwidth, but the bandwidth seems too low (around 4 GB/s). If this 
 is assumed to be accurate, then the computation has an effective MPI ratio of peak FLOPS to 
 peak memory bandwidth of $(\frac{652.8}{4} = 163.2)$  The effective MPI arithmetic intensity

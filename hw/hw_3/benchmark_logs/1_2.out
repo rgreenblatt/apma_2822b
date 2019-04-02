@@ -9,15 +9,6 @@
 ###############################################################################
 num threads found by omp: 2 mpi world size: 1
 
-------data transfer timings with blas------
-setup time: 0 wait time: 0 local copy time: 0 dgemm time: 0.486867
-
-------data transfer timings with mine------
-setup time: 0 wait time: 0 local copy time: 0 dgemm time: 1.6576
-
-======  size i: 2048 size j: 2048 size k: 2048 ======
-algorithm: openblas local, mine distributed total time: 0.54175 gflops: 29.5339
-algorithm: mine local, mine distributed total time: 1.79236 gflops: 8.92677
 
 ------data transfer timings with blas------
 setup time: 0 wait time: 0 local copy time: 0 dgemm time: 2.85701
