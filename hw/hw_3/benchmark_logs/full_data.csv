@@ -1,0 +1,9 @@
+threads,nodes,mpi_world_size,n,dgemm_algorithm,glops,setup_time,wait_time,local_copy_time,dgemm_time
+8,1,1,2048,mine,26.8,0,0,0,0.507
+8,1,1,2048,blas,47.8,0,0,0,0.279
+8,1,1,4096,mine,30.0,0,0,0,4.05
+8,1,1,4096,blass,38.6,0,0,0,3.09
+8,1,1,8096,mine,19.9,0,0,0,50.5
+8,1,1,8096,blass,44.9,0,0,0,21.9
+8,1,1,8096,mine,,0,0,0,50.5
+8,1,1,8096,blass,44.9,0,0,0,21.9

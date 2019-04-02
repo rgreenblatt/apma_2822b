@@ -1,4 +1,4 @@
-threads,mpi_world_size,nodes,n,dgemm_algorithm,time_setup,time_wait,time_copy,time_dgemm
+threads,processes,nodes,n,used,gflops,setup,wait,copy,dgemm
 8,1,1,2048,blas,47.7667,0,0,0,0.278573
 8,1,1,2048,mine,26.7809,0,0,0,0.506932
 8,1,1,4096,blas,38.6369,0,0,0,3.09188
