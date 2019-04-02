@@ -43,9 +43,9 @@ void dense_matrix_multiply(double **A, double **B, double **C, int size_i,
     cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, size_i, size_k,
                 size_j, 1, A[0], size_j, B[0], size_k, 1, C[0], size_k);
   } else {
-    int outer_block_size = (size_i + 32) / 32;
-    int middle_block_size = (size_j + 16) / 16;
-    int inner_block_size = (size_k + 8) / 8;
+    int outer_block_size = std::min(size_i, 16);
+    int middle_block_size = std::min(size_j, 32);
+    int inner_block_size = std::min(size_k, 256);
     int num_outer_per_thread =
         (int)ceil(((double)size_i) / (outer_block_size * num_threads));
     int num_blocks_middle = (int)ceil(((double)size_j) / (middle_block_size));
