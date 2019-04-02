@@ -127,8 +127,6 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   MPI_Comm_split(MPI_COMM_WORLD, world_rank % block_dim_col, world_rank, 
       &comm_col);
 
-  MPI_Barrier(MPI_COMM_WORLD);
-
   int rank_row, rank_col, size_row, size_col;
 
   MPI_Comm_size(comm_row, &size_row);

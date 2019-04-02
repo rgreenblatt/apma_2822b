@@ -7,8 +7,6 @@
 #include <utility>
 #include <vector>
 
-// compile with g++ main.cpp -std=c++11 -fopenmp -O3 -march=native
-
 namespace chr = std::chrono;
 using h_clock = chr::high_resolution_clock;
 
