@@ -120,23 +120,12 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   assert(size_j % block_dim_row == 0);
   assert(size_k % block_dim_col == 0);
 
-  /* { */
-  /*   std::stringstream buf; */
-  /*   buf << "alive 1 rank: " << world_rank; */
-  /*   std::cout << buf.str() << std::flush; */
-  /* } */
-
   MPI_Comm comm_row, comm_col;
 
   MPI_Comm_split(MPI_COMM_WORLD, world_rank / block_dim_col, world_rank, 
       &comm_row);
   MPI_Comm_split(MPI_COMM_WORLD, world_rank % block_dim_col, world_rank, 
       &comm_col);
-/* { */
-/*     std::stringstream buf; */
-/*     buf << "alive 2 rank: " << world_rank << std::endl; */
-/*     std::cout << buf.str() << std::flush; */
-/*   } */
 
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -152,12 +141,6 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   int n_block_i = size_i / block_dim_row;
   int n_block_j = size_j / block_dim_col;
   int n_block_k = size_k / block_dim_col;
-
-  /* { */
-  /*   std::stringstream buf; */
-  /*   buf << "alive 3 rank: " << world_rank; */
-  /*   std::cout << buf.str() << std::flush; */
-  /* } */
 
   double **A, **C, **working_A, **working_B;
   allocate_matrix(A, n_block_i, n_block_j);
@@ -205,22 +188,6 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   int rank_send_B = (rank_col + 1) % block_dim_row;
   int rank_rec_B = (rank_col - 1 + block_dim_row) % block_dim_row;
 
-  /* { */
-  /*   std::stringstream buf; */
-  /*   buf << "rank: " << world_rank << */ 
-  /*     " block_dim_row: " << block_dim_row << */
-  /*     " block_dim_col: " << block_dim_col << */
-  /*     " rank_row: " << rank_row << */
-  /*     " rank_col: " << rank_col << std::endl << */
-  /*     " rank_send_A: " << rank_send_A << */
-  /*     " rank_rec_A: " << rank_rec_A << */
-  /*     " rank_send_B: " << rank_send_B << */
-  /*     " rank_rec_B: " << rank_rec_B << */
-  /*     " size_row: " << size_row << */
-  /*     " size_col: " << size_col << std::endl; */
-  /*   std::cout << buf.str() << std::flush; */
-  /* } */
-  
   assert(block_dim_col == size_row);
   assert(block_dim_row == size_col);
 
@@ -282,13 +249,13 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     }
 
     #ifdef TIME
-      dgemm_time_start_timer();
+      dgemm_time_start_timer()
     #endif
     // perform matrix matrix multiplication on the process data
     dense_matrix_multiply(A, all_B[0], C, n_block_i, n_block_j, n_block_k,
                           num_threads, use_blas);
     #ifdef TIME
-      dgemm_time_end_timer();
+      dgemm_time_end_timer()
     #endif
 
     if (block_dim_col > 1 && j < block_dim_col - 1) {
@@ -344,12 +311,12 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
         name = "with mine";
       }
 
-      buf_time << "------data transfer timings " << name << "------"
+      buf_time << "------data transfer timings for " << name << "------"
                << std::endl
                << "setup time: " << total_comm_setup_time
                << " wait time: " << total_comm_wait_time
                << " local copy time: " << total_local_copy_time
-               << " dgemm time: " << total_dgemm_time << std::endl << std::endl;
+               << " dgemm time: " << total_dgemm_time << std::endl;
       std::cout << buf_time.str() << std::flush;
     }
   #endif
