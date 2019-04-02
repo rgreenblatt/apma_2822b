@@ -5,7 +5,7 @@ PROJECT(hw_3 C CXX)
 
 cmake_minimum_required(VERSION 2.8)
 
-add_definitions(-std=c++11 -Wall -Wextra -Wconversion -DTEST)
+add_definitions(-std=c++11 -Wall -Wextra -Wconversion -DTIME)
 # add_definitions(-g)
 add_definitions(-O3 -march=native)
 

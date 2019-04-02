@@ -282,13 +282,13 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     }
 
     #ifdef TIME
-      dgemm_time_start_timer()
+      dgemm_time_start_timer();
     #endif
     // perform matrix matrix multiplication on the process data
     dense_matrix_multiply(A, all_B[0], C, n_block_i, n_block_j, n_block_k,
                           num_threads, use_blas);
     #ifdef TIME
-      dgemm_time_end_timer()
+      dgemm_time_end_timer();
     #endif
 
     if (block_dim_col > 1 && j < block_dim_col - 1) {
@@ -344,12 +344,12 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
         name = "with mine";
       }
 
-      buf_time << "------data transfer timings for " << name << "------"
+      buf_time << "------data transfer timings " << name << "------"
                << std::endl
                << "setup time: " << total_comm_setup_time
                << " wait time: " << total_comm_wait_time
                << " local copy time: " << total_local_copy_time
-               << " dgemm time: " << total_dgemm_time << std::endl;
+               << " dgemm time: " << total_dgemm_time << std::endl << std::endl;
       std::cout << buf_time.str() << std::flush;
     }
   #endif
