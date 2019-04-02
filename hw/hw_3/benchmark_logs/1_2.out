@@ -1,0 +1,30 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 3390752
+##  Job Name : hw_3_1_2
+##  Nodelist : node1323
+##      CPUs : 
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_3
+##   Started : Tue Apr  2 18:27:10 EDT 2019
+###############################################################################
+num threads found by omp: 2 mpi world size: 1
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 0.486867
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 1.6576
+
+======  size i: 2048 size j: 2048 size k: 2048 ======
+algorithm: openblas local, mine distributed total time: 0.54175 gflops: 29.5339
+algorithm: mine local, mine distributed total time: 1.79236 gflops: 8.92677
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 2.85701
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 13.6679
+
+======  size i: 4096 size j: 4096 size k: 4096 ======
+algorithm: openblas local, mine distributed total time: 3.06537 gflops: 41.7568
+algorithm: mine local, mine distributed total time: 13.9456 gflops: 9.17855
