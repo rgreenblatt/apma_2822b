@@ -19,13 +19,14 @@ int main(int argc, char *argv[]) {
     double from[n];
     double to[n];
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
       from[i] = i * 0.4;
     }
 
     auto t1 = h_clock::now();
-#pragma omp parallel for
+
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
       to[i] = from[i];
     }
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]) {
 
     double from[n_mpi];
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < n_mpi; i++) {
       from[i] = i * 0.4;
     }
