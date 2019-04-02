@@ -70,11 +70,11 @@ int main(int argc, char **argv) {
         std::string name = algorithm_results[i].first;
         double time = algorithm_results[i].second;
         // arithmetic is done this way to avoid issues with int overflow
-        double g_flops_per_s =
+        double gflops =
             (size_i / 1024.) * (size_j / 1024.) * (size_k / 1024.) * (2 / time);
 
         std::cout << "algorithm: " << name << " total time: " << time
-                  << " gflops per s: " << g_flops_per_s << std::endl;
+                  << " gflops: " << gflops << std::endl;
       }
       std::cout << std::endl;
     }
