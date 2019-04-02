@@ -112,6 +112,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   }
 
 
+
   //the assumption is that matrix size is divisible by block dimensions
   //this assumption can be relaxed using padding or additional logic
   assert(size_i % block_dim_row == 0);
@@ -119,21 +120,44 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   assert(size_j % block_dim_row == 0);
   assert(size_k % block_dim_col == 0);
 
+  /* { */
+  /*   std::stringstream buf; */
+  /*   buf << "alive 1 rank: " << world_rank; */
+  /*   std::cout << buf.str() << std::flush; */
+  /* } */
+
   MPI_Comm comm_row, comm_col;
 
   MPI_Comm_split(MPI_COMM_WORLD, world_rank / block_dim_col, world_rank, 
       &comm_row);
   MPI_Comm_split(MPI_COMM_WORLD, world_rank % block_dim_col, world_rank, 
       &comm_col);
+/* { */
+/*     std::stringstream buf; */
+/*     buf << "alive 2 rank: " << world_rank << std::endl; */
+/*     std::cout << buf.str() << std::flush; */
+/*   } */
 
-  int rank_row, rank_col;
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  int rank_row, rank_col, size_row, size_col;
+
+  MPI_Comm_size(comm_row, &size_row);
+  MPI_Comm_size(comm_col, &size_col);
 
   MPI_Comm_rank(comm_row, &rank_row);
   MPI_Comm_rank(comm_col, &rank_col);
 
+
   int n_block_i = size_i / block_dim_row;
   int n_block_j = size_j / block_dim_col;
   int n_block_k = size_k / block_dim_col;
+
+  /* { */
+  /*   std::stringstream buf; */
+  /*   buf << "alive 3 rank: " << world_rank; */
+  /*   std::cout << buf.str() << std::flush; */
+  /* } */
 
   double **A, **C, **working_A, **working_B;
   allocate_matrix(A, n_block_i, n_block_j);
@@ -142,7 +166,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   allocate_matrix(working_B, n_block_j, n_block_k);
 
   int num_blocks_B_j =
-      num_blocks_before_B_j[rank_row + 1] - num_blocks_before_B_j[rank_row];
+      num_blocks_before_B_j[rank_col + 1] - num_blocks_before_B_j[rank_col];
 
   double **all_B[num_blocks_B_j];
   for (int i = 0; i < num_blocks_B_j; ++i) {
@@ -152,8 +176,8 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   // Initialize values:
   for (int i = 0; i < n_block_i; i++) {
     for (int j = 0; j < n_block_j; j++) {
-      int ii = i + n_block_i * rank_row;
-      int jj = (j + (num_blocks_before_B_j[rank_row] + rank_col) * n_block_j) %
+      int ii = i + n_block_i * rank_col;
+      int jj = (j + (num_blocks_before_B_j[rank_col] + rank_row) * n_block_j) %
                size_j;
       A[i][j] = f_a(ii, jj);
     }
@@ -166,20 +190,39 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
     for (int j = 0; j < n_block_j; j++) {
       int jj =
           j + n_block_j *
-                  ((which_block + num_blocks_before_B_j[rank_row] + rank_col) %
+                  ((which_block + num_blocks_before_B_j[rank_col] + rank_row) %
                    block_dim_col);
       for (int k = 0; k < n_block_k; k++) {
-        int kk = k + n_block_k * rank_col;
+        int kk = k + n_block_k * rank_row;
         all_B[which_block][j][k] = f_b(jj, kk);
       }
     }
   }
 
   //determine which rank each process sends data to
-  int rank_send_A = (rank_col + 1) % block_dim_col;
-  int rank_rec_A = (rank_col - 1 + block_dim_col) % block_dim_col;
-  int rank_send_B = (rank_row + 1) % block_dim_row;
-  int rank_rec_B = (rank_row - 1 + block_dim_row) % block_dim_row;
+  int rank_send_A = (rank_row + 1) % size_row;
+  int rank_rec_A = (rank_row - 1 + size_row) % size_row;
+  int rank_send_B = (rank_col + 1) % block_dim_row;
+  int rank_rec_B = (rank_col - 1 + block_dim_row) % block_dim_row;
+
+  /* { */
+  /*   std::stringstream buf; */
+  /*   buf << "rank: " << world_rank << */ 
+  /*     " block_dim_row: " << block_dim_row << */
+  /*     " block_dim_col: " << block_dim_col << */
+  /*     " rank_row: " << rank_row << */
+  /*     " rank_col: " << rank_col << std::endl << */
+  /*     " rank_send_A: " << rank_send_A << */
+  /*     " rank_rec_A: " << rank_rec_A << */
+  /*     " rank_send_B: " << rank_send_B << */
+  /*     " rank_rec_B: " << rank_rec_B << */
+  /*     " size_row: " << size_row << */
+  /*     " size_col: " << size_col << std::endl; */
+  /*   std::cout << buf.str() << std::flush; */
+  /* } */
+  
+  assert(block_dim_col == size_row);
+  assert(block_dim_row == size_col);
 
   #ifdef TIME
     //timing
@@ -307,7 +350,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                << " wait time: " << total_comm_wait_time
                << " local copy time: " << total_local_copy_time
                << " dgemm time: " << total_dgemm_time << std::endl;
-      std::cout << buf_time.str();
+      std::cout << buf_time.str() << std::flush;
     }
   #endif
 
@@ -346,9 +389,9 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                           num_threads, true);
 
     for (int i = 0; i < n_block_i; ++i) {
-      int ii = i + rank_row * n_block_i;
+      int ii = i + rank_col * n_block_i;
       for (int k = 0; k < n_block_k; ++k) {
-        int kk = k + rank_col * n_block_k;
+        int kk = k + rank_row * n_block_k;
 
         assert(std::abs(C[i][k] - C_test[ii][kk]) < 1e-6);
       }
