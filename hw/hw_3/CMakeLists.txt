@@ -31,7 +31,7 @@ add_executable(app
     "${PROJECT_SOURCE_DIR}/src/main.cpp"
 )
 
-add_executable(statistics 
+add_executable(measure_statistics 
     "${PROJECT_SOURCE_DIR}/src/measure_statistics.cpp"
 )
 
