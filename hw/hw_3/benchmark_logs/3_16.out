@@ -1,0 +1,11 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 3374328
+##  Job Name : hw_3_3_16
+##  Nodelist : node[954,960,965]
+##      CPUs : 
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_3
+##   Started : Mon Apr  1 22:37:04 EDT 2019
+###############################################################################
+num threads found by omp: 16 mpi world size: 3
+

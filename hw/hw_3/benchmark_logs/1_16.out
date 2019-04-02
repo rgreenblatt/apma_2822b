@@ -1,0 +1,51 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 3374324
+##  Job Name : hw_3_1_16
+##  Nodelist : node1121
+##      CPUs : 
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_3
+##   Started : Mon Apr  1 22:24:42 EDT 2019
+###############################################################################
+num threads found by omp: 16 mpi world size: 1
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 0.0549598
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 0.318793
+
+======  size i: 2048 size j: 2048 size k: 2048 ======
+algorithm: openblas local, mine distributed total time: 0.109372 gflops per s: 146.29
+algorithm: mine local, mine distributed total time: 0.374361 gflops per s: 42.7395
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 0.3893
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 2.22484
+
+======  size i: 4096 size j: 4096 size k: 4096 ======
+algorithm: openblas local, mine distributed total time: 0.598339 gflops per s: 213.926
+algorithm: mine local, mine distributed total time: 2.43041 gflops per s: 52.6661
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 3.17652
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 39.3669
+
+======  size i: 8192 size j: 8192 size k: 8192 ======
+algorithm: openblas local, mine distributed total time: 3.97701 gflops per s: 257.48
+algorithm: mine local, mine distributed total time: 40.1639 gflops per s: 25.4955
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 25.6668
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 325.88
+
+======  size i: 16384 size j: 16384 size k: 16384 ======
+algorithm: openblas local, mine distributed total time: 28.8215 gflops per s: 284.232
+algorithm: mine local, mine distributed total time: 329.198 gflops per s: 24.8848
+

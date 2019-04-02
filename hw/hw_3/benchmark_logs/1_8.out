@@ -1,0 +1,44 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 3374323
+##  Job Name : hw_3_1_8
+##  Nodelist : node1321
+##      CPUs : 
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_3
+##   Started : Mon Apr  1 22:22:00 EDT 2019
+###############################################################################
+num threads found by omp: 8 mpi world size: 1
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 0.19505
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 1.13462
+
+======  size i: 2048 size j: 2048 size k: 2048 ======
+algorithm: openblas local, mine distributed total time: 0.266514 gflops per s: 60.0343
+algorithm: mine local, mine distributed total time: 1.2499 gflops per s: 12.801
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 1.27052
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 5.24605
+
+======  size i: 4096 size j: 4096 size k: 4096 ======
+algorithm: openblas local, mine distributed total time: 1.48277 gflops per s: 86.325
+algorithm: mine local, mine distributed total time: 5.51651 gflops per s: 23.2031
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 15.9493
+
+------data transfer timings with mine------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 96.4086
+
+======  size i: 8192 size j: 8192 size k: 8192 ======
+algorithm: openblas local, mine distributed total time: 16.8235 gflops per s: 60.8672
+algorithm: mine local, mine distributed total time: 97.2752 gflops per s: 10.5268
+
+------data transfer timings with blas------
+setup time: 0 wait time: 0 local copy time: 0 dgemm time: 107.842
+
