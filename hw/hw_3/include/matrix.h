@@ -181,12 +181,13 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
   int rank_send_B = (rank_row + 1) % block_dim_row;
   int rank_rec_B = (rank_row - 1 + block_dim_row) % block_dim_row;
 
-  #ifdef TIME_DATA_TRANSFER
+  #ifdef TIME
     //timing
     double total_comm_setup_time = 0;
     double total_comm_wait_time = 0;
     double total_local_copy_time = 0;
-    h_timepoint t1_setup, t1_wait, t1_copy;
+    double total_dgemm_time = 0;
+    h_timepoint t1_setup, t1_wait, t1_copy, t1_dgemm;
     auto comm_setup_start_timer = [&t1_setup]() { t1_setup = h_clock::now(); };
     auto comm_setup_end_timer = [&t1_setup, &total_comm_setup_time]() {
       total_comm_setup_time +=
@@ -205,6 +206,12 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
           chr::duration_cast<chr::duration<double>>(h_clock::now() - t1_copy)
               .count();
     };
+    auto dgemm_time_start_timer = [&t1_dgemm]() { t1_dgemm = h_clock::now(); };
+    auto dgemm_time_end_timer = [&t1_dgemm, &total_dgemm_time]() {
+      total_dgemm_time +=
+          chr::duration_cast<chr::duration<double>>(h_clock::now() - t1_dgemm)
+              .count();
+    };
   #endif
 
   for (int j = 0; j < block_dim_col; j++) {
@@ -214,7 +221,7 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
 
 
     if (block_dim_col > 1 && j < block_dim_col - 1) {
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         comm_setup_start_timer();
       #endif
       MPI_Isend(A[0], n_block_i * n_block_j, MPI_DOUBLE, rank_send_A, 0,
@@ -226,34 +233,40 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                 MPI_DOUBLE, rank_send_B, 1, comm_col, &send_req_B);
       MPI_Irecv(working_B[0], n_block_j * n_block_k, MPI_DOUBLE, rank_rec_B,
                 1, comm_col, &rec_req_B);
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         comm_setup_end_timer();
       #endif
     }
 
+    #ifdef TIME
+      dgemm_time_start_timer()
+    #endif
     // perform matrix matrix multiplication on the process data
     dense_matrix_multiply(A, all_B[0], C, n_block_i, n_block_j, n_block_k,
                           num_threads, use_blas);
+    #ifdef TIME
+      dgemm_time_end_timer()
+    #endif
 
     if (block_dim_col > 1 && j < block_dim_col - 1) {
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         comm_wait_start_timer();
       #endif
       MPI_Status send_status_A, send_status_B, rec_status_A, rec_status_B;
       // wait for async send/rec so A/B can be copied into
       MPI_Wait(&send_req_A, &send_status_A);
       MPI_Wait(&rec_req_A, &rec_status_A);
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         comm_wait_end_timer();
         local_copy_time_start_timer();
       #endif
       matrix_copy(working_A, A, n_block_i, n_block_j);
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         local_copy_time_end_timer();
         comm_wait_start_timer();
       #endif
       MPI_Wait(&send_req_B, &send_status_B);
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         comm_wait_end_timer();
         local_copy_time_start_timer();
       #endif
@@ -262,23 +275,23 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
         matrix_copy(all_B[which_block - 1], all_B[which_block], n_block_j,
                     n_block_k);
       }
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         local_copy_time_end_timer();
         comm_wait_start_timer();
       #endif
       MPI_Wait(&rec_req_B, &rec_status_B);
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         comm_wait_end_timer();
         local_copy_time_start_timer();
       #endif
       matrix_copy(working_B, all_B[0], n_block_j, n_block_k);
-      #ifdef TIME_DATA_TRANSFER
+      #ifdef TIME
         local_copy_time_end_timer();
       #endif
     }
   }
 
-  #ifdef TIME_DATA_TRANSFER
+  #ifdef TIME
     if (world_rank == 0) {
       std::stringstream buf_time;
       std::string name;
@@ -292,7 +305,8 @@ void distributed_matrix_multiply(int size_i, int size_j, int size_k,
                << std::endl
                << "setup time: " << total_comm_setup_time
                << " wait time: " << total_comm_wait_time
-               << " local copy time: " << total_local_copy_time << std::endl;
+               << " local copy time: " << total_local_copy_time
+               << " dgemm time: " << total_dgemm_time << std::endl;
       std::cout << buf_time.str();
     }
   #endif
