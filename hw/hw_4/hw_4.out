@@ -1,0 +1,102 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 3573349
+##  Job Name : cuda.sh
+##  Nodelist : gpu1203
+##      CPUs : 1
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4
+##   Started : Fri Apr 12 14:49:04 EDT 2019
+###############################################################################
+module: unloading 'cuda/9.2.148'
+module: loading 'cuda/7.5.18'
+-- The C compiler identification is GNU 4.8.5
+-- The CXX compiler identification is GNU 4.8.5
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Found CUDA: /gpfs/runtime/opt/cuda/7.5.18/cuda (found version "7.5") 
+-- Try OpenMP C flag = [-fopenmp]
+-- Performing Test OpenMP_FLAG_DETECTED
+-- Performing Test OpenMP_FLAG_DETECTED - Success
+-- Try OpenMP CXX flag = [-fopenmp]
+-- Performing Test OpenMP_FLAG_DETECTED
+-- Performing Test OpenMP_FLAG_DETECTED - Success
+-- Found OpenMP: -fopenmp  
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /users/guest287/Documents/apma_2822b/hw/hw_4/build
+[100%] [100%] Building NVCC (Device) object CMakeFiles/app.dir/src/./app_generated_utils.cu.o
+[100%] Building NVCC (Device) object CMakeFiles/app.dir/src/./app_generated_spmv.cu.o
+Building NVCC (Device) object CMakeFiles/app.dir/src/./app_generated_methods.cu.o
+cc1: warning: command line option ‘-std=c++11’ is valid for C++/ObjC++ but not for C [enabled by default]
+cc1: warning: command line option ‘-std=c++11’ is valid for C++/ObjC++ but not for C [enabled by default]
+cc1: warning: command line option ‘-std=c++11’ is valid for C++/ObjC++ but not for C [enabled by default]
+cc1: warning: command line option ‘-std=c++11’ is valid for C++/ObjC++ but not for C [enabled by default]
+cc1: warning: command line option ‘-std=c++11’ is valid for C++/ObjC++ but not for C [enabled by default]
+cc1: warning: command line option ‘-std=c++11’ is valid for C++/ObjC++ but not for C [enabled by default]
+Scanning dependencies of target app
+Linking CXX executable ../bin/app
+[100%] Built target app
+nnz=1189787 Nrow=21713 Ncol=21713 nnz per row = 54.7961
+done reading data
+average nzr count is: 54.796067, max nzr count is: 87
+======= Timings Cublas =======
+gpu times: 
+all times: 1.433280e-04,6.474800e-05,6.344100e-05,6.335500e-05,6.347200e-05,6.317200e-05,6.280500e-05,6.293400e-05,6.325300e-05,6.343100e-05
+average not including first two runs: 6.323288e-05
+
+
+======= Timings CRS =======
+cpu times: 
+all times: 1.191531e-03,1.123699e-03,1.098880e-03,1.094109e-03,1.091922e-03,1.089923e-03,1.089272e-03,1.126032e-03,1.089170e-03,1.087841e-03
+average not including first two runs: 1.095894e-03
+
+gpu times: 
+all times: 1.433280e-04,6.474800e-05,6.344100e-05,6.335500e-05,6.347200e-05,6.317200e-05,6.280500e-05,6.293400e-05,6.325300e-05,6.343100e-05
+average not including first two runs: 6.323288e-05
+
+cpu managed before tranfer to the gpu times: 
+all times: 1.343955e-03,1.359869e-03,1.280892e-03,1.146933e-03,1.112320e-03,1.115296e-03,1.111296e-03,1.104082e-03,1.101430e-03,1.099310e-03
+average not including first two runs: 1.133945e-03
+
+gpu managed times: 
+all times: 3.280666e-03,6.699500e-05,6.307500e-05,6.300000e-05,6.279600e-05,6.235700e-05,6.282700e-05,6.278300e-05,6.216500e-05,6.336000e-05
+average not including first two runs: 6.279538e-05
+
+cpu managed after tranfer to the gpu times: 
+all times: 1.343955e-03,1.359869e-03,1.280892e-03,1.146933e-03,1.112320e-03,1.115296e-03,1.111296e-03,1.104082e-03,1.101430e-03,1.099310e-03
+average not including first two runs: 1.133945e-03
+
+cuda sparse library times: 
+all times: 1.809070e-04,4.805600e-05,4.586400e-05,4.556300e-05,4.535100e-05,4.519800e-05,4.534400e-05,4.602600e-05,4.641300e-05,4.554300e-05
+average not including first two runs: 4.566275e-05
+
+
+
+======= Timings ELLPACK =======
+cpu times: 
+all times: 2.023513e-03,1.974041e-03,1.980044e-03,2.008220e-03,1.975711e-03,1.994410e-03,1.967929e-03,1.968547e-03,1.970371e-03,1.979403e-03
+average not including first two runs: 1.980579e-03
+
+gpu times: 
+all times: 1.266810e-04,9.551800e-05,9.496000e-05,9.360800e-05,9.287100e-05,9.374500e-05,9.287200e-05,9.343000e-05,9.410100e-05,9.435700e-05
+average not including first two runs: 9.374300e-05
+
+cpu managed before tranfer to the gpu times: 
+all times: 2.120364e-03,2.122612e-03,2.081069e-03,2.033787e-03,1.994932e-03,1.985165e-03,1.984431e-03,1.978767e-03,1.979481e-03,1.971952e-03
+average not including first two runs: 2.001198e-03
+
+gpu managed times: 
+all times: 4.560479e-03,9.755000e-05,9.304300e-05,9.300500e-05,9.270100e-05,9.350100e-05,9.474700e-05,9.288500e-05,9.322100e-05,9.281400e-05
+average not including first two runs: 9.323963e-05
+
+cpu managed after tranfer to the gpu times: 
+all times: 2.120364e-03,2.122612e-03,2.081069e-03,2.033787e-03,1.994932e-03,1.985165e-03,1.984431e-03,1.978767e-03,1.979481e-03,1.971952e-03
+average not including first two runs: 2.001198e-03
+
+
