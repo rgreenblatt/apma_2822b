@@ -74,7 +74,7 @@ __global__ void SpMv_gpu_thread_ELLPACK(int num_per_block_row, int Nrow,
 }
 
 void ELLPACKMethodGPU::run() {
-  int num_threads = 256;
+  int num_threads = 64;
   int num_per_block_row = 1;
 
   int num_blocks_row = (Nrow + num_per_block_row - 1) / num_per_block_row;
