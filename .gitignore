@@ -3,6 +3,7 @@
 *.fls
 *.log
 *.gz
+*.dat
 compile_commands.json
 eigen
 **/latex_out_dir/main_file.*
