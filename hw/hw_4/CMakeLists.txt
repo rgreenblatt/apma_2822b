@@ -6,8 +6,8 @@ cmake_minimum_required(VERSION 3.12)
 find_package(CUDA REQUIRED)
 find_package(OpenMP REQUIRED)
 
-# set(CUDA_NVCC_FLAGS "-std=c++11 -O3")
-set(CUDA_NVCC_FLAGS "-std=c++11 -g")
+set(CUDA_NVCC_FLAGS "-std=c++11 -O3")
+# set(CUDA_NVCC_FLAGS "-std=c++11 -g")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")

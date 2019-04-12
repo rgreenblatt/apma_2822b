@@ -1,31 +1,109 @@
+#include <assert.h>
 #include <chrono>
 #include <cstdlib>
 #include <omp.h>
 #include <stdio.h>
-#include <assert.h>
 #include <string>
+#include <cstring>
 
 namespace chr = std::chrono;
 using h_clock = chr::high_resolution_clock;
 
+enum class MemoryType { Host, Device, Unified };
+
+class SpMvMethod {
+public:
+  virtual void run() const = 0;
+};
+
+class CRSMethod : public SpMvMethod {
+protected:
+  int Nrow;
+  double *AA;
+  int *IA;
+  int *JA;
+  double *x;
+  double *y;
+
+public:
+  CRSMethod(int Nrow, double *AA, int *IA, int *JA, double *x, double *y)
+      : Nrow(Nrow), AA(AA), IA(IA), JA(JA), x(x), y(y) {}
+};
+
+class CRSMethodCPU : public CRSMethod {
+public:
+  void run() const;
+  CRSMethodCPU(int Nrow, double *AA, int *IA, int *JA, double *x, double *y)
+      : CRSMethod(Nrow, AA, IA, JA, x,
+                  y) {}
+};
+
+class CRSMethodGPU : public CRSMethod {
+public:
+  void run() const ;
+  CRSMethodGPU(int Nrow, double *AA, int *IA, int *JA, double *x, double *y)
+      : CRSMethod(Nrow, AA, IA, JA, x,
+                  y) {}
+};
+
+class ELLPACKMethod : public SpMvMethod {
+protected:
+  int Nrow;
+  int maxnzr;
+  double *AS;
+  int *JA;
+  double *x;
+  double *y;
+
+public:
+  ELLPACKMethod(int Nrow, int maxnzr, double *AS, int *JA,
+                double *x, double *y)
+      : Nrow(Nrow), maxnzr(maxnzr), AS(AS), JA(JA), x(x),
+        y(y) {}
+};
+
+class ELLPACKMethodCPU : public ELLPACKMethod {public:
+public:
+  void run() const;
+  ELLPACKMethodCPU(int Nrow, int maxnzr, double *AS, int *JA,
+                   double *x, double *y)
+      : ELLPACKMethod(Nrow, maxnzr, AS, JA, x, y) {}
+};
+
+class ELLPACKMethodGPU : public ELLPACKMethod {
+public:
+  void run() const;
+  ELLPACKMethodGPU(int Nrow, int maxnzr, double *AS, int *JA,
+                   double *x, double *y)
+      : ELLPACKMethod(Nrow, maxnzr, AS, JA, x, y) {}
+};
+
+#define cudaErrchk(ans)                                                        \
+  { cudaAssert((ans), __FILE__, __LINE__); }
+inline void cudaAssert(cudaError_t code, const char *file, int line,
+                       bool abort = true) {
+  if (code != cudaSuccess) {
+    fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file,
+            line);
+    if (abort)
+      exit(code);
+  }
+}
 void SpMv_cpu(int Nrow, double *AA, int *IA, int *JA, double *x, double *y);
 
 void SpMv_gpu(int Nrow, double *AA, int *IA, int *JA, double *x, double *y);
 
-void time_function(int iterations,
-                      void (*func)(int Nrow, double *AA, int *IA, int *JA,
-                                   double *x, double *y), double* times,
-                      int Nrow, double *AA, int *IA, int *JA, double *v,
-                      double *rhs, bool is_cuda);
-void print_result(double* times, int iterations, const char * name);
+void time_function(int iterations, const SpMvMethod &method, double *times,
+                   bool is_cuda);
+
+void print_result(double *times, int iterations, const char *name);
+
+
+template <class T> void allocate_vector(T *&A, int n, MemoryType memory_type);
+template <class T> void allocate_matrix(T **&A, int n, int m, MemoryType memory_type);
 
 int main() {
 
-  double *AA, *AA_copy_gpu, *AA_copy_cpu, *AA_managed;
-  int *JA, *IA, *JA_copy_gpu, *JA_copy_cpu, *IA_copy_gpu, *IA_copy_cpu,
-      *JA_managed, *IA_managed;
-  double *v, *rhs, *v_copy_gpu, *v_copy_cpu, *rhs_copy_gpu, *rhs_copy_cpu,
-      *v_managed, *rhs_managed;
   double TOL = 1.0e-10;
   int i, nnz, Nrow, Ncol;
 
@@ -43,19 +121,25 @@ int main() {
   fprintf(stdout, "nnz=%d Nrow=%d Ncol=%d nnz per row = %g\n", nnz, Nrow, Ncol,
           (double)nnz / Nrow);
 
-  AA = new double[nnz];
-  JA = new int[nnz];
-  IA = new int[Nrow + 1];
+  double *AA, *v, *v_copy_gpu, *v_managed, *rhs, *rhs_copy_gpu, *rhs_copy_cpu,
+      *rhs_managed, *true_rhs;
+  int *IA, *JA;
 
-  v = new double[Ncol];
-  rhs = new double[Nrow];
+  allocate_vector(AA, nnz, MemoryType::Host);
+  allocate_vector(JA, nnz, MemoryType::Host);
+  allocate_vector(IA, Nrow + 1, MemoryType::Host);
+  allocate_vector(v, Ncol, MemoryType::Host);
+  allocate_vector(rhs, Nrow, MemoryType::Host);
 
-  AA_copy_cpu = new double[nnz];
-  JA_copy_cpu = new int[nnz];
-  IA_copy_cpu = new int[Nrow + 1];
+  allocate_vector(rhs_copy_cpu, Nrow, MemoryType::Host);
 
-  v_copy_cpu = new double[Ncol];
-  rhs_copy_cpu = new double[Nrow];
+  allocate_vector(true_rhs, Nrow, MemoryType::Host);
+
+  allocate_vector(v_copy_gpu, Ncol, MemoryType::Device);
+  allocate_vector(rhs_copy_gpu, Nrow, MemoryType::Device);
+
+  allocate_vector(v_managed, Ncol, MemoryType::Unified);
+  allocate_vector(rhs_managed, Nrow, MemoryType::Unified);
 
   for (i = 0; i <= Nrow; i++) {
     char *_ = fgets(buf, 128, SPfile);
@@ -75,83 +159,219 @@ int main() {
   for (i = 0; i < Nrow; i++)
     rhs[i] = 1.0;
 
-  cudaMalloc(&AA_copy_gpu, nnz * sizeof(double));
-  cudaMalloc(&JA_copy_gpu, nnz * sizeof(double));
-  cudaMalloc(&IA_copy_gpu, (Nrow + 1) * sizeof(double));
-  cudaMalloc(&v_copy_gpu, Ncol * sizeof(double));
-  cudaMalloc(&rhs_copy_gpu, Nrow * sizeof(double));
+  cudaErrchk(
+      cudaMemcpy(v_copy_gpu, v, Ncol * sizeof(double), cudaMemcpyHostToDevice));
+  cudaErrchk(cudaMemcpy(rhs_copy_gpu, rhs, Nrow * sizeof(double),
+                        cudaMemcpyHostToDevice));
 
-  cudaMemcpy(AA_copy_gpu, AA, nnz * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(JA_copy_gpu, JA, nnz * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(IA_copy_gpu, IA, (Nrow + 1) * sizeof(double),
-             cudaMemcpyHostToDevice);
-  cudaMemcpy(v_copy_gpu, v, Ncol * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(rhs_copy_gpu, rhs, Nrow * sizeof(double), cudaMemcpyHostToDevice);
+  cudaErrchk(
+      cudaMemcpy(v_managed, v, Ncol * sizeof(double), cudaMemcpyHostToHost));
+  cudaErrchk(cudaMemcpy(rhs_managed, rhs, Nrow * sizeof(double),
+                        cudaMemcpyHostToHost));
 
-  cudaMallocManaged(&AA_managed, nnz * sizeof(double));
-  cudaMallocManaged(&JA_managed, nnz * sizeof(double));
-  cudaMallocManaged(&IA_managed, (Nrow + 1) * sizeof(double));
-  cudaMallocManaged(&v_managed, Ncol * sizeof(double));
-  cudaMallocManaged(&rhs_managed, Nrow * sizeof(double));
+  {
+    double *AA_copy_gpu, *AA_managed;
+    int *JA_copy_gpu, *IA_copy_gpu, *JA_managed, *IA_managed;
 
-  cudaMemcpy(AA_managed, AA, nnz * sizeof(double), cudaMemcpyHostToHost);
-  cudaMemcpy(JA_managed, JA, nnz * sizeof(double), cudaMemcpyHostToHost);
-  cudaMemcpy(IA_managed, IA, (Nrow + 1) * sizeof(double), cudaMemcpyHostToHost);
-  cudaMemcpy(v_managed, v, Ncol * sizeof(double), cudaMemcpyHostToHost);
-  cudaMemcpy(rhs_managed, rhs, Nrow * sizeof(double), cudaMemcpyHostToHost);
+    allocate_vector(AA_copy_gpu, nnz, MemoryType::Device);
+    allocate_vector(JA_copy_gpu, nnz, MemoryType::Device);
+    allocate_vector(IA_copy_gpu, Nrow + 1, MemoryType::Device);
 
-  int iterations = 10;
-  double cpu_times[iterations];
-  double copy_gpu_times[iterations];
-  double managed_cpu_times_before_gpu[iterations];
-  double managed_gpu_times[iterations];
-  double managed_cpu_times_after_gpu[iterations];
-  double unused_times[iterations];
+    cudaErrchk(cudaMemcpy(AA_copy_gpu, AA, nnz * sizeof(double),
+                          cudaMemcpyHostToDevice));
+    cudaErrchk(cudaMemcpy(JA_copy_gpu, JA, nnz * sizeof(int),
+                          cudaMemcpyHostToDevice));
+    cudaErrchk(cudaMemcpy(IA_copy_gpu, IA, (Nrow + 1) * sizeof(int),
+                          cudaMemcpyHostToDevice));
 
-  // time different approaches
-  time_function(iterations, SpMv_cpu, cpu_times, Nrow, AA, IA, JA, v, rhs, false);
-  time_function(iterations, SpMv_gpu, copy_gpu_times, Nrow, AA_copy_gpu,
-                IA_copy_gpu, JA_copy_gpu, v_copy_gpu, rhs_copy_gpu, true);
+    allocate_vector(AA_managed, nnz, MemoryType::Unified);
+    allocate_vector(JA_managed, nnz, MemoryType::Unified);
+    allocate_vector(IA_managed, (Nrow + 1), MemoryType::Unified);
 
-  // copy back to host
-  // for unclear reasons, this must be done before using managed memory on the
-  // cpu
-  cudaMemcpy(AA_copy_gpu, AA_copy_cpu, nnz * sizeof(double),
-             cudaMemcpyHostToDevice);
-  cudaMemcpy(JA_copy_gpu, JA_copy_cpu, nnz * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(IA_copy_gpu, IA_copy_cpu, (Nrow + 1) * sizeof(double),
-             cudaMemcpyHostToDevice);
-  cudaMemcpy(v_copy_gpu, v_copy_cpu, Ncol * sizeof(double), cudaMemcpyHostToDevice);
-  cudaMemcpy(rhs_copy_gpu, rhs_copy_cpu, Nrow * sizeof(double), cudaMemcpyHostToDevice);
+    cudaErrchk(
+        cudaMemcpy(AA_managed, AA, nnz * sizeof(double), cudaMemcpyHostToHost));
+    cudaErrchk(
+        cudaMemcpy(JA_managed, JA, nnz * sizeof(int), cudaMemcpyHostToHost));
+    cudaErrchk(cudaMemcpy(IA_managed, IA, (Nrow + 1) * sizeof(int),
+                          cudaMemcpyHostToHost));
 
-  cudaDeviceSynchronize();
+    cudaErrchk(cudaDeviceSynchronize());
 
-  time_function(iterations, SpMv_cpu, managed_cpu_times_before_gpu, Nrow,
-                AA_managed, IA_managed, JA_managed, v_managed, rhs_managed, false);
-  time_function(iterations, SpMv_gpu, managed_gpu_times, Nrow, AA_managed,
-                IA_managed, JA_managed, v_managed, rhs_managed, true);
-  time_function(iterations, SpMv_gpu, managed_cpu_times_after_gpu, Nrow,
-                AA_managed, IA_managed, JA_managed, v_managed, rhs_managed, false);
-  time_function(iterations, SpMv_gpu, unused_times, Nrow, AA_managed,
-                IA_managed, JA_managed, v_managed, rhs_managed, true);
+    int iterations = 10;
+    double cpu_times[iterations];
+    double gpu_times[iterations];
+    double cpu_managed_times_before_gpu[iterations];
+    double cpu_managed_times_after_gpu[iterations];
+    double gpu_managed_times[iterations];
 
-  // verify that that the gpu function is correct
-  for (i = 0; i < Nrow; i++) {
-    assert(std::abs(rhs[i] - rhs_managed[i]) < TOL);
+    CRSMethodCPU cpu(Nrow, AA, IA, JA, v, rhs);
+    CRSMethodGPU gpu(Nrow, AA_copy_gpu, IA_copy_gpu, JA_copy_gpu,
+                         v_copy_gpu, rhs_copy_gpu);
+
+    time_function(iterations, cpu, cpu_times, false);
+    std::memcpy(true_rhs, rhs, sizeof(double) * Nrow);
+    time_function(iterations, gpu, gpu_times, true);
+
+    // copy back to host
+    cudaErrchk(cudaMemcpy(rhs_copy_cpu, rhs_copy_gpu, Nrow * sizeof(double),
+                          cudaMemcpyDeviceToHost));
+    cudaErrchk(cudaDeviceSynchronize());
+
+    CRSMethodCPU cpu_managed(Nrow, AA_managed, IA_managed, JA_managed,
+                                 v_managed, rhs_managed);
+    CRSMethodGPU gpu_managed(Nrow, AA_managed, IA_managed, JA_managed,
+                                 v_managed, rhs_managed);
+
+    time_function(iterations, cpu_managed, cpu_managed_times_before_gpu,
+                  false);
+    time_function(iterations, gpu_managed, gpu_managed_times, true);
+    time_function(iterations, cpu_managed, cpu_managed_times_after_gpu,
+                  false);
+
+    // verify correctness
+    for (int i = 0; i < Nrow; i++) {
+      assert(std::abs(true_rhs[i] - rhs_managed[i]) < TOL);
+      assert(std::abs(true_rhs[i] - rhs_copy_cpu[i]) < TOL);
+    }
+
+    // print out results
+    printf("\n======= Timings CRS =======\n");
+    print_result(cpu_times, iterations, "cpu");
+    print_result(gpu_times, iterations, "gpu");
+    print_result(cpu_managed_times_before_gpu, iterations,
+                 "cpu managed before tranfer to the gpu");
+    print_result(gpu_managed_times, iterations, "gpu managed");
+    print_result(cpu_managed_times_before_gpu, iterations,
+                 "cpu managed after tranfer to the gpu");
+    cudaErrchk(cudaFree(AA_copy_gpu));
+    cudaErrchk(cudaFree(IA_copy_gpu));
+    cudaErrchk(cudaFree(JA_copy_gpu));
+
+    cudaErrchk(cudaFree(AA_managed));
+    cudaErrchk(cudaFree(IA_managed));
+    cudaErrchk(cudaFree(JA_managed));
   }
 
-  // print out results
-  printf(" ======= Timings =======\n");
-  print_result(cpu_times, iterations, "cpu");
-  print_result(copy_gpu_times, iterations, "copy gpu");
-  print_result(managed_cpu_times_before_gpu, iterations,
-               "managed cpu before tranfer to the gpu");
-  print_result(managed_gpu_times, iterations,
-               "managed gpu");
-  print_result(managed_cpu_times_after_gpu, iterations,
-               "managed cpu after tranfer to the gpu");
+  // initialize "v" and "rhs"
+  for (int i = 0; i < Ncol; i++)
+    v[i] = 1.0;
+  for (i = 0; i < Nrow; i++)
+    rhs[i] = 1.0;
 
-  // trasnform sparse operator from the CSR to ELLPACK format
+  printf("\n");
+  {
+    int maxnzr = -1;
+    for (int i = 0; i < Nrow; i++) {
+      const int candidate = IA[i + 1] - IA[i];
+      if (candidate > maxnzr) {
+        maxnzr = candidate;
+      }
+    }
+
+    assert(maxnzr >= 0);
+
+    // ELLPACK
+    double *AS, *AS_copy_gpu, *AS_managed;
+    int *JA_E, *JA_E_copy_gpu, *JA_E_managed;
+
+    allocate_vector(AS, Nrow * maxnzr, MemoryType::Host);
+    allocate_vector(JA_E, Nrow * maxnzr, MemoryType::Host);
+
+    allocate_vector(AS_copy_gpu, Nrow * maxnzr, MemoryType::Device);
+    allocate_vector(JA_E_copy_gpu, Nrow * maxnzr, MemoryType::Device);
+
+    allocate_vector(JA_E_managed, Nrow * maxnzr, MemoryType::Unified);
+    allocate_vector(AS_managed, Nrow * maxnzr, MemoryType::Unified);
+
+    //transform sparse operator from the CSR to ELLPACK format
+    for (int i = 0; i < Nrow; i++) {
+      const int J1 = IA[i];
+      const int J2 = IA[i + 1];
+      for (int j = 0; j < maxnzr; j++) {
+        int idx = i * maxnzr + j;
+        if (j < J2 - J1) {
+          AS[idx] = AA[J1 + j];
+          JA_E[idx] = JA[j + J1];
+        } else {
+          AS[idx] = 0.;
+          JA_E[idx] = JA[J2 - 1];
+        }
+      }
+    }
+
+    cudaErrchk(cudaMemcpy(AS_copy_gpu, AS, Nrow * maxnzr * sizeof(double),
+                          cudaMemcpyHostToDevice));
+    cudaErrchk(cudaMemcpy(JA_E_copy_gpu, JA_E, Nrow * maxnzr * sizeof(int),
+                          cudaMemcpyHostToDevice));
+
+    cudaErrchk(cudaMemcpy(AS_managed, AS, Nrow * maxnzr * sizeof(double),
+                          cudaMemcpyHostToHost));
+    cudaErrchk(cudaMemcpy(JA_E_managed, JA_E, Nrow * maxnzr * sizeof(int),
+                          cudaMemcpyHostToHost));
+
+    cudaErrchk(cudaDeviceSynchronize());
+
+    int iterations = 10;
+    double cpu_times[iterations];
+    double gpu_times[iterations];
+    double cpu_managed_times_before_gpu[iterations];
+    double cpu_managed_times_after_gpu[iterations];
+    double gpu_managed_times[iterations];
+
+    ELLPACKMethodCPU cpu(Nrow, maxnzr, AS, JA_E, v, rhs);
+    ELLPACKMethodGPU gpu(Nrow, maxnzr, AS_copy_gpu, JA_E_copy_gpu, v_copy_gpu,
+        rhs_copy_gpu);
+
+    time_function(iterations, cpu, cpu_times, false);
+    time_function(iterations, gpu, gpu_times, true);
+
+    // copy back to host
+    cudaErrchk(cudaMemcpy(rhs_copy_cpu, rhs_copy_gpu, Nrow * sizeof(double),
+                          cudaMemcpyDeviceToHost));
+    cudaErrchk(cudaDeviceSynchronize());
+
+    ELLPACKMethodCPU cpu_managed(Nrow, maxnzr, AS_managed, JA_E_managed,
+                                 v_managed, rhs_managed);
+    ELLPACKMethodGPU gpu_managed(Nrow, maxnzr, AS_managed, JA_E_managed,
+                                 v_managed, rhs_managed);
+
+    time_function(iterations, cpu_managed, cpu_managed_times_before_gpu,
+                  false);
+    time_function(iterations, gpu_managed, gpu_managed_times, true);
+    time_function(iterations, cpu_managed, cpu_managed_times_after_gpu,
+                  false);
+
+    // this must be last for checking that the gpu computation is correct
+    gpu_managed.run();
+    cudaErrchk(cudaDeviceSynchronize());
+
+
+    // verify correctness
+    for (int i = 0; i < Nrow; i++) {
+      assert(std::abs(true_rhs[i] - rhs[i]) < TOL);
+      assert(std::abs(true_rhs[i] - rhs_managed[i]) < TOL);
+      assert(std::abs(true_rhs[i] - rhs_copy_cpu[i]) < TOL);
+    }
+
+    // print out results
+    printf("\n======= Timings ELLPACK =======\n");
+    print_result(cpu_times, iterations, "cpu");
+    print_result(gpu_times, iterations, "gpu");
+    print_result(cpu_managed_times_before_gpu, iterations,
+                 "cpu managed before tranfer to the gpu");
+    print_result(gpu_managed_times, iterations, "gpu managed");
+    print_result(cpu_managed_times_before_gpu, iterations,
+                 "cpu managed after tranfer to the gpu");
+
+    delete[] AS;
+    delete[] JA_E;
+
+    cudaErrchk(cudaFree(AS_copy_gpu));
+    cudaErrchk(cudaFree(JA_E_copy_gpu));
+
+    cudaErrchk(cudaFree(AS_managed));
+    cudaErrchk(cudaFree(JA_E_managed));
+  }
 
   delete[] AA;
   delete[] IA;
@@ -159,23 +379,16 @@ int main() {
   delete[] v;
   delete[] rhs;
 
-  cudaFree(AA_copy_gpu);
-  cudaFree(IA_copy_gpu);
-  cudaFree(JA_copy_gpu);
-  cudaFree(v_copy_gpu);
-  cudaFree(rhs_copy_gpu);
+  cudaErrchk(cudaFree(v_copy_gpu));
+  cudaErrchk(cudaFree(rhs_copy_gpu));
 
-  cudaFree(AA_managed);
-  cudaFree(IA_managed);
-  cudaFree(JA_managed);
-  cudaFree(v_managed);
-  cudaFree(rhs_managed);
+  cudaErrchk(cudaFree(v_managed));
+  cudaErrchk(cudaFree(rhs_managed));
 
   return 0;
 }
 
-void SpMv_cpu(int Nrow, double *AA, int *IA, int *JA, double *x, double *y) {
-
+void CRSMethodCPU::run() const {
   // compute y = A*x
   // A is sparse operator stored in a CSR format
 
@@ -189,34 +402,105 @@ void SpMv_cpu(int Nrow, double *AA, int *IA, int *JA, double *x, double *y) {
   }
 }
 
-__global__ void SpMv_gpu_thread(double *AA, int *IA, int *JA, double *x,
-                                double *y) {
+__global__ void SpMv_gpu_thread_CRS(int Nrow, double *AA, int *IA, int *JA,
+                                double *x, double *y) {
 
   int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < Nrow) {
 
+    // compute y = A*x
+    // A is sparse operator stored in a CSR format
+    const int J1 = IA[i];
+    const int J2 = IA[i + 1];
+    double sum = 0.0;
+    for (int j = 0; j < (J2 - J1); j++)
+      sum += AA[j + J1] * x[JA[j + J1]];
+    y[i] = sum;
+  }
+}
+
+void CRSMethodGPU::run() const {
+  int num_threads = 16;
+  SpMv_gpu_thread_CRS<<<(Nrow + num_threads - 1) / num_threads, num_threads>>>(
+      Nrow, AA, IA, JA, x, y);
+  cudaErrchk(cudaPeekAtLastError());
+}
+
+void ELLPACKMethodCPU::run() const {
   // compute y = A*x
-  // A is sparse operator stored in a CSR format
-  const int J1 = IA[i];
-  const int J2 = IA[i + 1];
-  double sum = 0.0;
-  for (int j = 0; j < (J2 - J1); j++)
-    sum += AA[j + J1] * x[JA[j + J1]];
-  y[i] = sum;
+  // A is sparse operator stored in a ELLPACK format
+
+  //Note, could be optimized using blocking
+  for (int i = 0; i < Nrow; i++) {
+    double sum = 0.0;
+    for (int j = 0; j < maxnzr; j++) {
+      int idx = i * maxnzr  + j;
+      sum += AS[idx] * x[JA[idx]];
+    }
+    y[i] = sum;
+  }
 }
 
-void SpMv_gpu(int Nrow, double *AA, int *IA, int *JA, double *x, double *y) {
-  SpMv_gpu_thread<<<(Nrow + 255) / 256, 256>>>(AA, IA, JA, x, y);
+__global__ void SpMv_gpu_thread_ELLPACK(int num_per_block_row, int Nrow,
+                                        int num_per_block_maxnzr,
+                                        int num_blocks_maxnzr, int maxnzr,
+                                        double *AS, int *JA, double *x,
+                                        double *y) {
+  // compute y = A*x
+  // A is sparse operator stored in a ELLPACK format
+
+  int loop_block_num_row = blockIdx.x * blockDim.x + threadIdx.x;
+  int max_row =
+      min((loop_block_num_row + 1) * num_per_block_row, Nrow);
+
+  for (int loop_block_num_maxnzr = 0; loop_block_num_maxnzr < num_blocks_maxnzr;
+       loop_block_num_maxnzr++) {
+    int max_maxnzr =
+        min((loop_block_num_maxnzr + 1) * num_per_block_maxnzr, maxnzr);
+    for (int i = loop_block_num_row * num_per_block_row; i < max_row; i++) {
+      double sum;
+      if (loop_block_num_maxnzr == 0) {
+        sum = 0;
+      } else {
+        sum = y[i];
+      }
+      for (int j = loop_block_num_maxnzr * num_per_block_maxnzr; j < max_maxnzr;
+           j++) {
+        int idx = i * maxnzr + j;
+        sum += AS[idx] * x[JA[idx]];
+      }
+      y[i] = sum;
+    }
+  }
 }
-void time_function(int iterations, void (*func)(int Nrow, double *AA, int *IA, int *JA,
-                                   double *x, double *y), double *times, int Nrow, double *AA,
-                      int *IA, int *JA, double *v, double *rhs, bool is_cuda) {
+
+void ELLPACKMethodGPU::run() const {
+  int num_threads = 32;
+  int num_per_block_row = 8;
+  int num_per_block_maxnzr = 100;
+
+  int num_blocks_maxnzr =
+      (maxnzr + num_per_block_maxnzr - 1) / num_per_block_maxnzr;
+
+  int num_blocks_row =
+    (Nrow + num_per_block_row - 1) / num_per_block_row;
+
+    SpMv_gpu_thread_ELLPACK<<<(num_blocks_row + num_threads - 1) / num_threads,
+    num_threads>>>(
+        num_per_block_row, Nrow, num_per_block_maxnzr, num_blocks_maxnzr, maxnzr,
+        AS, JA, x, y);
+  cudaErrchk(cudaDeviceSynchronize());
+  cudaErrchk(cudaPeekAtLastError());
+}
+
+void time_function(int iterations,
+                   const SpMvMethod &method,
+                   double *times, bool is_cuda) {
   for (int i = 0; i < iterations; ++i) {
     auto t1 = h_clock::now();
-    for (int j = 0; j < 10; j++) {
-      (*func)(Nrow, AA, IA, JA, v, rhs);
-    }
+    method.run();
     if (is_cuda) {
-      cudaDeviceSynchronize();
+      cudaErrchk(cudaDeviceSynchronize());
     }
     auto t2 = h_clock::now();
     double time =
@@ -226,7 +510,7 @@ void time_function(int iterations, void (*func)(int Nrow, double *AA, int *IA, i
   }
 }
 
-void print_result(double *times, int iterations, const char * name) {
+void print_result(double *times, int iterations, const char *name) {
   printf("%s times: \nall times: ", name);
   for (int i = 0; i < iterations; i++) {
     printf("%e", times[i]);
@@ -242,4 +526,37 @@ void print_result(double *times, int iterations, const char * name) {
   avg /= (iterations - 2);
 
   printf("\naverage not including first two runs: %e\n\n", avg);
+}
+
+template <class T> void allocate_vector(T *&A, int n, MemoryType memory_type) {
+  switch (memory_type) {
+  case MemoryType::Host:
+    A = new T[n];
+    break;
+  case MemoryType::Device:
+    cudaErrchk(cudaMalloc(&A, n * sizeof(T)));
+    break;
+  case MemoryType::Unified:
+    cudaErrchk(cudaMallocManaged(&A, n * sizeof(T)));
+    break;
+  }
+}
+
+template <class T>
+void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
+  A = new T *[n];
+  switch (memory_type) {
+  case MemoryType::Host:
+    A[0] = new T[n * m];
+    break;
+  case MemoryType::Device:
+    cudaErrchk(cudaMalloc(&A[0], n * m * sizeof(T)));
+    break;
+  case MemoryType::Unified:
+    cudaErrchk(cudaMallocManaged(&A[0], n * m * sizeof(T)));
+    break;
+  }
+  for (int i = 0; i < n; ++i) {
+    A[i] = A[0] + i * m;
+  }
 }
