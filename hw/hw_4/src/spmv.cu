@@ -153,10 +153,6 @@ int main() {
                               Nrow * sizeof(double), cudaMemcpyDeviceToHost));
     cuda_error_chk(cudaDeviceSynchronize());
 
-    // print out results
-    printf("\n======= Timings Cublas =======\n");
-    print_result(gpu_times, iterations, "gpu");
-
     // verify correctness
     for (int i = 0; i < Nrow; i++) {
       assert(std::abs(true_rhs[i] - rhs_managed[i]) < TOL);
