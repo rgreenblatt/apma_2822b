@@ -47,6 +47,8 @@ template <class T> void allocate_vector(T *&A, int n, MemoryType memory_type) {
   }
 }
 
+// not currently used because cuda doesn't work with 2D arrays for whatever
+// reason
 template <class T>
 void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
   A = new T *[n];
@@ -65,4 +67,3 @@ void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
     A[i] = A[0] + i * m;
   }
 }
-
