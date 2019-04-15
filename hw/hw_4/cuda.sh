@@ -10,7 +10,7 @@
 #SBATCH -o hw_04.out
 
 # Load CUDA module
-module load cuda/10.0.130
+module load cuda/9.1.85.1
 
 # Compile CUDA program and run
 ./clean.sh
