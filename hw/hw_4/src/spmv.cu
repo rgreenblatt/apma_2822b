@@ -1,13 +1,7 @@
 #include <assert.h>
 #include "methods.h"
 #include "utils.h"
-#include <cstdlib>
 #include <cstring>
-#include <cuda.h>
-#include <cusparse_v2.h>
-#include <stdio.h>
-#include <string>
-
 
 int main() {
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "methods.h"
-#include <stdio.h>
 #include <chrono>
+#include <stdio.h>
 
 #define cuda_sparse_error_chk(ans)                                             \
   { cuda_sparse_assert((ans), __FILE__, __LINE__); }
@@ -22,7 +22,7 @@ inline void cuda_assert(cudaError_t code, const char *file, int line) {
     if (abort)
       exit(code);
   }
-} 
+}
 
 namespace chr = std::chrono;
 using h_clock = chr::high_resolution_clock;
@@ -46,14 +46,13 @@ template <class T> void allocate_vector(T *&A, int n, MemoryType memory_type) {
     break;
   }
 }
-template <class T> 
-size_t allocate_matrix_device(T *&A, int n, int m) {
+template <class T> size_t allocate_matrix_device(T *&A, int n, int m) {
   size_t pitch;
   cuda_error_chk(cudaMallocPitch(&A, &pitch, m * sizeof(T), n));
   return pitch;
 }
 
-template <class T> 
+template <class T>
 void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
   switch (memory_type) {
   case MemoryType::Host:

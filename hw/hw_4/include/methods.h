@@ -1,9 +1,6 @@
 #pragma once
 
-#include <cublas_v2.h>
-#include <cuda.h>
 #include <cusparse_v2.h>
-#include <stdio.h>
 
 class SpMvMethod {
 public:
