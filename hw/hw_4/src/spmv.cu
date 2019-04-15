@@ -201,42 +201,57 @@ int main() {
     assert(maxnzr >= 0);
 
     // ELLPACK
-    double *AS, *AS_copy_gpu, *AS_managed;
-    int *JA_E, *JA_E_copy_gpu, *JA_E_managed;
+    double **AS, *AS_copy_gpu, **AS_managed;
+    int **JA_E, *JA_E_copy_gpu, **JA_E_managed;
+    int *row_lengths, *row_lengths_copy_gpu, *row_lengths_managed;
 
-    allocate_vector(AS, Nrow * maxnzr, MemoryType::Host);
-    allocate_vector(JA_E, Nrow * maxnzr, MemoryType::Host);
+    allocate_matrix(AS, Nrow, maxnzr, MemoryType::Host);
+    allocate_matrix(JA_E, Nrow, maxnzr, MemoryType::Host);
+    allocate_vector(row_lengths, Nrow, MemoryType::Host);
 
-    allocate_vector(AS_copy_gpu, Nrow * maxnzr, MemoryType::Device);
-    allocate_vector(JA_E_copy_gpu, Nrow * maxnzr, MemoryType::Device);
+    size_t pitch_AS =
+        allocate_matrix_device(AS_copy_gpu, Nrow, maxnzr);
+    size_t pitch_JA_E =
+        allocate_matrix_device(JA_E_copy_gpu, Nrow, maxnzr);
+    allocate_vector(row_lengths_copy_gpu, Nrow, MemoryType::Device);
 
-    allocate_vector(JA_E_managed, Nrow * maxnzr, MemoryType::Unified);
-    allocate_vector(AS_managed, Nrow * maxnzr, MemoryType::Unified);
+    allocate_matrix(AS_managed, Nrow, maxnzr, MemoryType::Unified);
+    allocate_matrix(JA_E_managed, Nrow, maxnzr, MemoryType::Unified);
+    allocate_vector(row_lengths_managed, Nrow, MemoryType::Unified);
 
     // transform sparse operator from the CSR to ELLPACK format
     for (int i = 0; i < Nrow; i++) {
       const int J1 = IA[i];
       const int J2 = IA[i + 1];
+      row_lengths[i] = J2 - J1;
       for (int j = 0; j < maxnzr; j++) {
-        int idx = i * maxnzr + j;
         if (j < J2 - J1) {
-          AS[idx] = AA[J1 + j];
-          JA_E[idx] = JA[j + J1];
+          AS[i][j] = AA[J1 + j];
+          JA_E[i][j] = JA[j + J1];
         } else {
-          AS[idx] = 0.;
-          JA_E[idx] = JA[J2 - 1];
+          AS[i][j] = 0.;
+          JA_E[i][j] = JA[J2 - 1];
         }
       }
     }
 
-    cuda_error_chk(cudaMemcpy(AS_copy_gpu, AS, Nrow * maxnzr * sizeof(double),
-                              cudaMemcpyHostToDevice));
-    cuda_error_chk(cudaMemcpy(JA_E_copy_gpu, JA_E, Nrow * maxnzr * sizeof(int),
+    cuda_error_chk(cudaMemcpy2D(AS_copy_gpu, pitch_AS, AS[0], maxnzr * sizeof(double),
+                                maxnzr * sizeof(double), Nrow,
+                                cudaMemcpyHostToDevice));
+    cuda_error_chk(
+        cudaMemcpy2D(JA_E_copy_gpu, pitch_JA_E, JA_E[0], maxnzr * sizeof(int),
+                     maxnzr * sizeof(int), Nrow, cudaMemcpyHostToDevice));
+
+    cuda_error_chk(cudaMemcpy(row_lengths_copy_gpu, row_lengths,
+                              Nrow * sizeof(int),
                               cudaMemcpyHostToDevice));
 
-    cuda_error_chk(cudaMemcpy(AS_managed, AS, Nrow * maxnzr * sizeof(double),
+    cuda_error_chk(cudaMemcpy(AS_managed[0], AS[0], Nrow * maxnzr * sizeof(double),
                               cudaMemcpyHostToHost));
-    cuda_error_chk(cudaMemcpy(JA_E_managed, JA_E, Nrow * maxnzr * sizeof(int),
+    cuda_error_chk(cudaMemcpy(JA_E_managed[0], JA_E[0], Nrow * maxnzr * sizeof(int),
+                              cudaMemcpyHostToHost));
+    cuda_error_chk(cudaMemcpy(row_lengths_managed, row_lengths,
+                              Nrow * sizeof(int),
                               cudaMemcpyHostToHost));
 
     cuda_error_chk(cudaDeviceSynchronize());
@@ -248,9 +263,32 @@ int main() {
     double cpu_managed_times_after_gpu[iterations];
     double gpu_managed_times[iterations];
 
-    ELLPACKMethodCPU cpu(Nrow, maxnzr, AS, JA_E, v, rhs);
-    ELLPACKMethodGPU gpu(Nrow, maxnzr, AS_copy_gpu, JA_E_copy_gpu, v_copy_gpu,
-                         rhs_copy_gpu);
+
+    /***/
+    cudaTextureDesc td;
+    memset(&td, 0, sizeof(td));
+    td.normalizedCoords = 0;
+    td.addressMode[0] = cudaAddressModeClamp;
+    td.readMode = cudaReadModeElementType;
+
+
+    struct cudaResourceDesc resDesc;
+    memset(&resDesc, 0, sizeof(resDesc));
+    resDesc.resType = cudaResourceTypeLinear;
+    resDesc.res.linear.devPtr = v_copy_gpu;
+    resDesc.res.linear.sizeInBytes = Nrow * sizeof(double);
+    resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
+    resDesc.res.linear.desc.x = 32;
+    resDesc.res.linear.desc.y = 32;
+
+    cudaTextureObject_t texObject;
+    cuda_error_chk(cudaCreateTextureObject(&texObject, &resDesc, &td, NULL));
+
+    ELLPACKMethodCPU cpu(Nrow, maxnzr, row_lengths, AS, JA_E, v, rhs);
+    ELLPACKMethodGPU gpu(Nrow, maxnzr, row_lengths_copy_gpu, AS_copy_gpu, pitch_AS,
+                         JA_E_copy_gpu, pitch_JA_E, texObject, rhs_copy_gpu);
+
+
 
     time_function(iterations, cpu, cpu_times, false);
     time_function(iterations, gpu, gpu_times, true);
@@ -260,10 +298,10 @@ int main() {
                               Nrow * sizeof(double), cudaMemcpyDeviceToHost));
     cuda_error_chk(cudaDeviceSynchronize());
 
-    ELLPACKMethodCPU cpu_managed(Nrow, maxnzr, AS_managed, JA_E_managed,
-                                 v_managed, rhs_managed);
-    ELLPACKMethodGPU gpu_managed(Nrow, maxnzr, AS_managed, JA_E_managed,
-                                 v_managed, rhs_managed);
+    ELLPACKMethodCPU cpu_managed(Nrow, maxnzr, row_lengths_managed, AS_managed,
+                                 JA_E_managed, v_managed, rhs_managed);
+    ELLPACKMethodGPUManaged gpu_managed(Nrow, maxnzr, row_lengths_managed, AS_managed,
+                                 JA_E_managed, v_managed, rhs_managed);
 
     time_function(iterations, cpu_managed, cpu_managed_times_before_gpu, false);
     time_function(iterations, gpu_managed, gpu_managed_times, true);

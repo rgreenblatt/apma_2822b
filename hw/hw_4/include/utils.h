@@ -46,20 +46,25 @@ template <class T> void allocate_vector(T *&A, int n, MemoryType memory_type) {
     break;
   }
 }
+template <class T> 
+size_t allocate_matrix_device(T *&A, int n, int m) {
+  size_t pitch;
+  cuda_error_chk(cudaMallocPitch(&A, &pitch, m * sizeof(T), n));
+  return pitch;
+}
 
-// not currently used because cuda doesn't work with 2D arrays for whatever
-// reason
-template <class T>
+template <class T> 
 void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
-  A = new T *[n];
   switch (memory_type) {
   case MemoryType::Host:
+    A = new T *[n];
     A[0] = new T[n * m];
     break;
   case MemoryType::Device:
-    cuda_error_chk(cudaMalloc(&A[0], n * m * sizeof(T)));
-    break;
+    fprintf(stderr, "Use allocate_matrix_device for device memory\n");
+    exit(1);
   case MemoryType::Unified:
+    cuda_error_chk(cudaMallocManaged(&A, n * sizeof(T *)));
     cuda_error_chk(cudaMallocManaged(&A[0], n * m * sizeof(T)));
     break;
   }

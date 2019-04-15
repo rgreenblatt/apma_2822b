@@ -2,8 +2,6 @@
 #include "utils.h"
 
 void CRSMethodCPU::run() {
-  // compute y = A*x
-  // A is sparse operator stored in a CSR format
 
   for (int i = 0; i < Nrow; i++) {
     const int J1 = IA[i];
@@ -21,8 +19,6 @@ __global__ void SpMv_gpu_thread_CRS(int Nrow, double *AA, int *IA, int *JA,
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < Nrow) {
 
-    // compute y = A*x
-    // A is sparse operator stored in a CSR format
     const int J1 = IA[i];
     const int J2 = IA[i + 1];
     double sum = 0.0;
@@ -39,54 +35,6 @@ void CRSMethodGPU::run() {
   cuda_error_chk(cudaPeekAtLastError());
 }
 
-void ELLPACKMethodCPU::run() {
-  // compute y = A*x
-  // A is sparse operator stored in a ELLPACK format
-
-  // Note, could be optimized using blocking
-  for (int i = 0; i < Nrow; i++) {
-    double sum = 0.0;
-    for (int j = 0; j < maxnzr; j++) {
-      int idx = i * maxnzr + j;
-      sum += AS[idx] * x[JA[idx]];
-    }
-    y[i] = sum;
-  }
-}
-
-__global__ void SpMv_gpu_thread_ELLPACK(int num_per_block_row, int Nrow,
-                                        int maxnzr, double *AS, int *JA,
-                                        double *x, double *y) {
-  // compute y = A*x
-  // A is sparse operator stored in a ELLPACK format
-
-  int block_row = blockIdx.x * blockDim.x + threadIdx.x;
-  int max_row = min((block_row + 1) * num_per_block_row, Nrow);
-
-  for (int i = block_row * num_per_block_row; i < max_row; i++) {
-    double sum = 0;
-    for (int j = 0; j < maxnzr; j++) {
-      int idx = i * maxnzr + j;
-      sum += AS[idx] * x[JA[idx]];
-    }
-    y[i] = sum;
-  }
-}
-
-void ELLPACKMethodGPU::run() {
-  int num_threads = 64;
-  int num_per_block_row = 1;
-
-  int num_blocks_row = (Nrow + num_per_block_row - 1) / num_per_block_row;
-
-  SpMv_gpu_thread_ELLPACK<<<(num_blocks_row + num_threads - 1) / num_threads,
-                            num_threads>>>(num_per_block_row, Nrow, maxnzr, AS,
-                                           JA, x, y);
-
-  cuda_error_chk(cudaDeviceSynchronize());
-  cuda_error_chk(cudaPeekAtLastError());
-}
-
 void CudaSparse::run() {
   double alpha = 1.;
   double beta = 0.;
@@ -97,9 +45,91 @@ void CudaSparse::run() {
 
 CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
                        double *AA, int *IA, int *JA, double *x, double *y)
-    : handle(handle), Nrow(Nrow), Ncol(Ncol), nnz(nnz), AA(AA), IA(IA), JA(JA),
-      x(x), y(y) {
+    : CRSMethod(Nrow, AA, IA, JA, x, y), handle(handle), Ncol(Ncol), nnz(nnz) {
   cuda_sparse_error_chk(cusparseCreateMatDescr(&descr));
   cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL);
   cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO);
+}
+
+void ELLPACKMethodCPU::run() {
+  for (int i = 0; i < Nrow; i++) {
+    double sum = 0.0;
+    for (int j = 0; j < row_lengths[i]; j++) {
+      sum += AS[i][j] * x[JA[i][j]];
+    }
+    y[i] = sum;
+  }
+}
+
+static __inline__ __device__ double fetch_double(uint2 p) {
+  return __hiloint2double(p.y, p.x);
+}
+
+__device__ double SpMv_gpu_thread_ELLPACK_row(int row_length, double *AS,
+                                              int *JA, cudaTextureObject_t x) {
+  double sum = 0;
+  for (int j = 0; j < row_length; j++) {
+    sum += AS[j] * fetch_double(tex1Dfetch<uint2>(x, JA[j]));
+  }
+  return sum;
+}
+
+__device__ double SpMv_gpu_thread_ELLPACK_row_managed(int row_length,
+                                                      double *AS, int *JA,
+                                                      double *x) {
+  double sum = 0;
+  for (int j = 0; j < row_length; j++) {
+    sum += AS[j] * x[JA[j]];
+  }
+  return sum;
+}
+
+__global__ void SpMv_gpu_thread_ELLPACK_managed(int Nrow, int maxnzr,
+                                                int *row_lengths, double **AS,
+                                                int **JA, double *x,
+                                                double *y) {
+  // compute y = A*x
+  // A is sparse operator stored in a ELLPACK format
+
+  int row = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (row < Nrow) {
+    y[row] = SpMv_gpu_thread_ELLPACK_row_managed(row_lengths[row], AS[row],
+                                                 JA[row], x);
+  }
+}
+
+__global__ void SpMv_gpu_thread_ELLPACK(int Nrow, int maxnzr, int *row_lengths,
+                                        double *AS, int *JA,
+                                        cudaTextureObject_t x, double *y,
+                                        size_t pitch_AS, size_t pitch_JA) {
+  // compute y = A*x
+  // A is sparse operator stored in a ELLPACK format
+
+  int row = blockIdx.x * blockDim.x + threadIdx.x;
+  if (row < Nrow) {
+    double *row_AS = (double *)((char *)AS + row * pitch_AS);
+    int *row_JA = (int *)((char *)JA + row * pitch_JA);
+    y[row] = SpMv_gpu_thread_ELLPACK_row(row_lengths[row], row_AS, row_JA, x);
+  }
+}
+
+void ELLPACKMethodGPU::run() {
+  int num_threads = 16;
+
+  SpMv_gpu_thread_ELLPACK<<<(Nrow + num_threads - 1) / num_threads,
+                            num_threads>>>(Nrow, maxnzr, row_lengths, AS, JA, x,
+                                           y, pitch_AS, pitch_JA);
+
+  cuda_error_chk(cudaPeekAtLastError());
+}
+
+void ELLPACKMethodGPUManaged::run() {
+  int num_threads = 16;
+
+  SpMv_gpu_thread_ELLPACK_managed<<<(Nrow + num_threads - 1) / num_threads,
+                                    num_threads>>>(Nrow, maxnzr, row_lengths,
+                                                   AS, JA, x, y);
+
+  cuda_error_chk(cudaPeekAtLastError());
 }
