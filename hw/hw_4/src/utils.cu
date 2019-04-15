@@ -36,7 +36,6 @@ void time_function(int iterations, SpMvMethod &method, double *times,
       float milliseconds = 0;
       cudaEventElapsedTime(&milliseconds, start, stop);
       time = milliseconds / 1000;
-      /* cuda_error_chk(cudaDeviceSynchronize()); */
     } else {
 
       auto t1 = h_clock::now();
