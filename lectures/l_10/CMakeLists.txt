@@ -6,7 +6,7 @@ PROJECT(hw_3 C CXX)
 cmake_minimum_required(VERSION 2.8)
 
 add_definitions(-std=c++11 -Wall -Wextra -Wconversion 
-  -fopenmp-targets=nvptx64-nvidia-cuda --cuda-path=/usr/lib/cuda/)
+  -fopenmp-targets=nvptx64-nvidia-cuda)
 # add_definitions(-g)
 add_definitions(-O3 -march=native)
 

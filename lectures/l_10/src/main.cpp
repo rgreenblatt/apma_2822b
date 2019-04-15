@@ -1,16 +1,15 @@
 #include <omp.h>
 #include <iostream>
-#include <math.h>
 
-int main(int argc, char *argv[])
+int main(int, char *[])
 {
   double *x, *y;
-  int N = 4000000;
+  const unsigned long N = 4000000;
 
   x = new double[N];
   y = new double[N];
 
-  for (int i = 0; i < N; ++i) {
+  for (unsigned long i = 0; i < N; ++i) {
     x[i] = 0.1 * i;
   }
 
@@ -18,8 +17,8 @@ int main(int argc, char *argv[])
 
 
   #pragma omp target teams distribute parallel for
-  for (int i = 0; i < N; ++i) {
-    y[i] = sin(x[i]) * cos(x[i]);
+  for (unsigned long i = 0; i < N; ++i) {
+    y[i] = (x[i] - 3.0) * (x[i] + 10.0);
   }
 
   return 0;

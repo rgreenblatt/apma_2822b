@@ -7,12 +7,12 @@
 #SBATCH -n 1
 
 #SBATCH -t 00:05:00
-#SBATCH -o hw_4.out
+#SBATCH -o hw_04.out
 
 # Load CUDA module
-module load cuda
+module load cuda/10.0.130
 
 # Compile CUDA program and run
 ./clean.sh
 ./build.sh
-./bin/app
+nvprof -o app.nvpf ./bin/app

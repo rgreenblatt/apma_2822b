@@ -29,7 +29,7 @@ __global__ void SpMv_gpu_thread_CRS(int Nrow, double *AA, int *IA, int *JA,
 }
 
 void CRSMethodGPU::run() {
-  int num_threads = 16;
+  int num_threads = 64;
   SpMv_gpu_thread_CRS<<<(Nrow + num_threads - 1) / num_threads, num_threads>>>(
       Nrow, AA, IA, JA, x, y);
   cuda_error_chk(cudaPeekAtLastError());
@@ -115,7 +115,7 @@ __global__ void SpMv_gpu_thread_ELLPACK(int Nrow, int maxnzr, int *row_lengths,
 }
 
 void ELLPACKMethodGPU::run() {
-  int num_threads = 16;
+  int num_threads = 64;
 
   SpMv_gpu_thread_ELLPACK<<<(Nrow + num_threads - 1) / num_threads,
                             num_threads>>>(Nrow, maxnzr, row_lengths, AS, JA, x,
@@ -125,7 +125,7 @@ void ELLPACKMethodGPU::run() {
 }
 
 void ELLPACKMethodGPUManaged::run() {
-  int num_threads = 16;
+  int num_threads = 64;
 
   SpMv_gpu_thread_ELLPACK_managed<<<(Nrow + num_threads - 1) / num_threads,
                                     num_threads>>>(Nrow, maxnzr, row_lengths,
