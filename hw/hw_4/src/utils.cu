@@ -1,5 +1,6 @@
 #include "utils.h"
 #include <assert.h>
+#include <iostream>
 
 void print_result(double *times, int iterations, const char *name) {
   printf("%s times: \nall times: ", name);
@@ -22,15 +23,29 @@ void print_result(double *times, int iterations, const char *name) {
 void time_function(int iterations, SpMvMethod &method, double *times,
                    bool is_cuda) {
   for (int i = 0; i < iterations; ++i) {
-    auto t1 = h_clock::now();
-    method.run();
+    double time;
     if (is_cuda) {
+      cudaEvent_t start, stop;
+      cudaEventCreate(&start);
+      cudaEventCreate(&stop);
+      cudaEventRecord(start);
+      method.run();
+      cudaEventRecord(stop);
+      cudaEventSynchronize(stop);
       cuda_error_chk(cudaDeviceSynchronize());
+      float milliseconds = 0;
+      cudaEventElapsedTime(&milliseconds, start, stop);
+      time = milliseconds / 1000;
+      cuda_error_chk(cudaDeviceSynchronize());
+    } else {
+
+      auto t1 = h_clock::now();
+      method.run();
+      auto t2 = h_clock::now();
+      double time =
+          std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
+              .count();
     }
-    auto t2 = h_clock::now();
-    double time =
-        std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
-            .count();
     times[i] = time;
   }
 }
