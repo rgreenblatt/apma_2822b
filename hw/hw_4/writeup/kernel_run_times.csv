@@ -1,0 +1,5 @@
+Method,"Average Kernel Time"
+"ELLPACK managed memory",1.1221ms
+"CRS",236.69us
+"ELLPACK",65.046us
+"cuSPARSE",38.012us
