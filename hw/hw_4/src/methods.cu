@@ -51,21 +51,36 @@ CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
 }
 
 void ELLPACKMethodCPU::run() {
-  const int unroll = 4;
-  for (int i = 0; i < Nrow; i+=unroll) {
-    double sum[unroll] = {0};
+  for (int i = 0; i < Nrow; i+=4) {
+    double sum_0 = 0;
+    double sum_1 = 0;
+    double sum_2 = 0;
+    double sum_3 = 0;
     for (int j = 0; j < maxnzr; j++) {
-      #pragma unroll
-      for (int k = 0; k < unroll; k++) {
-        if (i + k < Nrow) {
-          sum[k] += AS[i + k][j] * x[JA[i + k][j]];
-        }
+      if (i + 0 < Nrow) {
+        sum_0 += AS[i + 0][j] * x[JA[i + 0][j]];
+      }
+      if (i + 1 < Nrow) {
+        sum_1 += AS[i + 1][j] * x[JA[i + 1][j]];
+      }
+      if (i + 2 < Nrow) {
+        sum_2 += AS[i + 2][j] * x[JA[i + 2][j]];
+      }
+      if (i + 3 < Nrow) {
+        sum_3 += AS[i + 3][j] * x[JA[i + 3][j]];
       }
     }
-    for (int k = 0; k < unroll; k++) {
-      if (i + k < Nrow) {
-        y[i + k] = sum[k];
-      }
+    if (i + 0 < Nrow) {
+      y[i + 0] = sum_0;
+    }
+    if (i + 1 < Nrow) {
+      y[i + 1] = sum_1;
+    }
+    if (i + 2 < Nrow) {
+      y[i + 2] = sum_2;
+    }
+    if (i + 3 < Nrow) {
+      y[i + 3] = sum_3;
     }
   }
 }
