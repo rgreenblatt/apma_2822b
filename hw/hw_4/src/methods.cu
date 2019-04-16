@@ -51,12 +51,21 @@ CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
 }
 
 void ELLPACKMethodCPU::run() {
-  for (int i = 0; i < Nrow; i++) {
-    double sum = 0.0;
-    for (int j = 0; j < row_lengths[i]; j++) {
-      sum += AS[i][j] * x[JA[i][j]];
+  int unroll = 4;
+  for (int i = 0; i < Nrow; i+=unroll) {
+    double sum[unroll] = {0};
+    for (int j = 0; j < maxnzr; j++) {
+      for (int k = 0; k < unroll; k++) {
+        if (i + k < Nrow) {
+          sum[k] += AS[i + k][j] * x[JA[i + k][j]];
+        }
+      }
     }
-    y[i] = sum;
+    for (int k = 0; k < unroll; k++) {
+      if (i + k < Nrow) {
+        y[i + k] = sum[k];
+      }
+    }
   }
 }
 
