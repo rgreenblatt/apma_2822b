@@ -16,6 +16,7 @@ static __inline__ __device__ double get_vec_value(double *x, int i) {
 }
 
 void CRSMethodCPU::run() {
+  #pragma omp parallel for
   for (int i = 0; i < Nrow; i++) {
     const int J1 = IA[i];
     const int J2 = IA[i + 1];
