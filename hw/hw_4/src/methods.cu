@@ -1,5 +1,6 @@
 #include "methods.h"
 #include "utils.h"
+#include <algorithm>
 
 void CRSMethodCPU::run() {
 
@@ -51,37 +52,30 @@ CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
 }
 
 void ELLPACKMethodCPU::run() {
-  for (int i = 0; i < Nrow; i+=4) {
-    double sum_0 = 0;
-    double sum_1 = 0;
-    double sum_2 = 0;
-    double sum_3 = 0;
-    for (int j = 0; j < maxnzr; j++) {
-      if (i + 0 < Nrow) {
-        sum_0 += AS[i + 0][j] * x[JA[i + 0][j]];
-      }
-      if (i + 1 < Nrow) {
-        sum_1 += AS[i + 1][j] * x[JA[i + 1][j]];
-      }
-      if (i + 2 < Nrow) {
-        sum_2 += AS[i + 2][j] * x[JA[i + 2][j]];
-      }
-      if (i + 3 < Nrow) {
-        sum_3 += AS[i + 3][j] * x[JA[i + 3][j]];
+  const int unroll = 4;
+  int i;
+  for (i = 0; i < Nrow - unroll + 1; i+=unroll) {
+    double sum[unroll] = {0};
+    int unroll_maxnzr = std::max(row_lengths[i + 0],
+        std::max(row_lengths[i + 1], std::max(row_lengths[i + 2], 
+            row_lengths[i + 3])));
+    for (int j = 0; j < unroll_maxnzr; j++) {
+      #pragma unroll
+      for (int k = 0; k < unroll; k++) {
+        sum[k] += AS[i + k][j] * x[JA[i + k][j]];
       }
     }
-    if (i + 0 < Nrow) {
-      y[i + 0] = sum_0;
+    #pragma unroll
+    for (int k = 0; k < unroll; k++) {
+      y[i + k] = sum[k];
     }
-    if (i + 1 < Nrow) {
-      y[i + 1] = sum_1;
+  }
+  for (;i < Nrow; i++) {
+    double sum = 0;
+    for (int j = 0; j < row_lengths[i]; j++) {
+      sum += AS[i][j] * x[JA[i][j]];
     }
-    if (i + 2 < Nrow) {
-      y[i + 2] = sum_2;
-    }
-    if (i + 3 < Nrow) {
-      y[i + 3] = sum_3;
-    }
+    y[i] = sum;
   }
 }
 

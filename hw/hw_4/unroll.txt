@@ -1,0 +1,52 @@
+nnz=1189787 Nrow=21713 Ncol=21713 nnz per row = 54.7961
+done reading data
+average nzr count is: 54.796067, max nzr count is: 87
+======= Timings CRS =======
+cpu times: 
+all times: 1.621590e-03,1.665460e-03,1.301489e-03,1.314561e-03,1.328420e-03,1.296844e-03,1.306466e-03,1.365000e-03,1.280812e-03,1.266317e-03
+average not including first two runs: 1.307489e-03
+
+gpu times: 
+all times: 9.888640e-04,9.705920e-04,9.723200e-04,9.559360e-04,9.196800e-04,9.558720e-04,9.572800e-04,9.697600e-04,9.387840e-04,9.277760e-04
+average not including first two runs: 9.496760e-04
+
+cpu managed before tranfer to the gpu times: 
+all times: 5.119026e-03,1.311080e-03,1.366648e-03,1.331108e-03,1.284038e-03,1.381342e-03,1.285257e-03,1.286410e-03,1.332255e-03,1.249042e-03
+average not including first two runs: 1.314513e-03
+
+gpu managed times: 
+all times: 1.345440e-03,9.714880e-04,9.640000e-04,9.586880e-04,9.602240e-04,9.634240e-04,9.591680e-04,9.535360e-04,9.821120e-04,9.792320e-04
+average not including first two runs: 9.650480e-04
+
+cpu managed after tranfer to the gpu times: 
+all times: 5.119026e-03,1.311080e-03,1.366648e-03,1.331108e-03,1.284038e-03,1.381342e-03,1.285257e-03,1.286410e-03,1.332255e-03,1.249042e-03
+average not including first two runs: 1.314513e-03
+
+cuda sparse library times: 
+all times: 7.883520e-04,3.769280e-04,3.703360e-04,3.804800e-04,3.343360e-04,3.531840e-04,3.267840e-04,3.261440e-04,3.355520e-04,3.399040e-04
+average not including first two runs: 3.458400e-04
+
+
+
+======= Timings ELLPACK =======
+cpu times: 
+all times: 3.453665e-03,2.653786e-03,2.620721e-03,2.623038e-03,2.576767e-03,2.477187e-03,2.530048e-03,2.509107e-03,2.676830e-03,3.337305e-03
+average not including first two runs: 2.668875e-03
+
+gpu times: 
+all times: 1.060928e-03,1.026400e-03,1.028224e-03,1.021248e-03,1.022880e-03,1.015488e-03,1.063744e-03,1.041984e-03,1.055072e-03,1.045472e-03
+average not including first two runs: 1.036764e-03
+
+cpu managed before tranfer to the gpu times: 
+all times: 7.568138e-03,2.777897e-03,3.438608e-03,2.685422e-03,2.654162e-03,2.605228e-03,2.621444e-03,2.642510e-03,2.558896e-03,2.794371e-03
+average not including first two runs: 2.750080e-03
+
+gpu managed times: 
+all times: 1.524576e-03,1.058592e-03,1.070144e-03,1.028128e-03,1.034592e-03,1.036864e-03,1.022400e-03,1.012032e-03,1.026688e-03,1.026080e-03
+average not including first two runs: 1.032116e-03
+
+cpu managed after tranfer to the gpu times: 
+all times: 7.568138e-03,2.777897e-03,3.438608e-03,2.685422e-03,2.654162e-03,2.605228e-03,2.621444e-03,2.642510e-03,2.558896e-03,2.794371e-03
+average not including first two runs: 2.750080e-03
+
+
