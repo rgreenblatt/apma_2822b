@@ -280,7 +280,7 @@ int main() {
 
     ELLPACKMethodCPU cpu(Nrow, maxnzr, row_lengths, AS, JA_E, v, rhs);
     ELLPACKMethodGPU gpu(Nrow, maxnzr, row_lengths_copy_gpu,
-                                        AS_copy_gpu, JA_E_copy_gpu, v_copy_gpu,
+                                        AS_copy_gpu, JA_E_copy_gpu, texObject,
                                         rhs_copy_gpu);
 
     time_function(iterations, cpu, cpu_times, false);
@@ -296,7 +296,7 @@ int main() {
     ELLPACKMethodCPU cpu_managed(Nrow, maxnzr, row_lengths_managed, AS_managed,
                                  JA_E_managed, v_managed, rhs_managed);
     ELLPACKMethodGPU gpu_managed(Nrow, maxnzr, row_lengths_managed,
-                                        AS_managed, JA_E_managed, v_managed,
+                                        AS_managed, JA_E_managed, texObject,
                                         rhs_managed);
 
     time_function(iterations, cpu_managed, cpu_managed_times_before_gpu, false);

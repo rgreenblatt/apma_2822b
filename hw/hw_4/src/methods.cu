@@ -85,17 +85,19 @@ static __inline__ __device__ double fetch_double(uint2 p) {
 }
 
 __device__ double SpMv_gpu_thread_ELLPACK_row(int row_length, double **AS,
-                                              int **JA, double *x, int row) {
+                                              int **JA, cudaTextureObject_t x,
+                                              int row) {
   double sum = 0;
   for (int j = 0; j < row_length; j++) {
-    sum += AS[j][row] * x[JA[j][row]];
+    sum += AS[j][row] * fetch_double(tex1Dfetch<uint2>(x, JA[j][row]));
+
   }
   return sum;
 }
 
 __global__ void SpMv_gpu_thread_ELLPACK(int Nrow, int maxnzr, int *row_lengths,
-                                        double **AS, int **JA, double *x,
-                                        double *y) {
+                                        double **AS, int **JA,
+                                        cudaTextureObject_t x, double *y) {
   // compute y = A*x
   // A is sparse operator stored in a ELLPACK format
 

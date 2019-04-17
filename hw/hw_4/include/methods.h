@@ -54,38 +54,34 @@ protected:
   int maxnzr;
   int *row_lengths;
   double *y;
-
-public:
-  ELLPACKMethod(int Nrow, int maxnzr, int *row_lengths, double *y)
-      : Nrow(Nrow), maxnzr(maxnzr), row_lengths(row_lengths), y(y) {}
-};
-
-class ELLPACKMethod2DArray : public ELLPACKMethod {
-protected:
   double **AS;
   int **JA;
-  double *x;
 
 public:
-  ELLPACKMethod2DArray(int Nrow, int maxnzr, int *row_lengths, double **AS,
-                       int **JA, double *x, double *y)
-      : ELLPACKMethod(Nrow, maxnzr, row_lengths, y), AS(AS), JA(JA), x(x) {}
+  ELLPACKMethod(int Nrow, int maxnzr, int *row_lengths, double **AS,
+                int **JA, double *y)
+      : Nrow(Nrow), maxnzr(maxnzr), row_lengths(row_lengths), AS(AS), JA(JA),
+        y(y) {}
 };
 
-class ELLPACKMethodCPU : public ELLPACKMethod2DArray {
+class ELLPACKMethodCPU : public ELLPACKMethod {
+protected:
+  double *x;
 public:
   void run();
   ELLPACKMethodCPU(int Nrow, int maxnzr, int *row_lengths, double **AS,
                    int **JA, double *x, double *y)
-      : ELLPACKMethod2DArray(Nrow, maxnzr, row_lengths, AS, JA, x, y) {}
+      : ELLPACKMethod(Nrow, maxnzr, row_lengths, AS, JA, y), x(x) {}
 };
 
-class ELLPACKMethodGPU : public ELLPACKMethod2DArray {
+class ELLPACKMethodGPU : public ELLPACKMethod {
+protected:
+  cudaTextureObject_t x;
 public:
   void run();
   ELLPACKMethodGPU(int Nrow, int maxnzr, int *row_lengths, double **AS,
-                          int **JA, double *x, double *y)
-      : ELLPACKMethod2DArray(Nrow, maxnzr, row_lengths, AS, JA, x, y) {}
+                          int **JA,  cudaTextureObject_t x, double *y)
+      : ELLPACKMethod(Nrow, maxnzr, row_lengths, AS, JA, y), x(x) {}
 };
 
 /* class ELLPACKMethodGPU : public ELLPACKMethod { */
