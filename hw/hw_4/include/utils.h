@@ -56,18 +56,19 @@ template <class T>
 void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
   switch (memory_type) {
   case MemoryType::Host:
-    A = new T *[n];
+    A = new T *[m];
     A[0] = new T[n * m];
     break;
   case MemoryType::Device:
-    fprintf(stderr, "Use allocate_matrix_device for device memory\n");
-    exit(1);
+    cuda_error_chk(cudaMallocManaged(&A, m * sizeof(T *)));
+    cuda_error_chk(cudaMalloc(&(A[0]), n * m * sizeof(T)));
+    break;
   case MemoryType::Unified:
-    cuda_error_chk(cudaMallocManaged(&A, n * sizeof(T *)));
+    cuda_error_chk(cudaMallocManaged(&A, m * sizeof(T *)));
     cuda_error_chk(cudaMallocManaged(&A[0], n * m * sizeof(T)));
     break;
   }
-  for (int i = 0; i < n; ++i) {
-    A[i] = A[0] + i * m;
+  for (int i = 0; i < m; ++i) {
+    A[i] = A[0] + i * n;
   }
 }

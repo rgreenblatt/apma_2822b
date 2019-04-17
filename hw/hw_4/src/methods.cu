@@ -3,7 +3,6 @@
 #include <algorithm>
 
 void CRSMethodCPU::run() {
-
   for (int i = 0; i < Nrow; i++) {
     const int J1 = IA[i];
     const int J2 = IA[i + 1];
@@ -52,31 +51,30 @@ CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
 }
 
 void ELLPACKMethodCPU::run() {
-  const int unroll = 8;
-  int i;
-  for (i = 0; i < Nrow - unroll + 1; i+=unroll) {
-    double sum[unroll] = {0};
-    
+  const int unroll_num = 4;
+  #pragma omp parallel for
+  for (int i = 0; i <  (Nrow / unroll_num) * unroll_num ; i += unroll_num) {
+    double sum[unroll_num] = {0};
 
     int unroll_maxnzr = row_lengths[i];
-    for (int k = 1; k < unroll; ++k) {
+    for (int k = 1; k < unroll_num; ++k) {
       unroll_maxnzr = std::max(unroll_maxnzr, row_lengths[i + k]);
     }
     for (int j = 0; j < unroll_maxnzr; j++) {
-      #pragma unroll
-      for (int k = 0; k < unroll; k++) {
-        sum[k] += AS[i + k][j] * x[JA[i + k][j]];
+    #pragma unroll unroll_num
+      for (int k = 0; k < unroll_num; k++) {
+        sum[k] += AS[j][i + k] * x[JA[j][i + k]];
       }
     }
-    #pragma unroll
-    for (int k = 0; k < unroll; k++) {
+    #pragma unroll unroll_num
+    for (int k = 0; k < unroll_num; k++) {
       y[i + k] = sum[k];
     }
   }
-  for (;i < Nrow; i++) {
+  for (int i = Nrow - Nrow % unroll_num; i < Nrow; i++) {
     double sum = 0;
     for (int j = 0; j < row_lengths[i]; j++) {
-      sum += AS[i][j] * x[JA[i][j]];
+      sum += AS[j][i] * x[JA[j][i]];
     }
     y[i] = sum;
   }
@@ -86,52 +84,26 @@ static __inline__ __device__ double fetch_double(uint2 p) {
   return __hiloint2double(p.y, p.x);
 }
 
-__device__ double SpMv_gpu_thread_ELLPACK_row(int row_length, double *AS,
-                                              int *JA, cudaTextureObject_t x) {
+__device__ double SpMv_gpu_thread_ELLPACK_row(int row_length, double **AS,
+                                              int **JA, double *x, int row) {
   double sum = 0;
   for (int j = 0; j < row_length; j++) {
-    sum += AS[j] * fetch_double(tex1Dfetch<uint2>(x, JA[j]));
+    sum += AS[j][row] * x[JA[j][row]];
   }
   return sum;
-}
-
-__device__ double SpMv_gpu_thread_ELLPACK_row_managed(int row_length,
-                                                      double *AS, int *JA,
-                                                      double *x) {
-  double sum = 0;
-  for (int j = 0; j < row_length; j++) {
-    sum += AS[j] * x[JA[j]];
-  }
-  return sum;
-}
-
-__global__ void SpMv_gpu_thread_ELLPACK_managed(int Nrow, int maxnzr,
-                                                int *row_lengths, double **AS,
-                                                int **JA, double *x,
-                                                double *y) {
-  // compute y = A*x
-  // A is sparse operator stored in a ELLPACK format
-
-  int row = blockIdx.x * blockDim.x + threadIdx.x;
-
-  if (row < Nrow) {
-    y[row] = SpMv_gpu_thread_ELLPACK_row_managed(row_lengths[row], AS[row],
-                                                 JA[row], x);
-  }
 }
 
 __global__ void SpMv_gpu_thread_ELLPACK(int Nrow, int maxnzr, int *row_lengths,
-                                        double *AS, int *JA,
-                                        cudaTextureObject_t x, double *y,
-                                        size_t pitch_AS, size_t pitch_JA) {
+                                        double **AS, int **JA, double *x,
+                                        double *y) {
   // compute y = A*x
   // A is sparse operator stored in a ELLPACK format
 
   int row = blockIdx.x * blockDim.x + threadIdx.x;
+
   if (row < Nrow) {
-    double *row_AS = (double *)((char *)AS + row * pitch_AS);
-    int *row_JA = (int *)((char *)JA + row * pitch_JA);
-    y[row] = SpMv_gpu_thread_ELLPACK_row(row_lengths[row], row_AS, row_JA, x);
+    y[row] =
+        SpMv_gpu_thread_ELLPACK_row(row_lengths[row], AS, JA, x, row);
   }
 }
 
@@ -140,15 +112,5 @@ void ELLPACKMethodGPU::run() {
 
   SpMv_gpu_thread_ELLPACK<<<(Nrow + num_threads - 1) / num_threads,
                             num_threads>>>(Nrow, maxnzr, row_lengths, AS, JA, x,
-                                           y, pitch_AS, pitch_JA);
-
-}
-
-void ELLPACKMethodGPUManaged::run() {
-  int num_threads = 64;
-
-  SpMv_gpu_thread_ELLPACK_managed<<<(Nrow + num_threads - 1) / num_threads,
-                                    num_threads>>>(Nrow, maxnzr, row_lengths,
-                                                   AS, JA, x, y);
-
+                                           y);
 }
