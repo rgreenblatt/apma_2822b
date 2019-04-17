@@ -41,10 +41,29 @@ void time_function(int iterations, SpMvMethod &method, double *times,
       auto t1 = h_clock::now();
       method.run();
       auto t2 = h_clock::now();
-      time =
-          std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
-              .count();
+      time = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1)
+                 .count();
     }
     times[i] = time;
   }
+}
+
+void allocate_tex_object(cudaTextureObject_t &tex, double *dev_ptr, int n) {
+
+  cudaTextureDesc td;
+  memset(&td, 0, sizeof(td));
+  td.normalizedCoords = 0;
+  td.addressMode[0] = cudaAddressModeClamp;
+  td.readMode = cudaReadModeElementType;
+
+  struct cudaResourceDesc res_desc;
+  memset(&res_desc, 0, sizeof(res_desc));
+  res_desc.resType = cudaResourceTypeLinear;
+  res_desc.res.linear.devPtr = dev_ptr;
+  res_desc.res.linear.sizeInBytes = n * sizeof(double);
+  res_desc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
+  res_desc.res.linear.desc.x = 32;
+  res_desc.res.linear.desc.y = 32;
+
+  cuda_error_chk(cudaCreateTextureObject(&tex, &res_desc, &td, NULL));
 }

@@ -23,7 +23,8 @@ int main() {
           (double)nnz / Nrow);
 
   double *AA, *v, *v_copy_gpu, *v_managed, *rhs, *rhs_copy_gpu,
-      *rhs_copy_cpu_mine, *rhs_copy_cpu_cuda_sparse, *rhs_managed, *true_rhs;
+      *rhs_copy_cpu_mine, *rhs_copy_cpu_mine_tex, *rhs_copy_cpu_cuda_sparse,
+      *rhs_managed, *true_rhs;
   int *IA, *JA;
 
   allocate_vector(AA, nnz, MemoryType::Host);
@@ -33,6 +34,7 @@ int main() {
   allocate_vector(rhs, Nrow, MemoryType::Host);
 
   allocate_vector(rhs_copy_cpu_mine, Nrow, MemoryType::Host);
+  allocate_vector(rhs_copy_cpu_mine_tex, Nrow, MemoryType::Host);
   allocate_vector(rhs_copy_cpu_cuda_sparse, Nrow, MemoryType::Host);
 
   allocate_vector(true_rhs, Nrow, MemoryType::Host);
@@ -114,16 +116,30 @@ int main() {
     int iterations = 10;
     double cpu_times[iterations];
     double gpu_times[iterations];
+    double gpu_tex_times[iterations];
     double cpu_managed_times_before_gpu[iterations];
     double cpu_managed_times_after_gpu[iterations];
     double gpu_managed_times[iterations];
 
+    cudaTextureObject_t v_tex;
+
+    allocate_tex_object(v_tex, v_copy_gpu, Nrow);
+
     CRSMethodCPU cpu(Nrow, AA, IA, JA, v, rhs);
-    CRSMethodGPU gpu(Nrow, AA_copy_gpu, IA_copy_gpu, JA_copy_gpu, v_copy_gpu,
-                     rhs_copy_gpu);
+    CRSMethodGPU<cudaTextureObject_t> gpu_tex(Nrow, AA_copy_gpu, IA_copy_gpu,
+                                              JA_copy_gpu, v_tex, rhs_copy_gpu);
+    CRSMethodGPU<double *> gpu(Nrow, AA_copy_gpu, IA_copy_gpu, JA_copy_gpu,
+                               v_copy_gpu, rhs_copy_gpu);
 
     time_function(iterations, cpu, cpu_times, false);
     std::memcpy(true_rhs, rhs, sizeof(double) * Nrow);
+    time_function(iterations, gpu_tex, gpu_tex_times, true);
+
+    // copy back to host
+    cuda_error_chk(cudaMemcpy(rhs_copy_cpu_mine_tex, rhs_copy_gpu,
+                              Nrow * sizeof(double), cudaMemcpyDeviceToHost));
+    cuda_error_chk(cudaDeviceSynchronize());
+
     time_function(iterations, gpu, gpu_times, true);
 
     // copy back to host
@@ -133,8 +149,8 @@ int main() {
 
     CRSMethodCPU cpu_managed(Nrow, AA_managed, IA_managed, JA_managed,
                              v_managed, rhs_managed);
-    CRSMethodGPU gpu_managed(Nrow, AA_managed, IA_managed, JA_managed,
-                             v_managed, rhs_managed);
+    CRSMethodGPU<double *> gpu_managed(Nrow, AA_managed, IA_managed, JA_managed,
+                                       v_managed, rhs_managed);
 
     time_function(iterations, cpu_managed, cpu_managed_times_before_gpu, false);
     time_function(iterations, gpu_managed, gpu_managed_times, true);
@@ -164,6 +180,7 @@ int main() {
     printf("\n======= Timings CRS =======\n");
     print_result(cpu_times, iterations, "cpu");
     print_result(gpu_times, iterations, "gpu");
+    print_result(gpu_tex_times, iterations, "gpu_tex");
     print_result(cpu_managed_times_before_gpu, iterations,
                  "cpu managed before tranfer to the gpu");
     print_result(gpu_managed_times, iterations, "gpu managed");
@@ -204,7 +221,8 @@ int main() {
     allocate_vector(row_lengths_managed, Nrow, MemoryType::Unified);
 
     /* size_t pitch_AS = allocate_matrix_device(AS_copy_gpu, Nrow, maxnzr); */
-    /* size_t pitch_JA_E = allocate_matrix_device(JA_E_copy_gpu, Nrow, maxnzr); */
+    /* size_t pitch_JA_E = allocate_matrix_device(JA_E_copy_gpu, Nrow, maxnzr);
+     */
     allocate_matrix(AS_copy_gpu, Nrow, maxnzr, MemoryType::Device);
     allocate_matrix(JA_E_copy_gpu, Nrow, maxnzr, MemoryType::Device);
     allocate_vector(row_lengths_copy_gpu, Nrow, MemoryType::Device);
@@ -226,10 +244,13 @@ int main() {
     }
 
     /* cuda_error_chk( */
-    /*     cudaMemcpy2D(AS_copy_gpu, pitch_AS, AS[0], maxnzr * sizeof(double), */
-    /*                  maxnzr * sizeof(double), Nrow, cudaMemcpyHostToDevice)); */
+    /*     cudaMemcpy2D(AS_copy_gpu, pitch_AS, AS[0], maxnzr * sizeof(double),
+     */
+    /*                  maxnzr * sizeof(double), Nrow, cudaMemcpyHostToDevice));
+     */
     /* cuda_error_chk(cudaMemcpy2D(JA_E_copy_gpu, pitch_JA_E, JA_E[0], */
-    /*                             maxnzr * sizeof(int), maxnzr * sizeof(int), */
+    /*                             maxnzr * sizeof(int), maxnzr * sizeof(int),
+     */
     /*                             Nrow, cudaMemcpyHostToDevice)); */
 
     cuda_error_chk(cudaMemcpy(AS_copy_gpu[0], AS[0],
@@ -255,11 +276,11 @@ int main() {
     int iterations = 10;
     double cpu_times[iterations];
     double gpu_times[iterations];
+    double gpu_tex_times[iterations];
     double cpu_managed_times_before_gpu[iterations];
     double cpu_managed_times_after_gpu[iterations];
     double gpu_managed_times[iterations];
 
-    /***/
     cudaTextureDesc td;
     memset(&td, 0, sizeof(td));
     td.normalizedCoords = 0;
@@ -279,14 +300,22 @@ int main() {
     cuda_error_chk(cudaCreateTextureObject(&texObject, &resDesc, &td, NULL));
 
     ELLPACKMethodCPU cpu(Nrow, maxnzr, row_lengths, AS, JA_E, v, rhs);
-    ELLPACKMethodGPU gpu(Nrow, maxnzr, row_lengths_copy_gpu,
-                                        AS_copy_gpu, JA_E_copy_gpu, texObject,
-                                        rhs_copy_gpu);
+    ELLPACKMethodGPU<cudaTextureObject_t> gpu_tex(
+        Nrow, maxnzr, row_lengths_copy_gpu, AS_copy_gpu, JA_E_copy_gpu,
+        texObject, rhs_copy_gpu);
+    ELLPACKMethodGPU<double *> gpu(Nrow, maxnzr, row_lengths_copy_gpu,
+                                   AS_copy_gpu, JA_E_copy_gpu, v_copy_gpu,
+                                   rhs_copy_gpu);
 
     time_function(iterations, cpu, cpu_times, false);
-    printf("before gpu\n");
+    time_function(iterations, gpu_tex, gpu_tex_times, true);
+
+    // copy back to host
+    cuda_error_chk(cudaMemcpy(rhs_copy_cpu_mine_tex, rhs_copy_gpu,
+                              Nrow * sizeof(double), cudaMemcpyDeviceToHost));
+    cuda_error_chk(cudaDeviceSynchronize());
+
     time_function(iterations, gpu, gpu_times, true);
-    printf("after gpu\n");
 
     // copy back to host
     cuda_error_chk(cudaMemcpy(rhs_copy_cpu_mine, rhs_copy_gpu,
@@ -295,14 +324,12 @@ int main() {
 
     ELLPACKMethodCPU cpu_managed(Nrow, maxnzr, row_lengths_managed, AS_managed,
                                  JA_E_managed, v_managed, rhs_managed);
-    ELLPACKMethodGPU gpu_managed(Nrow, maxnzr, row_lengths_managed,
-                                        AS_managed, JA_E_managed, texObject,
-                                        rhs_managed);
+    ELLPACKMethodGPU<double *> gpu_managed(Nrow, maxnzr, row_lengths_managed,
+                                           AS_managed, JA_E_managed, v_managed,
+                                           rhs_managed);
 
     time_function(iterations, cpu_managed, cpu_managed_times_before_gpu, false);
-    printf("before gpu\n");
     time_function(iterations, gpu_managed, gpu_managed_times, true);
-    printf("after gpu\n");
     time_function(iterations, cpu_managed, cpu_managed_times_after_gpu, false);
 
     // this must be last for checking that the gpu computation is correct
@@ -314,12 +341,14 @@ int main() {
       assert(std::abs(true_rhs[i] - rhs[i]) < TOL);
       assert(std::abs(true_rhs[i] - rhs_managed[i]) < TOL);
       assert(std::abs(true_rhs[i] - rhs_copy_cpu_mine[i]) < TOL);
+      assert(std::abs(true_rhs[i] - rhs_copy_cpu_mine_tex[i]) < TOL);
     }
 
     // print out results
     printf("\n======= Timings ELLPACK =======\n");
     print_result(cpu_times, iterations, "cpu");
     print_result(gpu_times, iterations, "gpu");
+    print_result(gpu_tex_times, iterations, "gpu_tex");
     print_result(cpu_managed_times_before_gpu, iterations,
                  "cpu managed before tranfer to the gpu");
     print_result(gpu_managed_times, iterations, "gpu managed");

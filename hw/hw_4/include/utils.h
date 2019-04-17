@@ -1,4 +1,5 @@
 #pragma once
+
 #include "methods.h"
 #include <chrono>
 #include <stdio.h>
@@ -72,3 +73,5 @@ void allocate_matrix(T **&A, int n, int m, MemoryType memory_type) {
     A[i] = A[0] + i * n;
   }
 }
+
+void allocate_tex_object(cudaTextureObject_t &tex, double *dev_ptr, int n);

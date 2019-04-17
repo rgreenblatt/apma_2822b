@@ -7,7 +7,7 @@ find_package(CUDA REQUIRED)
 find_package(OpenMP REQUIRED)
 
 list( APPEND CUDA_NVCC_FLAGS "-arch=sm_50;-std=c++11;-O3")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -march=native")
 # set(CUDA_NVCC_FLAGS "-std=c++11 -g")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
