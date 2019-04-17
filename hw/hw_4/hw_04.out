@@ -1,100 +1,73 @@
 ## SLURM PROLOG ###############################################################
-##    Job ID : 3680427
+##    Job ID : 3683418
 ##  Job Name : cuda.sh
 ##  Nodelist : gpu1210
 ##      CPUs : 8
 ##   Mem/CPU : 2800 MB
 ## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4
-##   Started : Wed Apr 17 13:24:19 EDT 2019
+##   Started : Wed Apr 17 18:20:15 EDT 2019
 ###############################################################################
-module: unloading 'cuda/9.1.85.1'
+module: unloading 'cuda/10.0.130'
 module: loading 'cuda/9.1.85.1'
--- The C compiler identification is GNU 4.8.5
--- The CXX compiler identification is GNU 4.8.5
--- Check for working C compiler: /usr/bin/cc
--- Check for working C compiler: /usr/bin/cc -- works
--- Detecting C compiler ABI info
--- Detecting C compiler ABI info - done
--- Check for working CXX compiler: /usr/bin/c++
--- Check for working CXX compiler: /usr/bin/c++ -- works
--- Detecting CXX compiler ABI info
--- Detecting CXX compiler ABI info - done
--- Found CUDA: /gpfs/runtime/opt/cuda/9.1.85.1/cuda (found version "9.1") 
--- Try OpenMP C flag = [-fopenmp]
--- Performing Test OpenMP_FLAG_DETECTED
--- Performing Test OpenMP_FLAG_DETECTED - Success
--- Try OpenMP CXX flag = [-fopenmp]
--- Performing Test OpenMP_FLAG_DETECTED
--- Performing Test OpenMP_FLAG_DETECTED - Success
--- Found OpenMP: -fopenmp  
--- Configuring done
--- Generating done
--- Build files have been written to: /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4/build
-[ 33%] [100%] [100%] Building NVCC (Device) object CMakeFiles/app.dir/src/./app_generated_utils.cu.o
-Building NVCC (Device) object CMakeFiles/app.dir/src/./app_generated_methods.cu.o
-Building NVCC (Device) object CMakeFiles/app.dir/src/./app_generated_spmv.cu.o
-/gpfs_home/guest287/Documents/apma_2822b/hw/hw_4/src/methods.cu(83): warning: function "fetch_double" was declared but never referenced
-
-/gpfs_home/guest287/Documents/apma_2822b/hw/hw_4/src/methods.cu(83): warning: function "fetch_double" was declared but never referenced
-
-Scanning dependencies of target app
-Linking CXX executable ../bin/app
-[100%] Built target app
-==204584== NVPROF is profiling process 204584, command: ./bin/app
-==204584== nnz=1189787 Nrow=21713 Ncol=21713 nnz per row = 54.7961
+==219174== NVPROF is profiling process 219174, command: ./bin/app
+nnz=1189787 Nrow=21713 Ncol=21713 nnz per row = 54.7961
 done reading data
 average nzr count is: 54.796067, max nzr count is: 87
 ======= Timings CRS =======
 cpu times: 
-all times: 1.276123e-03,1.194646e-03,1.136702e-03,1.129501e-03,1.161438e-03,1.187427e-03,1.160261e-03,1.111599e-03,1.120346e-03,1.096957e-03
-average not including first two runs: 1.138029e-03
+all times: 8.051030e-04,1.589010e-04,1.710980e-04,1.577340e-04,1.583960e-04,1.578740e-04,1.584550e-04,1.581700e-04,1.620370e-04,1.580260e-04
+average not including first two runs: 1.602238e-04
 
 gpu times: 
-all times: 1.360320e-04,4.928000e-05,4.822400e-05,4.710400e-05,4.796800e-05,4.700800e-05,4.691200e-05,4.681600e-05,4.707200e-05,4.707200e-05
-average not including first two runs: 4.727200e-05
+all times: 5.267200e-05,4.649600e-05,4.601600e-05,4.592000e-05,4.659200e-05,4.547200e-05,4.601600e-05,4.518400e-05,4.656000e-05,4.572800e-05
+average not including first two runs: 4.593600e-05
+
+gpu_tex times: 
+all times: 1.080320e-04,5.052800e-05,4.832000e-05,4.771200e-05,4.774400e-05,4.812800e-05,4.739200e-05,4.745600e-05,4.681600e-05,4.848000e-05
+average not including first two runs: 4.775600e-05
 
 cpu managed before tranfer to the gpu times: 
-all times: 1.424999e-03,1.421429e-03,1.332196e-03,1.159022e-03,1.134156e-03,1.126814e-03,1.164875e-03,1.167689e-03,1.176481e-03,1.174998e-03
-average not including first two runs: 1.179529e-03
+all times: 2.450910e-04,2.390360e-04,1.692370e-04,1.597320e-04,1.588600e-04,1.640390e-04,1.584320e-04,1.582280e-04,1.582490e-04,1.580570e-04
+average not including first two runs: 1.606043e-04
 
 gpu managed times: 
-all times: 4.273920e-03,4.902400e-05,4.672000e-05,4.723200e-05,4.742400e-05,4.684800e-05,4.729600e-05,4.768000e-05,4.720000e-05,4.787200e-05
-average not including first two runs: 4.728400e-05
+all times: 4.741856e-03,4.816000e-05,4.700800e-05,4.614400e-05,4.595200e-05,4.588800e-05,4.627200e-05,4.636800e-05,4.598400e-05,4.528000e-05
+average not including first two runs: 4.611200e-05
 
 cpu managed after tranfer to the gpu times: 
-all times: 1.424999e-03,1.421429e-03,1.332196e-03,1.159022e-03,1.134156e-03,1.126814e-03,1.164875e-03,1.167689e-03,1.176481e-03,1.174998e-03
-average not including first two runs: 1.179529e-03
+all times: 2.450910e-04,2.390360e-04,1.692370e-04,1.597320e-04,1.588600e-04,1.640390e-04,1.584320e-04,1.582280e-04,1.582490e-04,1.580570e-04
+average not including first two runs: 1.606043e-04
 
 cuda sparse library times: 
-all times: 1.947520e-04,4.566400e-05,4.140800e-05,4.012800e-05,4.054400e-05,3.990400e-05,3.974400e-05,4.032000e-05,4.048000e-05,4.016000e-05
-average not including first two runs: 4.033600e-05
+all times: 1.114880e-04,4.294400e-05,4.012800e-05,3.993600e-05,6.316799e-05,4.000000e-05,3.990400e-05,3.926400e-05,3.961600e-05,3.993600e-05
+average not including first two runs: 4.274400e-05
 
 
-before gpu
-after gpu
-before gpu
-after gpu
 
 ======= Timings ELLPACK =======
 cpu times: 
-all times: 1.809246e-03,3.746230e-04,2.423430e-04,2.331660e-04,2.324980e-04,2.355670e-04,2.318090e-04,2.318800e-04,2.320800e-04,2.323970e-04
-average not including first two runs: 2.339675e-04
+all times: 6.555230e-04,3.569080e-04,2.508050e-04,2.317800e-04,2.307690e-04,2.300360e-04,2.294590e-04,2.330570e-04,2.291780e-04,2.301510e-04
+average not including first two runs: 2.331544e-04
 
 gpu times: 
-all times: 3.816000e-04,5.308800e-05,4.915200e-05,4.966400e-05,4.860800e-05,4.953600e-05,4.937600e-05,4.835200e-05,4.902400e-05,5.142400e-05
-average not including first two runs: 4.939200e-05
+all times: 5.299200e-05,4.864000e-05,4.787200e-05,4.761600e-05,4.825600e-05,4.752000e-05,4.681600e-05,4.803200e-05,4.790400e-05,4.790400e-05
+average not including first two runs: 4.774000e-05
+
+gpu_tex times: 
+all times: 4.502080e-04,5.014400e-05,4.844800e-05,4.774400e-05,4.764800e-05,4.764800e-05,4.790400e-05,4.752000e-05,4.793600e-05,4.713600e-05
+average not including first two runs: 4.774800e-05
 
 cpu managed before tranfer to the gpu times: 
-all times: 9.633240e-04,7.977190e-04,3.611960e-04,2.770130e-04,2.748080e-04,2.746550e-04,2.767780e-04,2.744250e-04,2.753260e-04,2.767920e-04
-average not including first two runs: 2.863741e-04
+all times: 1.051308e-03,8.206740e-04,3.610110e-04,2.926550e-04,2.928280e-04,2.900720e-04,2.909290e-04,2.947150e-04,2.878650e-04,2.879440e-04
+average not including first two runs: 2.997524e-04
 
 gpu managed times: 
-all times: 8.503680e-03,5.776000e-05,4.873600e-05,5.027200e-05,5.200000e-05,4.963200e-05,4.966400e-05,5.062400e-05,4.841600e-05,5.014400e-05
-average not including first two runs: 4.993600e-05
+all times: 8.662112e-03,5.600000e-05,4.704000e-05,4.704000e-05,4.761600e-05,4.796800e-05,4.771200e-05,4.732800e-05,4.716800e-05,4.684800e-05
+average not including first two runs: 4.734000e-05
 
 cpu managed after tranfer to the gpu times: 
-all times: 9.633240e-04,7.977190e-04,3.611960e-04,2.770130e-04,2.748080e-04,2.746550e-04,2.767780e-04,2.744250e-04,2.753260e-04,2.767920e-04
-average not including first two runs: 2.863741e-04
+all times: 1.051308e-03,8.206740e-04,3.610110e-04,2.926550e-04,2.928280e-04,2.900720e-04,2.909290e-04,2.947150e-04,2.878650e-04,2.879440e-04
+average not including first two runs: 2.997524e-04
 
 
-Generated result file: /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4/app.nvpf
+==219174== Generated result file: /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4/app.nvpf

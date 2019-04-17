@@ -1,0 +1,73 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 3683508
+##  Job Name : cuda.sh
+##  Nodelist : gpu1210
+##      CPUs : 8
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4
+##   Started : Wed Apr 17 18:27:52 EDT 2019
+###############################################################################
+module: unloading 'cuda/10.0.130'
+module: loading 'cuda/9.1.85.1'
+==219627== NVPROF is profiling process 219627, command: ./bin/app
+nnz=1189787 Nrow=21713 Ncol=21713 nnz per row = 54.7961
+done reading data
+average nzr count is: 54.796067, max nzr count is: 87
+======= Timings CRS =======
+cpu times: 
+all times: 8.041480e-04,1.597680e-04,1.581290e-04,1.580010e-04,1.582170e-04,1.578640e-04,1.611270e-04,1.581830e-04,1.580300e-04,1.583110e-04
+average not including first two runs: 1.584828e-04
+
+gpu times: 
+all times: 5.712000e-05,5.200000e-05,5.120000e-05,4.998400e-05,5.142400e-05,5.068800e-05,5.094400e-05,5.084800e-05,5.152000e-05,5.059200e-05
+average not including first two runs: 5.090000e-05
+
+gpu_tex times: 
+all times: 1.098240e-04,5.430400e-05,5.331200e-05,5.241600e-05,5.142400e-05,5.292800e-05,5.219200e-05,5.235200e-05,5.260800e-05,5.267200e-05
+average not including first two runs: 5.248800e-05
+
+cpu managed before tranfer to the gpu times: 
+all times: 2.394530e-04,2.309050e-04,1.787310e-04,1.590280e-04,1.583710e-04,1.585730e-04,1.582510e-04,1.581780e-04,1.617730e-04,1.582480e-04
+average not including first two runs: 1.613941e-04
+
+gpu managed times: 
+all times: 4.227168e-03,5.683200e-05,5.161600e-05,5.020800e-05,5.132800e-05,5.152000e-05,5.113600e-05,5.216000e-05,5.011200e-05,4.995200e-05
+average not including first two runs: 5.100400e-05
+
+cpu managed after tranfer to the gpu times: 
+all times: 2.394530e-04,2.309050e-04,1.787310e-04,1.590280e-04,1.583710e-04,1.585730e-04,1.582510e-04,1.581780e-04,1.617730e-04,1.582480e-04
+average not including first two runs: 1.613941e-04
+
+cuda sparse library times: 
+all times: 1.044480e-04,4.208000e-05,3.987200e-05,3.955200e-05,3.929600e-05,3.862400e-05,3.846400e-05,4.000000e-05,3.932800e-05,3.916800e-05
+average not including first two runs: 3.928800e-05
+
+
+
+======= Timings ELLPACK =======
+cpu times: 
+all times: 5.964390e-04,2.955480e-04,2.242910e-04,2.199140e-04,2.152650e-04,2.145900e-04,2.151050e-04,2.192060e-04,2.148910e-04,2.144210e-04
+average not including first two runs: 2.172104e-04
+
+gpu times: 
+all times: 5.212800e-05,4.771200e-05,4.649600e-05,4.675200e-05,4.563200e-05,4.563200e-05,4.550400e-05,4.668800e-05,4.534400e-05,4.796800e-05
+average not including first two runs: 4.625200e-05
+
+gpu_tex times: 
+all times: 4.101760e-04,4.774400e-05,4.723200e-05,4.726400e-05,4.550400e-05,4.595200e-05,4.604800e-05,4.659200e-05,4.681600e-05,4.614400e-05
+average not including first two runs: 4.644400e-05
+
+cpu managed before tranfer to the gpu times: 
+all times: 9.036370e-04,6.909680e-04,2.900610e-04,2.375760e-04,2.370130e-04,2.357930e-04,2.392740e-04,2.367560e-04,2.362570e-04,2.350770e-04
+average not including first two runs: 2.434759e-04
+
+gpu managed times: 
+all times: 7.969855e-03,5.609600e-05,4.556800e-05,4.656000e-05,4.710400e-05,4.620800e-05,4.547200e-05,4.732800e-05,4.585600e-05,4.633600e-05
+average not including first two runs: 4.630400e-05
+
+cpu managed after tranfer to the gpu times: 
+all times: 9.036370e-04,6.909680e-04,2.900610e-04,2.375760e-04,2.370130e-04,2.357930e-04,2.392740e-04,2.367560e-04,2.362570e-04,2.350770e-04
+average not including first two runs: 2.434759e-04
+
+
+==219627== Generated result file: /gpfs_home/guest287/Documents/apma_2822b/hw/hw_4/app_more.nvpf

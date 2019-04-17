@@ -7,12 +7,12 @@
 #SBATCH -n 8
 
 #SBATCH -t 00:05:00
-#SBATCH -o hw_04_tex.out
+#SBATCH -o hw_04_less.out
 
 # Load CUDA module
 module load cuda/9.1.85.1
 
 # Compile CUDA program and run
-./clean.sh
-./build.sh
-nvprof -o app_tex.nvpf ./bin/app
+# ./clean.sh
+# ./build.sh
+nvprof -o app_less.nvpf ./bin/app

@@ -44,7 +44,7 @@ __global__ void SpMv_gpu_thread_CRS(int Nrow, double *AA, int *IA, int *JA, T x,
 }
 
 template <typename T> void CRSMethodGPU<T>::run() {
-  int num_threads = 64;
+  int num_threads = 32;
   SpMv_gpu_thread_CRS<<<(CRSMethod<T>::Nrow + num_threads - 1) / num_threads,
                         num_threads>>>(CRSMethod<T>::Nrow, CRSMethod<T>::AA,
                                        CRSMethod<T>::IA, CRSMethod<T>::JA,
@@ -121,7 +121,7 @@ __global__ void SpMv_gpu_thread_ELLPACK(int Nrow, int maxnzr, int *row_lengths,
 }
 
 template <typename T> void ELLPACKMethodGPU<T>::run() {
-  int num_threads = 64;
+  int num_threads = 32;
 
   SpMv_gpu_thread_ELLPACK<<<
       (ELLPACKMethod<T>::Nrow + num_threads - 1) / num_threads, num_threads>>>(
