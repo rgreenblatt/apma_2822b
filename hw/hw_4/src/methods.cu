@@ -52,13 +52,16 @@ CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
 }
 
 void ELLPACKMethodCPU::run() {
-  const int unroll = 4;
+  const int unroll = 8;
   int i;
   for (i = 0; i < Nrow - unroll + 1; i+=unroll) {
     double sum[unroll] = {0};
-    int unroll_maxnzr = std::max(row_lengths[i + 0],
-        std::max(row_lengths[i + 1], std::max(row_lengths[i + 2], 
-            row_lengths[i + 3])));
+    
+
+    int unroll_maxnzr = row_lengths[i];
+    for (int k = 1; k < unroll; ++k) {
+      unroll_maxnzr = std::max(unroll_maxnzr, row_lengths[i + k]);
+    }
     for (int j = 0; j < unroll_maxnzr; j++) {
       #pragma unroll
       for (int k = 0; k < unroll; k++) {
