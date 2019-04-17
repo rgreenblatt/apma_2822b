@@ -69,7 +69,7 @@ CudaSparse::CudaSparse(cusparseHandle_t handle, int Nrow, int Ncol, int nnz,
 
 void ELLPACKMethodCPU::run() {
   const int unroll_num = 4;
-#pragma omp parallel for
+  #pragma omp parallel for
   for (int i = 0; i < (Nrow / unroll_num) * unroll_num; i += unroll_num) {
     double sum[unroll_num] = {0};
 
@@ -78,12 +78,12 @@ void ELLPACKMethodCPU::run() {
       unroll_maxnzr = std::max(unroll_maxnzr, row_lengths[i + k]);
     }
     for (int j = 0; j < unroll_maxnzr; j++) {
-#pragma unroll unroll_num
+      #pragma unroll unroll_num
       for (int k = 0; k < unroll_num; k++) {
         sum[k] += AS[j][i + k] * x[JA[j][i + k]];
       }
     }
-#pragma unroll unroll_num
+    #pragma unroll unroll_num
     for (int k = 0; k < unroll_num; k++) {
       y[i + k] = sum[k];
     }
