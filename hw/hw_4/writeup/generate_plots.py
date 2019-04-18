@@ -1,7 +1,6 @@
-# libraries
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
 
 # font = {'family' : 'normal',
 #         'weight': 'normal',
@@ -13,8 +12,8 @@ import matplotlib
 barWidth = 0.25
 
 # set height of bar
-gpu_times = [5.627600e-05, 7.177600e-05]
-cpu_times = [1.163711e-03, 1.532791e-03]
+gpu_times = [4.646400e-05, 4.766800e-05, 3.886400e-05]
+cpu_times = [1.600510e-04, 2.352189e-04, 0.0]
 
 # Set position of bar on X axis
 r1 = np.arange(len(gpu_times))
@@ -29,8 +28,10 @@ plt.bar(r2, cpu_times, color='#557f2d', width=barWidth, edgecolor='white',
 # Add xticks on the middle of the group bars
 plt.xlabel('Method', fontweight='bold')
 plt.ylabel('Average running time (s)', fontweight='bold')
-plt.xticks([r + barWidth for r in range(len(gpu_times))], ['CRS', 'ELLPACK'])
+plt.xticks([r + barWidth for r in range(len(gpu_times))],
+           ['CRS', 'ELLPACK', 'cuSPARSE'])
 
 # Create legend & Show graphic
 plt.legend()
+plt.tight_layout()
 plt.savefig("running_times.png")
