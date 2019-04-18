@@ -68,6 +68,10 @@ int main() {
   cuda_error_chk(cudaMemcpy(rhs_copy_gpu, rhs, Nrow * sizeof(double),
                             cudaMemcpyHostToDevice));
 
+  cudaTextureObject_t v_tex;
+
+  allocate_tex_object(v_tex, v_copy_gpu, Nrow);
+
   cuda_error_chk(
       cudaMemcpy(v_managed, v, Ncol * sizeof(double), cudaMemcpyHostToHost));
   cuda_error_chk(cudaMemcpy(rhs_managed, rhs, Nrow * sizeof(double),
@@ -120,10 +124,6 @@ int main() {
     double cpu_managed_times_before_gpu[iterations];
     double cpu_managed_times_after_gpu[iterations];
     double gpu_managed_times[iterations];
-
-    cudaTextureObject_t v_tex;
-
-    allocate_tex_object(v_tex, v_copy_gpu, Nrow);
 
     CRSMethodCPU cpu(Nrow, AA, IA, JA, v, rhs);
     CRSMethodGPU<cudaTextureObject_t> gpu_tex(Nrow, AA_copy_gpu, IA_copy_gpu,
@@ -220,9 +220,6 @@ int main() {
     allocate_matrix(JA_E_managed, Nrow, maxnzr, MemoryType::Unified);
     allocate_vector(row_lengths_managed, Nrow, MemoryType::Unified);
 
-    /* size_t pitch_AS = allocate_matrix_device(AS_copy_gpu, Nrow, maxnzr); */
-    /* size_t pitch_JA_E = allocate_matrix_device(JA_E_copy_gpu, Nrow, maxnzr);
-     */
     allocate_matrix(AS_copy_gpu, Nrow, maxnzr, MemoryType::Device);
     allocate_matrix(JA_E_copy_gpu, Nrow, maxnzr, MemoryType::Device);
     allocate_vector(row_lengths_copy_gpu, Nrow, MemoryType::Device);
@@ -242,16 +239,6 @@ int main() {
         }
       }
     }
-
-    /* cuda_error_chk( */
-    /*     cudaMemcpy2D(AS_copy_gpu, pitch_AS, AS[0], maxnzr * sizeof(double),
-     */
-    /*                  maxnzr * sizeof(double), Nrow, cudaMemcpyHostToDevice));
-     */
-    /* cuda_error_chk(cudaMemcpy2D(JA_E_copy_gpu, pitch_JA_E, JA_E[0], */
-    /*                             maxnzr * sizeof(int), maxnzr * sizeof(int),
-     */
-    /*                             Nrow, cudaMemcpyHostToDevice)); */
 
     cuda_error_chk(cudaMemcpy(AS_copy_gpu[0], AS[0],
                               Nrow * maxnzr * sizeof(double),
@@ -281,28 +268,10 @@ int main() {
     double cpu_managed_times_after_gpu[iterations];
     double gpu_managed_times[iterations];
 
-    cudaTextureDesc td;
-    memset(&td, 0, sizeof(td));
-    td.normalizedCoords = 0;
-    td.addressMode[0] = cudaAddressModeClamp;
-    td.readMode = cudaReadModeElementType;
-
-    struct cudaResourceDesc resDesc;
-    memset(&resDesc, 0, sizeof(resDesc));
-    resDesc.resType = cudaResourceTypeLinear;
-    resDesc.res.linear.devPtr = v_copy_gpu;
-    resDesc.res.linear.sizeInBytes = Nrow * sizeof(double);
-    resDesc.res.linear.desc.f = cudaChannelFormatKindUnsigned;
-    resDesc.res.linear.desc.x = 32;
-    resDesc.res.linear.desc.y = 32;
-
-    cudaTextureObject_t texObject;
-    cuda_error_chk(cudaCreateTextureObject(&texObject, &resDesc, &td, NULL));
-
     ELLPACKMethodCPU cpu(Nrow, maxnzr, row_lengths, AS, JA_E, v, rhs);
     ELLPACKMethodGPU<cudaTextureObject_t> gpu_tex(
         Nrow, maxnzr, row_lengths_copy_gpu, AS_copy_gpu, JA_E_copy_gpu,
-        texObject, rhs_copy_gpu);
+        v_tex, rhs_copy_gpu);
     ELLPACKMethodGPU<double *> gpu(Nrow, maxnzr, row_lengths_copy_gpu,
                                    AS_copy_gpu, JA_E_copy_gpu, v_copy_gpu,
                                    rhs_copy_gpu);
