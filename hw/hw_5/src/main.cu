@@ -7,6 +7,17 @@
 #include <utility>
 #include <vector> // std::vector
 
+#define cuda_error_chk(ans)                                                    \
+  { cuda_assert((ans), __FILE__, __LINE__); }
+inline void cuda_assert(cudaError_t code, const char *file, int line) {
+  if (code != cudaSuccess) {
+    fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file,
+            line);
+    exit(code);
+  }
+}
+
+
 #define USE_NVTX
 
 #ifdef USE_NVTX
@@ -15,19 +26,24 @@
 
 #define FULL_MASK 0xffffffff
 
-//primarily for camel case avoidance
-enum : uint32_t { warp_size = warpSize, log_warp_size = 5 };
+// primarily for camel case avoidance
+enum : uint32_t { warp_size = 32, log_warp_size = 5 };
 
-template <typename T> __inline__ __device__ T warp_prefix_sum(T val) {
+template <typename T>
+__forceinline__ __device__ T warp_prefix_sum(T val, T *sum) {
   T orig_val = val;
 
-  for (uint8_t i = 0;  i < warp_size; ++i) {
+  for (uint8_t i = 0; i < warp_size; ++i) {
     val += __shfl_up_sync(FULL_MASK, val, 1);
+  }
+
+  if (sum != NULL) {
+    *sum = val;
   }
   return val - orig_val;
 }
 
-template <typename T> __inline__ __device__ T warp_reduce_sum(T val) {
+template <typename T> __forceinline__ __device__ T warp_reduce_sum(T val) {
   for (uint32_t offset = warp_size / 2; offset > 0; offset /= 2) {
     val += __shfl_down_sync(FULL_MASK, val, offset);
   }
@@ -37,26 +53,28 @@ template <typename T> __inline__ __device__ T warp_reduce_sum(T val) {
 #define BITS_PER_PASS 2
 #define BINS_PER_PASS 4
 
-__inline__ __host__ __device__ void count_keys(uint32_t *data, uint8_t *counts,
-                                               uint32_t start, uint32_t end,
-                                               uint8_t shift) {
-  for (size_t i = start; i < end; i+=warp_size) {
-    // hopefully compiler optimization will save me
-    counts[(data[i] >> shift) & (BINS_PER_PASS - 1)]++;
-  }
-}
-
 __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
-                      uint32_t n, uint32_t m, uint32_t total_count,
+    uint32_t n, uint32_t m, u_int32_t nth, uint32_t total_count,
                       uint32_t threads_per_n, size_t num_warps_per_n) {
 
-  extern __shared__ uint32_t counts[];
+  extern __shared__ uint32_t shared_common[];
 
-  uint32_t *bin_sums = counts;
-  uint32_t *working_data =
-      &counts[n * num_warps_per_n * BINS_PER_PASS];
+  uint32_t *bin_sums = shared_common;
+
+  uint32_t *working_data = &shared_common[n * num_warps_per_n * BINS_PER_PASS];
+  uint32_t *sorted_data =
+      &shared_common[n * m + n * num_warps_per_n * BINS_PER_PASS];
+
   uint32_t *indexes =
-      &counts[n * num_warps_per_n * BINS_PER_PASS + n * m];
+      &shared_common[n * num_warps_per_n * BINS_PER_PASS + n * m * 2];
+  uint32_t *sorted_indexes =
+      &shared_common[n * num_warps_per_n * BINS_PER_PASS + n * m * 2];
+
+  uint32_t *warp_maxes =
+      &shared_common[n * num_warps_per_n * BINS_PER_PASS + n * m * 3];
+  uint32_t *n_maxes =
+      &shared_common[n * num_warps_per_n * BINS_PER_PASS + n * m * 3 +
+                     BINS_PER_PASS * num_warps_per_n * n];
 
   size_t index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -70,13 +88,15 @@ __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
   uint32_t m_end = umin((m_index + warp_size) * m_interval, m);
 
   for (size_t i = n_start; i < n_end; ++i) {
-    for (uint32_t j = m_start; j < m_end; j+=warp_size) {
+    for (uint32_t j = m_start; j < m_end; j += warp_size) {
       indexes[i * m + j] = j;
-      working_data[i * m + j] = data[n][j];
+      working_data[i * m + j] = data[i][j];
     }
   }
 
   auto warp_id = threadIdx.x >> log_warp_size;
+
+  bool is_last_thread_in_warp = (m_index + 1) % warp_size == 0 || m_index == m;
 
   for (uint8_t shift = 0; shift < sizeof(uint32_t); shift += BITS_PER_PASS) {
     for (size_t i = n_start; i < n_end; ++i) {
@@ -88,33 +108,72 @@ __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
   for (uint8_t bin = 0; bin < BINS_PER_PASS; bin++) {                          \
     expr                                                                       \
   }
+
+#define WARP_LOOP(expr)                                                        \
+  for (size_t j = m_start; j < m_end; j += warp_size) {                        \
+    expr                                                                       \
+  }
+
       uint8_t counts[BINS_PER_PASS] = {};
-      count_keys(&working_data[i], counts, m_start, m_end, shift);
 
-      BIN_LOOP(counts[bin] = warp_reduce_sum(counts[bin]);)
+      WARP_LOOP(
+          counts[(working_data[j * m + j] >> shift) & (BINS_PER_PASS - 1)]++;)
 
-      if (m_index % warp_size == 0) {
-        size_t iter_index = (m_index + warp_size - 1) / warp_size;
+      for (uint8_t bin = 0; bin < BINS_PER_PASS; bin++) {
+        counts[bin] = warp_prefix_sum(
+            counts[bin],
+            (is_last_thread_in_warp
+                 ? (uint8_t *)&warp_maxes[warp_id * BINS_PER_PASS + bin]
+                 : (uint8_t *)0));
+      }
 
-        BIN_LOOP(INDEX_BIN_ARRAY(bin_sums, iter_index) = counts[bin];)
+      if (is_last_thread_in_warp) {
+        BIN_LOOP(INDEX_BIN_ARRAY(bin_sums, warp_id) =
+                     warp_maxes[warp_id * BINS_PER_PASS + bin];)
       }
 
       __syncthreads();
 
-      //assumption is that num_warps_per_n is less than the warp_size
+      // assumption is that num_warps_per_n is less than the warp_size
       if (m_index < num_warps_per_n) {
-        BIN_LOOP(INDEX_BIN_ARRAY(bin_sums, m_index) =
-                     warp_prefix_sum(INDEX_BIN_ARRAY(bin_sums, m_index));)
+        for (uint8_t bin = 0; bin < BINS_PER_PASS; bin++) {
+          INDEX_BIN_ARRAY(bin_sums, m_index) = warp_prefix_sum(
+              INDEX_BIN_ARRAY(bin_sums, m_index),
+              m_index == num_warps_per_n - 1 ? &n_maxes[n * BINS_PER_PASS + bin]
+              : (uint32_t *)0);
+        }
       }
 
       __syncthreads();
 
-      
-      while (num_to_reduce > 1) {
-        /* uint32_t bit0 = count.bit0; */
-      }
+      WARP_LOOP(
+          uint8_t bit =
+              (working_data[i * m + j] >> shift) & (BINS_PER_PASS - 1);
+          uint32_t idx = counts[bit] + bin_sums[warp_id * BINS_PER_PASS + bit] +
+                         n_maxes[bit];
+          sorted_data[idx] = working_data[j]; sorted_indexes[idx] = indexes[j];)
+
+        
+        uint32_t * temp_ptr = working_data;
+        working_data = sorted_data;
+        sorted_data = temp_ptr;
+        
+        temp_ptr =  indexes;
+        indexes = sorted_indexes;
+        sorted_indexes = temp_ptr;
+
 #undef INDEX_BIN_ARRAY
 #undef BIN_LOOP
+    }
+  }
+  for (size_t i = n_start; i < n_end; ++i) {
+    if (m_start == 0) {
+      max_locs[n_start][0] = indexes[i * m];
+      max_vals[n_start][0] = sorted_data[i * m];
+    }
+    if (nth >= m_start && nth < m_end) {
+      max_locs[n_start][1] = indexes[nth + i * m];
+      max_vals[n_start][1] = sorted_data[nth + i * m];
     }
   }
 }
@@ -146,18 +205,18 @@ int main() {
   /*   nvtxRangeId_t nvtx_1 = nvtxRangeStartA("A"); */
   /* #endif */
 
-  cudaMallocManaged(&data, m * sizeof(uint32_t *));
-  cudaMallocManaged(&max_vals, m * sizeof(uint32_t *));
-  cudaMallocManaged(&max_locs, m * sizeof(size_t *));
+  cudaMallocManaged(&data, n * sizeof(uint32_t *));
+  cudaMallocManaged(&max_vals, n * sizeof(uint32_t *));
+  cudaMallocManaged(&max_locs, n * sizeof(size_t *));
 
   cudaMallocManaged(&data[0], n * m * sizeof(uint32_t));
   cudaMallocManaged(&max_vals[0], n * m * sizeof(uint32_t));
   cudaMallocManaged(&max_locs[0], n * m * sizeof(size_t));
 
-  for (size_t i = 1; i < m; ++i) {
-    data[i] = data[0] + i * n;
-    max_vals[i] = max_vals[0] + i * n;
-    max_locs[i] = max_locs[0] + i * n;
+  for (size_t i = 1; i < n; ++i) {
+    data[i] = data[0] + i * m;
+    max_vals[i] = max_vals[0] + i * m;
+    max_locs[i] = max_locs[0] + i * m;
   }
 
   /* #ifdef USE_NVTX */
@@ -169,6 +228,14 @@ int main() {
     std::random_shuffle(range_to_m.begin(), range_to_m.end());
     for (unsigned j = 0; j < m; ++j) {
       data[i][j] = range_to_m[j];
+    }
+  }
+
+  //set to obvious failure
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t j = 0; j < 2; ++j) {
+      max_locs[i][j] = static_cast<uint32_t>(-1);
+      max_vals[i][j] = static_cast<uint32_t>(-1);
     }
   }
 
@@ -195,7 +262,24 @@ int main() {
   // row of data, i.e  MAX(data[i]) for each i also find the locaiton of each
   // maximum
 
-  maxes<<<1, 1>>>(data, max_vals, max_locs, n, m);
+  //set to obvious failure
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t j = 0; j < 2; ++j) {
+      max_locs[i][j] = static_cast<uint32_t>(-1);
+      max_vals[i][j] = static_cast<uint32_t>(-1);
+    }
+  }
+
+
+  uint num_threads_per_block = 64;
+
+  // TODO: args
+  maxes<<<n, num_threads_per_block>>>(
+      data, max_vals, max_locs, n, m, nth_max, n * num_threads_per_block,
+      num_threads_per_block,
+      (num_threads_per_block + warp_size - 1) / warp_size);
+
+  cuda_error_chk(cudaDeviceSynchronize());
 
   std::cout << "==== gpu ====\n";
   for (size_t i = 0; i < n; i++) {
