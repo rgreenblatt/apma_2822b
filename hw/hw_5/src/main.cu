@@ -1,10 +1,11 @@
-#include <stdio.h>
-#include <algorithm>    // std::random_shuffle
-#include <vector>       // std::vector
-#include <omp.h>
+#include <algorithm> // std::random_shuffle
 #include <cfloat>
+#include <cstdint>
 #include <iostream>
+#include <omp.h>
+#include <stdio.h>
 #include <utility>
+#include <vector> // std::vector
 
 #define USE_NVTX
 
@@ -12,59 +13,112 @@
 #include "nvToolsExt.h"
 #endif
 
-struct ValLocPair {
-  int val;
-  int loc;
-};
+#define FULL_MASK 0xffffffff
 
-__host__ __device__ void get_nth(int N2, int *DATA, int nth_max, int offset,
-                                 int *out) {
-  if (nth_max == 0) {
-    out[0] = DATA[0];
-    out[1] = offset;
-    return;
-  } else if (nth_max == N2 - 1) {
-    out[0] = DATA[N2 - 1];
-    out[1] = N2 - 1 + offset;
-    return;
+//primarily for camel case avoidance
+enum : uint32_t { warp_size = warpSize, log_warp_size = 5 };
+
+template <typename T> __inline__ __device__ T warp_prefix_sum(T val) {
+  T orig_val = val;
+
+  for (uint8_t i = 0;  i < warp_size; ++i) {
+    val += __shfl_up_sync(FULL_MASK, val, 1);
   }
-  int * lower_equal = new int[N2];
-  int * greater = new int[N2];
-  int size_lower_equal = 1;
-  int size_greater = 0;
-  greater[size_greater - 1] = DATA[0];
+  return val - orig_val;
+}
 
-  for (int j = 1; j < N2; j++) {
-    if (DATA[j] < DATA[0]) {
-      size_lower_equal++;
-      lower_equal[size_lower_equal - 1] = DATA[j];
-    } else {
-      size_greater++;
-      greater[size_greater - 1] = DATA[j];
+template <typename T> __inline__ __device__ T warp_reduce_sum(T val) {
+  for (uint32_t offset = warp_size / 2; offset > 0; offset /= 2) {
+    val += __shfl_down_sync(FULL_MASK, val, offset);
+  }
+  return val;
+}
+
+#define BITS_PER_PASS 2
+#define BINS_PER_PASS 4
+
+__inline__ __host__ __device__ void count_keys(uint32_t *data, uint8_t *counts,
+                                               uint32_t start, uint32_t end,
+                                               uint8_t shift) {
+  for (size_t i = start; i < end; i+=warp_size) {
+    // hopefully compiler optimization will save me
+    counts[(data[i] >> shift) & (BINS_PER_PASS - 1)]++;
+  }
+}
+
+__global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
+                      uint32_t n, uint32_t m, uint32_t total_count,
+                      uint32_t threads_per_n, size_t num_warps_per_n) {
+
+  extern __shared__ uint32_t counts[];
+
+  uint32_t *bin_sums = counts;
+  uint32_t *working_data =
+      &counts[n * num_warps_per_n * BINS_PER_PASS];
+  uint32_t *indexes =
+      &counts[n * num_warps_per_n * BINS_PER_PASS + n * m];
+
+  size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+
+  size_t n_start = (index * n) / total_count;
+  size_t n_end = ((index + 1) * n) / total_count;
+
+  uint32_t m_interval = (m + threads_per_n - 1) / threads_per_n;
+  uint32_t m_index = static_cast<uint32_t>(index - (n_start * total_count) / n);
+
+  uint32_t m_start = m_index * m_interval;
+  uint32_t m_end = umin((m_index + warp_size) * m_interval, m);
+
+  for (size_t i = n_start; i < n_end; ++i) {
+    for (uint32_t j = m_start; j < m_end; j+=warp_size) {
+      indexes[i * m + j] = j;
+      working_data[i * m + j] = data[n][j];
     }
   }
-  if (size_lower_equal >= nth_max) {
-    get_nth(size_lower_equal, lower_equal, nth_max, offset, out);
-  } else {
-    get_nth(size_greater, greater, nth_max, size_lower_equal, out);
+
+  auto warp_id = threadIdx.x >> log_warp_size;
+
+  for (uint8_t shift = 0; shift < sizeof(uint32_t); shift += BITS_PER_PASS) {
+    for (size_t i = n_start; i < n_end; ++i) {
+
+#define INDEX_BIN_ARRAY(arr, iter_index)                                       \
+  (arr[i * threads_per_n * BINS_PER_PASS + iter_index * BINS_PER_PASS + bin])
+
+#define BIN_LOOP(expr)                                                         \
+  for (uint8_t bin = 0; bin < BINS_PER_PASS; bin++) {                          \
+    expr                                                                       \
   }
-}
+      uint8_t counts[BINS_PER_PASS] = {};
+      count_keys(&working_data[i], counts, m_start, m_end, shift);
 
-__global__ void find_MAX1(int N1, int N2, int **DATA, int *MAXES) {
-  int gtid = threadIdx.x + blockIdx.x * blockDim.x;
-  if (gtid == 0)
-    printf("in find_MAX1\n");
-}
+      BIN_LOOP(counts[bin] = warp_reduce_sum(counts[bin]);)
 
-__global__
-void find_MAX2(int N1, int N2, int **DATA, int nmax,  int *MAXES){
+      if (m_index % warp_size == 0) {
+        size_t iter_index = (m_index + warp_size - 1) / warp_size;
 
-   int gtid = threadIdx.x + blockIdx.x*blockDim.x;
-   if (gtid==0) printf( "in find_MAX2\n" );
+        BIN_LOOP(INDEX_BIN_ARRAY(bin_sums, iter_index) = counts[bin];)
+      }
+
+      __syncthreads();
+
+      //assumption is that num_warps_per_n is less than the warp_size
+      if (m_index < num_warps_per_n) {
+        BIN_LOOP(INDEX_BIN_ARRAY(bin_sums, m_index) =
+                     warp_prefix_sum(INDEX_BIN_ARRAY(bin_sums, m_index));)
+      }
+
+      __syncthreads();
+
+      while (num_to_reduce > 1) {
+        /* uint32_t bit0 = count.bit0; */
+      }
+#undef INDEX_BIN_ARRAY
+#undef BIN_LOOP
+    }
+  }
 }
 
 int main() {
-
   int ngpus = 0;
   cudaGetDeviceCount(&ngpus);
   printf("ngpus = %d\n", ngpus);
@@ -73,103 +127,88 @@ int main() {
   else
     return 0;
 
-  int N1 = 10;
-  int N2 = 100;
+  uint32_t m = 10;
+  uint32_t n = 100;
 
-  std::vector<int> myvector;
-  for (int i = 0; i < N2; ++i)
-    myvector.push_back(i);
+  std::vector<uint32_t> range_to_m;
 
-  int **DATA;
-  int *MAXES;
+  for (uint32_t i = 0; i < m; ++i) {
+    range_to_m.push_back(i);
+  }
 
-#ifdef USE_NVTX
-  // nvtxRangePushA("A");
-  nvtxRangeId_t nvtx_1 = nvtxRangeStartA("A");
-#endif
+  uint32_t **data;
+  uint32_t **max_vals;
+  uint32_t **max_locs;
 
-  cudaMallocManaged(&DATA, N1 * sizeof(int *));
-  cudaMallocManaged(&DATA[0], N1 * N2 * sizeof(int));
-  for (unsigned i = 1; i < N1; ++i)
-    DATA[i] = DATA[0] + i * N2;
+  /* #ifdef USE_NVTX */
+  /*   // nvtxRangePushA("A"); */
+  /*   nvtxRangeId_t nvtx_1 = nvtxRangeStartA("A"); */
+  /* #endif */
 
-  cudaMallocManaged(&MAXES, N1 * 4 * sizeof(int));
+  cudaMallocManaged(&data, m * sizeof(uint32_t *));
+  cudaMallocManaged(&max_vals, m * sizeof(uint32_t *));
+  cudaMallocManaged(&max_locs, m * sizeof(size_t *));
 
-#ifdef USE_NVTX
-    nvtxRangeEnd(nvtx_1);
-    //nvtxRangePop();
-    #endif
+  cudaMallocManaged(&data[0], n * m * sizeof(uint32_t));
+  cudaMallocManaged(&max_vals[0], n * m * sizeof(uint32_t));
+  cudaMallocManaged(&max_locs[0], n * m * sizeof(size_t));
 
-    for (unsigned i = 0; i < N1; ++i){
-       std::random_shuffle ( myvector.begin(), myvector.end() );
-       for (unsigned j = 0; j < N2; ++j)
-          DATA[i][j] = myvector[j];
+  for (size_t i = 1; i < m; ++i) {
+    data[i] = data[0] + i * n;
+    max_vals[i] = max_vals[0] + i * n;
+    max_locs[i] = max_locs[0] + i * n;
+  }
+
+  /* #ifdef USE_NVTX */
+  /*   nvtxRangeEnd(nvtx_1); */
+  /*   //nvtxRangePop(); */
+  /* #endif */
+
+  for (unsigned i = 0; i < n; ++i) {
+    std::random_shuffle(range_to_m.begin(), range_to_m.end());
+    for (unsigned j = 0; j < m; ++j) {
+      data[i][j] = range_to_m[j];
     }
+  }
 
-    int nth_max = std::rand() % N2;
+  uint32_t nth_max = static_cast<uint32_t>(std::rand()) % m;
 
-/* ---------------  TASK 1  ------------ */
+  /* ---------------  TASK 1  ------------ */
 
-    for (int i = 0; i < N1; i++) {
-      for (int j = 0; j < 2; j++) {
-        MAXES[i * N2 + j * 2] = -INT_MAX;
-        MAXES[i * N2 + j * 2 + 1] = -1;
-      }
-    }
+  std::cout << "==== cpu ====\n";
+  for (size_t i = 0; i < n; i++) {
+    std::cout << "value: " << max_vals[i][0] << " loc: " << max_locs[i][0]
+              << " value nth: " << max_vals[i][1]
+              << " loc nth: " << max_locs[i][1] << "\n";
+  }
+  std::cout << std::endl;
 
-#pragma omp parallel for
-    for (int i = 0; i < N1; i++) {
-      for (int j = 0; j < N1; j++) {
-        if (DATA[i][j] > MAXES[i * N2]) {
-          MAXES[i * N2] = DATA[i][j];
-          MAXES[i * N2 + 1] = j;
-        }
-      }
+  /* ---------------  TASK 2  ------------ */
 
-    }
+  /* ---------------  TASK 3  ------------ */
 
+  // write GPU code to find the maximum in each row of data, i.e  MAX(data[i])
+  // for each i also find the locaiton of each maximum
 
-    #pragma omp parallel for
-    for (int i = 0; i < N1; i++) {
-      get_nth(N2, DATA[i], nth_max, 0, MAXES + i * N2 + 2);
-    }
+  // write GPU code to find the first maximum and the Nth maximum value in each
+  // row of data, i.e  MAX(data[i]) for each i also find the locaiton of each
+  // maximum
 
+  maxes<<<1, 1>>>(data, max_vals, max_locs, n, m);
 
-    std::cout << "==== cpu ====" << std::endl;
-    for (int i = 0; i < N1; i++) {
-      int base = i * N2;
-      std::cout << "value: " << MAXES[base] << " loc: " << MAXES[base + 1]
-                << " value nth: " << MAXES[i + base + 2]
-                << " loc nth: " << MAXES[i + base + 3] << std::endl;
-    }
-    std::cout << std::endl;
+  std::cout << "==== gpu ====\n";
+  for (size_t i = 0; i < n; i++) {
+    std::cout << "value: " << max_vals[i][0] << " loc: " << max_locs[i][0]
+              << " value nth: " << max_vals[i][1]
+              << " loc nth: " << max_locs[i][1] << "\n";
+  }
+  std::cout << std::endl;
 
-    /* ---------------  TASK 2  ------------ */
-/* ---------------  TASK 2  ------------ */
+  // print results;
+  cudaDeviceSynchronize();
 
-    //write GPU code to find the maximum in each row of DATA, i.e  MAX(DATA[i]) for each i
-    //also find the locaiton of each maximum
+  cudaFree(data[0]);
+  cudaFree(data);
 
-
-    find_MAX1<<<1,1>>>(N1,N2, DATA, MAXES);
-
-
-    //print results;
-
-/* ---------------  TASK 3  ------------ */
-
-
-    //write GPU code to find the first maximum and the Nth maximum value in each row of DATA, i.e  MAX(DATA[i]) for each i
-    //also find the locaiton of each maximum
-
-    find_MAX2<<<1,1>>>(N1,N2, DATA, nth_max, MAXES);
-
-    //print results;
-    cudaDeviceSynchronize();
-
-    cudaFree(DATA[0]);
-    cudaFree(DATA);
-
-   return 0;
-
+  return 0;
 }
