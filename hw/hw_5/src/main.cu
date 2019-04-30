@@ -109,6 +109,7 @@ __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
 
       __syncthreads();
 
+      
       while (num_to_reduce > 1) {
         /* uint32_t bit0 = count.bit0; */
       }
