@@ -1,12 +1,14 @@
 #include <algorithm>
+#include <assert.h>
 #include <cfloat>
 #include <cstdint>
 #include <iostream>
 #include <omp.h>
+#include <random>
 #include <stdio.h>
+#include <stdlib.h>
 #include <utility>
 #include <vector>
-#include <stdlib.h>
 
 #define cuda_error_chk(ans)                                                    \
   { cuda_assert((ans), __FILE__, __LINE__); }
@@ -18,26 +20,21 @@ inline void cuda_assert(cudaError_t code, const char *file, int line) {
   }
 }
 
-#define USE_NVTX
-
-#ifdef USE_NVTX
-#include "nvToolsExt.h"
-#endif
-
-#define FULL_MASK 0xffffffff
+const unsigned FULL_MASK = 0xffffffff;
 
 // primarily for camel case avoidance
-enum : uint32_t { warp_size = 32, log_warp_size = 5 };
+const unsigned WARP_SIZE = 32;
+const unsigned LOG_WARP_SIZE = 5;
 
 template <typename T>
 __forceinline__ __device__ T warp_prefix_sum(T val, T *sum,
-                                             uint32_t thread_idx) {
+                                             unsigned thread_idx) {
   T orig_val = val;
 
-  for (uint8_t i = 1; i < warp_size; i <<= 1) {
+  for (uint8_t i = 1; i < WARP_SIZE; i <<= 1) {
     auto adder = __shfl_up_sync(FULL_MASK, val, i);
 
-    if (thread_idx % warp_size >= i) {
+    if (thread_idx % WARP_SIZE >= i) {
       val += adder;
     }
   }
@@ -49,160 +46,135 @@ __forceinline__ __device__ T warp_prefix_sum(T val, T *sum,
   return val - orig_val;
 }
 
-__global__ void test_prefix_sum(uint32_t *data, uint32_t *returned,
-                                uint32_t n) {
-  uint32_t sum;
-  size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-  if (index < n) {
-    returned[index] = warp_prefix_sum(data[index], &sum, threadIdx.x);
-    printf("adding index: %lu, as: %u, sum: %u\n", index, returned[index], sum);
-  }
-}
+const uint8_t BITS_PER_PASS = 2;
+const uint8_t BINS_PER_PASS = 4;
 
-#define BITS_PER_PASS 2
-#define BINS_PER_PASS 4
-
-union packed
-{
-  uint32_t packed_int;
-  uint8_t array_int[BINS_PER_PASS];
+union packed {
+  uint32_t bytes;
+  uint8_t vals[BINS_PER_PASS];
 };
 
 __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
-                      uint32_t n, uint32_t m, u_int32_t nth,
-                      uint32_t total_count,
-                      uint32_t num_warps_per_n) {
+                      uint32_t m, u_int32_t nth, uint32_t num_warps_per_n) {
 
   extern __shared__ uint32_t shared_memory[];
 
   uint32_t *bin_sums = shared_memory;
-  size_t size_bins = n * num_warps_per_n * BINS_PER_PASS;
 
-  size_t current_size = size_bins;
+  size_t current_size = num_warps_per_n * BINS_PER_PASS;
   uint32_t *working_data = &bin_sums[current_size];
 
-  size_t size_data = n * m;
-  current_size += size_data;
+  current_size += m;
   uint32_t *sorted_data = &bin_sums[current_size];
 
-  current_size += size_data;
+  current_size += m;
   uint32_t *indexes = &bin_sums[current_size];
 
-  current_size += size_data;
+  current_size += m;
   uint32_t *sorted_indexes = &bin_sums[current_size];
 
-  current_size += size_data;
+  current_size += m;
   uint32_t *n_maxes = &bin_sums[current_size];
 
-  current_size += BINS_PER_PASS * n;
+  current_size += BINS_PER_PASS;
   packed *warp_maxes = (packed *)&bin_sums[current_size];
 
-  size_t size_bins_warp = n * num_warps_per_n;
-  current_size += size_bins_warp;
+  current_size += num_warps_per_n;
 
-  uint32_t m_per_warp = m / num_warps_per_n;  
-  uint32_t m_iterations = (m_per_warp - 1 + warp_size) / warp_size;
+  uint32_t m_per_warp = m / num_warps_per_n;
+  uint32_t m_iterations = (m_per_warp - 1 + WARP_SIZE) / WARP_SIZE;
 
   packed *warp_iteration_maxes = (packed *)&bin_sums[current_size];
-  current_size += size_bins_warp * m_iterations;
+  current_size += num_warps_per_n * m_iterations;
 
-  size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+  size_t n_idx = blockIdx.x;
+  uint32_t m_index = threadIdx.x;
+  unsigned warp_idx = threadIdx.x >> LOG_WARP_SIZE;
 
-  size_t n_start = (index * n) / total_count;
-  size_t n_stop_iter = ullmin(((index + 1) * n) / total_count + 1, n);
-
-  uint32_t m_index = static_cast<uint32_t>(index - (n_start * total_count) / n);
-
-  auto warp_id = threadIdx.x >> log_warp_size;
-
-  uint32_t m_local_index = m_index % warp_size;
-
-  uint32_t m_offset = m_per_warp * warp_id;
+  // it is possible to change this so that the extra values are distributed
+  // evenly over warps
+  uint32_t m_local_index = m_index % WARP_SIZE;
+  uint32_t m_offset = m_per_warp * warp_idx;
   uint32_t m_start = m_local_index + m_offset;
   uint32_t m_end =
-      (warp_id == num_warps_per_n - 1) ? m : m_per_warp * (warp_id + 1);
+      (warp_idx == num_warps_per_n - 1) ? m : m_per_warp * (warp_idx + 1);
 
-  for (size_t i = n_start; i < n_stop_iter; ++i) {
-    for (uint32_t j = m_start; j < m_end; j += warp_size) {
-      indexes[i * m + j] = j;
-      working_data[i * m + j] = data[i][j];
-    }
+  for (uint32_t j = m_start; j < m_end; j += WARP_SIZE) {
+    working_data[j] = data[n_idx][j];
+    indexes[j] = j;
   }
 
-  __syncthreads();
+  bool is_last_thread_in_warp = (m_index + 1) % WARP_SIZE == 0;
 
-  bool is_last_thread_in_warp = (m_index + 1) % warp_size == 0;
+  packed *counts = new packed[m_iterations]();
 
-  for (uint8_t shift = 0; shift < 8 * sizeof(uint32_t); shift += BITS_PER_PASS) {
-    for (size_t i = n_start; i < n_stop_iter; ++i) {
+  for (uint8_t shift = 0; shift < 8 * sizeof(uint32_t);
+       shift += BITS_PER_PASS) {
 
-#define INDEX_BIN_ARRAY(arr, iter_index)                                       \
-  (arr[i * num_warps_per_n * BINS_PER_PASS + iter_index * BINS_PER_PASS + bin])
+    for (uint32_t i = 0; i < m_iterations; ++i) {
+      counts[i].bytes = 0;
+    }
 
-      auto warp_idx = (threadIdx.x >> log_warp_size) + i * num_warps_per_n;
+    for (size_t j = m_start; j < m_end; j += WARP_SIZE) {
+      counts[(j - m_offset) / WARP_SIZE]
+          .vals[(working_data[j] >> shift) & (BINS_PER_PASS - 1)]++;
+      counts[(j - m_offset) / WARP_SIZE].bytes = warp_prefix_sum(
+          counts[(j - m_offset) / WARP_SIZE].bytes,
+          (is_last_thread_in_warp || j == m_end - 1)
+              ? &warp_iteration_maxes[warp_idx * m_iterations +
+                                      (j - m_offset) / WARP_SIZE]
+                     .bytes
+              : nullptr,
+          threadIdx.x);
+    }
 
-      packed *counts = new packed[m_iterations]();
+    if (m_local_index < m_iterations) {
+      warp_iteration_maxes[warp_idx * m_iterations + m_local_index]
+          .bytes = warp_prefix_sum(
+          warp_iteration_maxes[warp_idx * m_iterations + m_local_index].bytes,
+          (m_local_index == m_iterations - 1) ? &warp_maxes[warp_idx].bytes
+                                              : nullptr,
+          threadIdx.x);
+    }
 
-      for (size_t j = m_start; j < m_end; j += warp_size) {
-        counts[(j - m_offset) / warp_size].array_int[(working_data[i * m + j] >> shift) &
-                                        (BINS_PER_PASS - 1)]++;
-        counts[(j - m_offset) / warp_size].packed_int = warp_prefix_sum(
-            counts[(j - m_offset) / warp_size].packed_int,
-            (is_last_thread_in_warp || j == m_end - 1)
-                ? &warp_iteration_maxes[warp_idx * m_iterations + (j - m_offset) / warp_size]
-                       .packed_int
-                : nullptr,
-            threadIdx.x);
+    if (is_last_thread_in_warp) {
+      for (uint32_t bin = 0; bin < BINS_PER_PASS; bin++) {
+        bin_sums[BINS_PER_PASS * warp_idx + bin] =
+            warp_maxes[warp_idx].vals[bin];
+        /* printf("warp_idx: %u, warp max: %u\n", warp_idx, */
+        /*        warp_maxes[warp_idx].array_int[bin]); */
       }
-
-      if (m_local_index < m_iterations) {
-        warp_iteration_maxes[warp_idx * m_iterations + m_local_index]
-            .packed_int = warp_prefix_sum(
-            warp_iteration_maxes[warp_idx * m_iterations + m_local_index]
-                .packed_int,
-            (m_local_index == m_iterations - 1)
-                ? &warp_maxes[warp_idx].packed_int
-                : nullptr,
-            threadIdx.x);
-      }
-
-      if (is_last_thread_in_warp) {
-        for (uint32_t bin = 0; bin < BINS_PER_PASS; bin++) {
-          INDEX_BIN_ARRAY(bin_sums, warp_id) =
-              warp_maxes[warp_idx].array_int[bin];
-        }
-      }
+    }
 
     __syncthreads();
 
-    // assumption is that num_warps_per_n is less than the warp_size
+    // assumption is that num_warps_per_n is less than the WARP_SIZE
     if (m_index < num_warps_per_n) {
       for (uint8_t bin = 0; bin < BINS_PER_PASS; bin++) {
-        INDEX_BIN_ARRAY(bin_sums, m_index) = warp_prefix_sum(
-            INDEX_BIN_ARRAY(bin_sums, m_index),
-            (m_index == num_warps_per_n - 1) ? &n_maxes[i * BINS_PER_PASS + bin]
-                                             : (uint32_t *)0,
+        bin_sums[BINS_PER_PASS * m_index + bin] = warp_prefix_sum(
+            bin_sums[BINS_PER_PASS * m_index + bin],
+            (m_index == num_warps_per_n - 1) ? &n_maxes[bin] : (uint32_t *)0,
             threadIdx.x);
       }
     }
 
-   if (m_index < BINS_PER_PASS) {
-      n_maxes[i * BINS_PER_PASS + m_index] = warp_prefix_sum(
-          n_maxes[i * BINS_PER_PASS + m_index], (uint32_t *)0, threadIdx.x);
+    if (m_index < BINS_PER_PASS) {
+      n_maxes[m_index] =
+          warp_prefix_sum(n_maxes[m_index], (uint32_t *)0, threadIdx.x);
     }
+
     __syncthreads();
 
-    for (size_t j = m_start; j < m_end; j += warp_size) {
-      uint8_t bin = (working_data[i * m + j] >> shift) & (BINS_PER_PASS - 1);
-      uint32_t idx =
-          counts[(j - m_offset) / warp_size].array_int[bin] +
-          INDEX_BIN_ARRAY(bin_sums, warp_id) +
-          n_maxes[i * BINS_PER_PASS + bin] +
-          warp_iteration_maxes[warp_idx * m_iterations + (j - m_offset) / warp_size]
-              .array_int[bin];
+    for (size_t j = m_start; j < m_end; j += WARP_SIZE) {
+      uint8_t bin = (working_data[j] >> shift) & (BINS_PER_PASS - 1);
+      uint32_t idx = counts[(j - m_offset) / WARP_SIZE].vals[bin] +
+                     bin_sums[BINS_PER_PASS * warp_idx + bin] + n_maxes[bin] +
+                     warp_iteration_maxes[warp_idx * m_iterations +
+                                          (j - m_offset) / WARP_SIZE]
+                         .vals[bin];
 
-      sorted_data[i * m + idx] = working_data[i * m + j];
-      sorted_indexes[i * m + idx] = indexes[i * m + j];
+      sorted_data[idx] = working_data[j];
+      sorted_indexes[idx] = indexes[j];
     }
 
     __syncthreads();
@@ -214,25 +186,18 @@ __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
     temp_ptr = indexes;
     indexes = sorted_indexes;
     sorted_indexes = temp_ptr;
-
-
-
-#undef INDEX_BIN_ARRAY
-#undef BIN_LOOP
-      }
   }
 
-
-  for (size_t i = n_start; i < n_stop_iter; ++i) {
-    if (m_start == 0) {
-      max_locs[n_start][0] = indexes[i * m];
-      max_vals[n_start][0] = sorted_data[i * m];
-    }
-    if (nth >= m_start && nth < m_end) {
-      max_locs[n_start][1] = indexes[nth + i * m];
-      max_vals[n_start][1] = sorted_data[nth + i * m];
-    }
+  if (m_start == 0) {
+    max_locs[n_idx][0] = indexes[0];
+    max_vals[n_idx][0] = sorted_data[0];
   }
+  if (nth >= m_start && nth < m_end) {
+    max_locs[n_idx][1] = indexes[nth];
+    max_vals[n_idx][1] = sorted_data[nth];
+  }
+
+  delete[] counts;
 }
 
 int main() {
@@ -245,7 +210,7 @@ int main() {
     return 0;
 
   uint32_t m = 1024;
-  uint32_t n = 1;
+  uint32_t n = 16384;
 
   std::vector<uint32_t> range_to_m;
 
@@ -281,6 +246,9 @@ int main() {
   /*   //nvtxRangePop(); */
   /* #endif */
 
+  /* std::random_device r; */
+  /* std::srand(r()); */
+
   for (unsigned i = 0; i < n; ++i) {
     std::random_shuffle(range_to_m.begin(), range_to_m.end());
     for (unsigned j = 0; j < m; ++j) {
@@ -301,13 +269,12 @@ int main() {
 
   /* ---------------  TASK 1  ------------ */
 
-  std::cout << "==== cpu ====\n";
-  for (size_t i = 0; i < n; i++) {
-    std::cout << "value: " << max_vals[i][0] << " loc: " << max_locs[i][0]
-              << " value nth: " << max_vals[i][1]
-              << " loc nth: " << max_locs[i][1] << "\n";
-  }
-  std::cout << std::endl;
+  /* for (size_t i = 0; i < n; ++i) { */
+  /*   assert(max_vals[i][0] == 0); */
+  /*   assert(max_vals[i][1] == nth_max); */
+  /* } */
+
+  /* std::cout << "==== cpu passed tests ====" << std::endl; */
 
   /* ---------------  TASK 2  ------------ */
 
@@ -328,52 +295,37 @@ int main() {
     }
   }
 
-  //test code
-  /* const uint test_size = 16; */
-  /* uint32_t *data_test; */
-  /* uint32_t *return_test; */
-  /* cudaMallocManaged(&data_test, n * sizeof(uint32_t)); */
-  /* cudaMallocManaged(&return_test, n * sizeof(uint32_t)); */
-
-  /* for (size_t i = 0; i < test_size; ++i) { */
-  /*   return_test[i] = static_cast<uint32_t>(-1); */
-  /*   data_test[i] = i; */
-  /* } */
-
-  /* test_prefix_sum<<<1, test_size>>>(data_test, return_test, test_size); */
-
-  /* cuda_error_chk(cudaDeviceSynchronize()); */
-
-  /* for (size_t i = 0; i < test_size; ++i) { */
-  /*   printf("i: %lu, r: %u\n", i, return_test[i]); */
-  /* } */
-
-  //assumptions:
-  // - values per warp < 256
-  // - num_warps_per_n is less than the warp_size
-
-  uint32_t num_threads_per_block = 128;
+  uint32_t num_threads_per_block = 256;
   uint32_t num_warps_per_n =
-      std::min((num_threads_per_block + warp_size - 1) / warp_size,
-               ((m + warp_size - 1) / warp_size));
+      std::min((num_threads_per_block + WARP_SIZE - 1) / WARP_SIZE,
+               ((m + WARP_SIZE - 1) / WARP_SIZE));
 
-  size_t shared_count = (n * num_warps_per_n * BINS_PER_PASS) / 4 +
-                        n * num_warps_per_n * BINS_PER_PASS + n * m * 4 +
-                        BINS_PER_PASS * n;
+  uint32_t m_per_warp = m / num_warps_per_n;
+  uint32_t m_iterations = (m_per_warp - 1 + WARP_SIZE) / WARP_SIZE;
+
+  // assumptions:
+  // - values per warp < 256
+  // - num_warps_per_n is less than the WARP_SIZE
+  // - num theads is a multiple of the warp size
+
+  assert(m_per_warp < static_cast<uint8_t>(-1));
+  assert(num_threads_per_block / WARP_SIZE < WARP_SIZE);
+  assert(num_threads_per_block % WARP_SIZE == 0);
+
+  size_t shared_count = num_warps_per_n * BINS_PER_PASS + num_warps_per_n +
+                        +num_warps_per_n * m_iterations + m * 4 + BINS_PER_PASS;
 
   maxes<<<n, num_threads_per_block, shared_count * sizeof(int32_t)>>>(
-      data, max_vals, max_locs, n, m, nth_max, n * num_threads_per_block,
-      num_warps_per_n);
+      data, max_vals, max_locs, m, nth_max, num_warps_per_n);
 
   cuda_error_chk(cudaDeviceSynchronize());
 
-  std::cout << "==== gpu ====\n";
-  for (size_t i = 0; i < n; i++) {
-    std::cout << "value: " << max_vals[i][0] << " loc: " << max_locs[i][0]
-              << " value nth: " << max_vals[i][1]
-              << " loc nth: " << max_locs[i][1] << "\n";
+  for (size_t i = 0; i < n; ++i) {
+    assert(max_vals[i][0] == 0);
+    assert(max_vals[i][1] == nth_max);
   }
-  std::cout << std::endl;
+
+  std::cout << "==== gpu passed tests ====" << std::endl;
 
   // print results;
   cudaDeviceSynchronize();
