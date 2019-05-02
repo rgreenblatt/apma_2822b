@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <utility>
 #include <vector>
+#include <cstring>
 
 #define cuda_error_chk(ans)                                                    \
   { cuda_assert((ans), __FILE__, __LINE__); }
@@ -200,6 +201,16 @@ __global__ void maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_locs,
   delete[] counts;
 }
 
+template <typename T>
+void set_max_unsigned_value_2D(T **data, unsigned n, unsigned m) {
+  #pragma omp parallel for
+  for (size_t i = 0; i < n; ++i) {
+    for (size_t j = 0; j < m; ++j) {
+      data[i][j] = static_cast<T>(-1);
+    }
+  }
+}
+
 int main() {
   int ngpus = 0;
   cudaGetDeviceCount(&ngpus);
@@ -209,6 +220,8 @@ int main() {
   else
     return 0;
 
+  // the kernel doesn't distribute extra values evenly across warps (this can be
+  // changed), as such, it will be faster if m is a multiple of the warp size
   uint32_t m = 1024;
   uint32_t n = 16384;
 
@@ -221,33 +234,28 @@ int main() {
   uint32_t **data;
   uint32_t **max_vals;
   uint32_t **max_locs;
-
-  /* #ifdef USE_NVTX */
-  /*   // nvtxRangePushA("A"); */
-  /*   nvtxRangeId_t nvtx_1 = nvtxRangeStartA("A"); */
-  /* #endif */
+  uint32_t **cpu_max_locs;
 
   cudaMallocManaged(&data, n * sizeof(uint32_t *));
   cudaMallocManaged(&max_vals, n * sizeof(uint32_t *));
   cudaMallocManaged(&max_locs, n * sizeof(size_t *));
+  cpu_max_locs = new uint32_t*[n];
 
   cudaMallocManaged(&data[0], n * m * sizeof(uint32_t));
   cudaMallocManaged(&max_vals[0], n * m * sizeof(uint32_t));
   cudaMallocManaged(&max_locs[0], n * m * sizeof(size_t));
+  cpu_max_locs[0] = new uint32_t[n * m];
 
   for (size_t i = 1; i < n; ++i) {
     data[i] = data[0] + i * m;
     max_vals[i] = max_vals[0] + i * m;
     max_locs[i] = max_locs[0] + i * m;
+    cpu_max_locs[i] = cpu_max_locs[0] + i * m;
   }
 
-  /* #ifdef USE_NVTX */
-  /*   nvtxRangeEnd(nvtx_1); */
-  /*   //nvtxRangePop(); */
-  /* #endif */
-
-  /* std::random_device r; */
-  /* std::srand(r()); */
+  //for deterministic shuffles, comment out the below lines
+  std::random_device r;
+  std::srand(r());
 
   for (unsigned i = 0; i < n; ++i) {
     std::random_shuffle(range_to_m.begin(), range_to_m.end());
@@ -256,38 +264,33 @@ int main() {
     }
   }
 
-  // set to obvious failure
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = 0; j < 2; ++j) {
-      max_locs[i][j] = static_cast<uint32_t>(-1);
-      max_vals[i][j] = static_cast<uint32_t>(-1);
-    }
-  }
-
   uint32_t nth_max = static_cast<uint32_t>(std::rand()) % m;
-  std::cout << "nth is " << nth_max << std::endl;
+
+  //make unset values very obvious
+  set_max_unsigned_value_2D(max_locs, n, 2);
+  set_max_unsigned_value_2D(max_vals, n, 2);
 
   /* ---------------  TASK 1  ------------ */
+
+
 
   /* for (size_t i = 0; i < n; ++i) { */
   /*   assert(max_vals[i][0] == 0); */
   /*   assert(max_vals[i][1] == nth_max); */
   /* } */
 
-  /* std::cout << "==== cpu passed tests ====" << std::endl; */
+  std::cout << "==== cpu passed tests ====" << std::endl;
 
   /* ---------------  TASK 2  ------------ */
+  
 
   /* ---------------  TASK 3  ------------ */
 
-  // write GPU code to find the maximum in each row of data, i.e  MAX(data[i])
-  // for each i also find the locaiton of each maximum
 
-  // write GPU code to find the first maximum and the Nth maximum value in each
-  // row of data, i.e  MAX(data[i]) for each i also find the locaiton of each
-  // maximum
+  set_max_unsigned_value_2D(max_locs, n, 2);
+  set_max_unsigned_value_2D(max_vals, n, 2);
 
-  // set to obvious failure
+  //make unset values very obvious
   for (size_t i = 0; i < n; ++i) {
     for (size_t j = 0; j < 2; ++j) {
       max_locs[i][j] = static_cast<uint32_t>(-1);
