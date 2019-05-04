@@ -122,7 +122,7 @@ __global__ void max_data(loc_value **data, uint32_t **max_vals, uint32_t **max_l
   loc_value warp_max;
 
   do {
-    if (first_iter) {
+    if (!first_iter) {
       __syncthreads();
     }
 
@@ -130,28 +130,24 @@ __global__ void max_data(loc_value **data, uint32_t **max_vals, uint32_t **max_l
 
     if (m_index < size_reduced) {
 
-      warp_max = warp_reduce_max(first_iter ? data[n_idx][m_index]
-                                            : maxes[m_index]);
+      warp_max =
+          warp_reduce_max(first_iter ? data[n_idx][m_index] : maxes[m_index]);
 
       if (next_size_reduced == 1) {
         if (!m_index) {
           max_vals[n_idx][0] = warp_max.val;
           max_locs[n_idx][0] = warp_max.idx;
-          printf("idx: %u, n: %lu, val is: %u\n", m_index, n_idx,
-                 max_vals[n_idx][0]);
         }
-      } else if (m_index % WARP_SIZE) {
+      } else if (!(m_index % WARP_SIZE)) {
         maxes[warp_idx] = warp_max;
       }
-
-      first_iter = false;
     }
+
+    first_iter = false;
 
     size_reduced = next_size_reduced;
 
   } while (size_reduced > 1);
-  /* printf("idx: %u, n: %lu, val is: %u\n", m_index, n_idx, */
-  /*        max_vals[n_idx][0]); */
 }
 
 const uint8_t BITS_PER_PASS = 2;
@@ -318,7 +314,7 @@ int main() {
   else
     return 0;
 
-  uint32_t m = 64;
+  uint32_t m = 1024;
   /* uint32_t n = 16384; */
   uint32_t n = 1;
 
@@ -419,19 +415,16 @@ int main() {
     fill(max_locs[0], n * 2, static_cast<uint32_t>(-1));
     fill(max_vals[0], n * 2, static_cast<uint32_t>(-1));
 
-    max_data<<<n, m, m * sizeof(loc_value)>>>(data_struct, max_locs, max_vals,
-                                              m);
+    max_data<<<n, m, (m - 1 + WARP_SIZE) / WARP_SIZE * sizeof(loc_value)>>>(
+        data_struct, max_vals, max_locs, m);
 
     cuda_error_chk(cudaDeviceSynchronize());
-
-    printf("val is: %u\n", max_vals[0][0]);
+    cuda_error_chk(cudaDeviceSynchronize());
+    cuda_error_chk(cudaDeviceSynchronize());
+    cuda_error_chk(cudaDeviceSynchronize());
 
     for (size_t i = 0; i < n; ++i) {
-      /* printf("val is: %u\n", max_vals[0][0]); */
-      /* printf("val is: %u\n", max_vals[i][0]); */
       assert(max_vals[i][0] == m - 1);
-      /* printf("val is: %u\n", max_vals[0][0]); */
-      /* printf("val is: %u\n", max_vals[i][0]); */
       assert(max_locs[i][0] == cpu_max_locs[i][0]);
     }
 
