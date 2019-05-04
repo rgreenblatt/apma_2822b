@@ -343,9 +343,11 @@ int main() {
     cudaSetDevice(0);
   else
     return 0;
+  int num_threads = omp_get_max_threads();
+  printf("threads = %d\n", num_threads);
 
   uint32_t m = 1024;
-  uint32_t n = 8096;
+  uint32_t n = 10000;
 
   std::vector<uint32_t> range_to_m;
 
@@ -464,8 +466,6 @@ int main() {
 
     auto t1 = h_clock::now();
 
-    std::cout << "before max data" << std::endl;
-
     max_data<<<n, m, (m - 1 + WARP_SIZE) / WARP_SIZE * sizeof(loc_value)>>>(
         data_struct, max_vals, max_locs, m);
 
@@ -475,13 +475,8 @@ int main() {
 
     gpu_time_max = chr::duration_cast<chr::duration<double>>(t2 - t1).count();
     
-    std::cout << "after max data" << std::endl;
-
     for (size_t i = 0; i < n; ++i) {
-      if (max_vals[i][0] != m - 1) {
-        std::cout << "val is: " << max_vals[i][0] << std::endl;
-        assert(max_vals[i][0] == m - 1);
-      }
+      assert(max_vals[i][0] == m - 1);
       assert(max_locs[i][0] == cpu_max_locs[i][0]);
     }
 
@@ -516,8 +511,6 @@ int main() {
                           +num_warps_per_n * m_iterations + m * 4 +
                           BINS_PER_PASS;
 
-    std::cout << "before sort maxes" << std::endl;
-
     auto t1 = h_clock::now();
 
     sort_maxes<<<n, num_threads_per_block, shared_count * sizeof(uint32_t)>>>(
@@ -526,14 +519,10 @@ int main() {
 
     cuda_error_chk(cudaDeviceSynchronize());
 
-    std::cout << "after sort maxes" << std::endl;
-
     auto t2 = h_clock::now();
 
     gpu_time_nth_and_max =
         chr::duration_cast<chr::duration<double>>(t2 - t1).count();
-
-    std::cout << "before tests" << std::endl;
 
     for (size_t i = 0; i < n; ++i) {
       assert(max_vals[i][0] == m - 1);
