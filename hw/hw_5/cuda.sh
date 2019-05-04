@@ -10,9 +10,10 @@
 #SBATCH -o hw_04.out
 
 # Load CUDA module
-module load cuda/9.1.85.1
+module load cuda/10.0.130
 
 # Compile CUDA program and run
 # ./clean.sh
 # ./build.sh
-nvprof -o app.nvpf ./bin/app
+# nvprof -o app.nvpf ./bin/app
+./bin/app

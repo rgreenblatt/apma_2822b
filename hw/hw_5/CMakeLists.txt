@@ -5,9 +5,11 @@ cmake_minimum_required(VERSION 2.8)
 
 find_package(CUDA REQUIRED)
 find_package(OpenMP REQUIRED)
-find_library(LIBNVTOOLSEXT libnvToolsExt.so PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib64/)
+# find_library(LIBNVTOOLSEXT libnvToolsExt.so PATHS ${CUDA_TOOLKIT_ROOT_DIR}/lib64/)
 
-list( APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_50,code=sm_50;-std=c++11;-O3")
+# list( APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_70,code=sm_70;-std=c++11;-O3")
+list( APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_70,code=sm_70;-std=c++11;-g;-G")
+# list( APPEND CUDA_NVCC_FLAGS "-std=c++11;-O3")
 # list( APPEND CUDA_NVCC_FLAGS "-gencode arch=compute_50,code=sm_50;-std=c++11;-g;-G")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 
@@ -19,7 +21,7 @@ include_directories("${PROJECT_SOURCE_DIR}/include")
 
 cuda_add_executable(app ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cu )
 
-target_link_libraries(app ${LIBNVTOOLSEXT})
+# target_link_libraries(app ${LIBNVTOOLSEXT})
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)

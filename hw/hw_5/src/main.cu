@@ -33,11 +33,11 @@ const unsigned LOG_WARP_SIZE = 5;
 
 template <typename T>
 __forceinline__ __device__ T warp_prefix_sum(T val, T *sum,
-                                             unsigned thread_idx) {
+                                             unsigned thread_idx, unsigned mask) {
   T orig_val = val;
 
   for (uint8_t i = 1; i < WARP_SIZE; i <<= 1) {
-    auto adder = __shfl_up_sync(FULL_MASK, val, i);
+    auto adder = __shfl_up_sync(mask, val, i);
 
     if (thread_idx % WARP_SIZE >= i) {
       val += adder;
@@ -59,10 +59,11 @@ union loc_value {
   uint64_t bytes;
 };
 
-__forceinline__ __device__ loc_value warp_reduce_max(loc_value p) {
+__forceinline__ __device__ loc_value warp_reduce_max(loc_value p, unsigned mask) {
   for (unsigned offset = WARP_SIZE / 2; offset > 0; offset /= 2) {
     loc_value other_p;
-    other_p.bytes = __shfl_down_sync(FULL_MASK, p.bytes, offset);
+    /* other_p.bytes = __shfl_down_sync(FULL_MASK, p.bytes, offset); */
+    other_p.bytes = __shfl_down_sync(mask, p.bytes, offset);
 
     if (other_p.val > p.val) {
       p = other_p;
@@ -132,10 +133,13 @@ __global__ void max_data(loc_value **data, uint32_t **max_vals, uint32_t **max_l
 
     unsigned next_size_reduced = (size_reduced - 1 + WARP_SIZE) / WARP_SIZE;
 
+    unsigned mask = __ballot_sync(FULL_MASK, m_index < size_reduced);
+
     if (m_index < size_reduced) {
 
       warp_max =
-          warp_reduce_max(first_iter ? data[n_idx][m_index] : maxes[m_index]);
+          warp_reduce_max(first_iter ? data[n_idx][m_index] : maxes[m_index],
+              mask);
 
       if (next_size_reduced == 1) {
         if (!m_index) {
@@ -218,6 +222,8 @@ __global__ void sort_maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_
       counts[i].bytes = 0;
     }
 
+    unsigned mask_warp_reduce = __ballot_sync(FULL_MASK, m_start < m_end);
+
     for (size_t j = m_start; j < m_end; j += WARP_SIZE) {
       counts[(j - m_offset) / WARP_SIZE]
           .vals[(working_data[j] >> shift) & (BINS_PER_PASS - 1)]++;
@@ -228,42 +234,62 @@ __global__ void sort_maxes(uint32_t **data, uint32_t **max_vals, uint32_t **max_
                                       (j - m_offset) / WARP_SIZE]
                      .bytes
               : nullptr,
-          threadIdx.x);
+          threadIdx.x, 
+          mask_warp_reduce);
+      mask_warp_reduce = __ballot_sync(FULL_MASK, j + WARP_SIZE < m_end);
     }
 
-    if (m_local_index < m_iterations) {
+    bool iteration_reduce_condition = m_local_index < m_iterations;
+
+    unsigned mask_warp_iteration_reduce = 
+      __ballot_sync(FULL_MASK, iteration_reduce_condition);
+
+    if (iteration_reduce_condition) {
       warp_iteration_maxes[warp_idx * m_iterations + m_local_index]
           .bytes = warp_prefix_sum(
           warp_iteration_maxes[warp_idx * m_iterations + m_local_index].bytes,
           (m_local_index == m_iterations - 1) ? &warp_maxes[warp_idx].bytes
                                               : nullptr,
-          threadIdx.x);
+          threadIdx.x,
+          mask_warp_iteration_reduce);
     }
 
     if (is_last_thread_in_warp) {
       for (uint32_t bin = 0; bin < BINS_PER_PASS; bin++) {
         bin_sums[BINS_PER_PASS * warp_idx + bin] =
             warp_maxes[warp_idx].vals[bin];
-        /* printf("warp_idx: %u, warp max: %u\n", warp_idx, */
-        /*        warp_maxes[warp_idx].array_int[bin]); */
       }
     }
 
     __syncthreads();
 
+    bool bin_reduce_condition = m_index < num_warps_per_n;
+
+    unsigned mask_warp_bin_reduce = 
+      __ballot_sync(FULL_MASK, bin_reduce_condition);
+
     // assumption is that num_warps_per_n is less than the WARP_SIZE
-    if (m_index < num_warps_per_n) {
+    if (bin_reduce_condition) {
       for (uint8_t bin = 0; bin < BINS_PER_PASS; bin++) {
         bin_sums[BINS_PER_PASS * m_index + bin] = warp_prefix_sum(
             bin_sums[BINS_PER_PASS * m_index + bin],
             (m_index == num_warps_per_n - 1) ? &n_maxes[bin] : (uint32_t *)0,
-            threadIdx.x);
+            threadIdx.x,
+            mask_warp_bin_reduce);
       }
     }
 
-    if (m_index < BINS_PER_PASS) {
+    bool n_reduce_condition = m_index < BINS_PER_PASS;
+
+    unsigned mask_warp_n_reduce = 
+      __ballot_sync(FULL_MASK, n_reduce_condition);
+
+    if (n_reduce_condition) {
       n_maxes[m_index] =
-          warp_prefix_sum(n_maxes[m_index], (uint32_t *)0, threadIdx.x);
+          warp_prefix_sum(n_maxes[m_index], 
+              (uint32_t *)0, 
+              threadIdx.x,
+              mask_warp_n_reduce);
     }
 
     __syncthreads();
@@ -319,7 +345,7 @@ int main() {
     return 0;
 
   uint32_t m = 1024;
-  uint32_t n = 16384;
+  uint32_t n = 8096;
 
   std::vector<uint32_t> range_to_m;
 
@@ -438,6 +464,8 @@ int main() {
 
     auto t1 = h_clock::now();
 
+    std::cout << "before max data" << std::endl;
+
     max_data<<<n, m, (m - 1 + WARP_SIZE) / WARP_SIZE * sizeof(loc_value)>>>(
         data_struct, max_vals, max_locs, m);
 
@@ -446,9 +474,14 @@ int main() {
     auto t2 = h_clock::now();
 
     gpu_time_max = chr::duration_cast<chr::duration<double>>(t2 - t1).count();
+    
+    std::cout << "after max data" << std::endl;
 
     for (size_t i = 0; i < n; ++i) {
-      assert(max_vals[i][0] == m - 1);
+      if (max_vals[i][0] != m - 1) {
+        std::cout << "val is: " << max_vals[i][0] << std::endl;
+        assert(max_vals[i][0] == m - 1);
+      }
       assert(max_locs[i][0] == cpu_max_locs[i][0]);
     }
 
@@ -462,6 +495,7 @@ int main() {
     fill(max_vals[0], n * 2, static_cast<uint32_t>(-1));
 
     uint32_t num_threads_per_block = m / 4;
+    /* uint32_t num_threads_per_block = 32; */
     uint32_t num_warps_per_n =
         std::min((num_threads_per_block + WARP_SIZE - 1) / WARP_SIZE,
                  ((m + WARP_SIZE - 1) / WARP_SIZE));
@@ -482,17 +516,24 @@ int main() {
                           +num_warps_per_n * m_iterations + m * 4 +
                           BINS_PER_PASS;
 
+    std::cout << "before sort maxes" << std::endl;
+
     auto t1 = h_clock::now();
 
-    sort_maxes<<<n, num_threads_per_block, shared_count * sizeof(int32_t)>>>(
+    sort_maxes<<<n, num_threads_per_block, shared_count * sizeof(uint32_t)>>>(
         data, max_vals, max_locs, m, nth_max, num_warps_per_n);
 
+
     cuda_error_chk(cudaDeviceSynchronize());
+
+    std::cout << "after sort maxes" << std::endl;
 
     auto t2 = h_clock::now();
 
     gpu_time_nth_and_max =
         chr::duration_cast<chr::duration<double>>(t2 - t1).count();
+
+    std::cout << "before tests" << std::endl;
 
     for (size_t i = 0; i < n; ++i) {
       assert(max_vals[i][0] == m - 1);
@@ -509,11 +550,18 @@ int main() {
             << "gpu_time_nth_and_max: " << gpu_time_nth_and_max << "\n"
             << "gpu_time_max: " << gpu_time_max << std::endl;
 
-  // print results;
-  cudaDeviceSynchronize();
 
   cudaFree(data[0]);
   cudaFree(data);
+
+  cudaFree(data_struct[0]);
+  cudaFree(data_struct);
+
+  cudaFree(max_vals[0]);
+  cudaFree(max_vals);
+
+  cudaFree(max_locs[0]);
+  cudaFree(max_locs);
 
   return 0;
 }
