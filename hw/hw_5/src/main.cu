@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <utility>
 #include <vector>
+#include <chrono>
 
 #define cuda_error_chk(ans)                                                    \
   { cuda_assert((ans), __FILE__, __LINE__); }
@@ -20,6 +21,9 @@ inline void cuda_assert(cudaError_t code, const char *file, int line) {
     exit(code);
   }
 }
+
+namespace chr = std::chrono;
+using h_clock = chr::high_resolution_clock;
 
 #define FULL_MASK 0xffffffff
 
@@ -122,7 +126,7 @@ __global__ void max_data(loc_value **data, uint32_t **max_vals, uint32_t **max_l
   loc_value warp_max;
 
   do {
-    if (first_iter) {
+    if (!first_iter) {
       __syncthreads();
     }
 
@@ -130,28 +134,24 @@ __global__ void max_data(loc_value **data, uint32_t **max_vals, uint32_t **max_l
 
     if (m_index < size_reduced) {
 
-      warp_max = warp_reduce_max(first_iter ? data[n_idx][m_index]
-                                            : maxes[m_index]);
+      warp_max =
+          warp_reduce_max(first_iter ? data[n_idx][m_index] : maxes[m_index]);
 
       if (next_size_reduced == 1) {
         if (!m_index) {
           max_vals[n_idx][0] = warp_max.val;
           max_locs[n_idx][0] = warp_max.idx;
-          printf("idx: %u, n: %lu, val is: %u\n", m_index, n_idx,
-                 max_vals[n_idx][0]);
         }
-      } else if (m_index % WARP_SIZE) {
+      } else if (!(m_index % WARP_SIZE)) {
         maxes[warp_idx] = warp_max;
       }
-
-      first_iter = false;
     }
+
+    first_iter = false;
 
     size_reduced = next_size_reduced;
 
   } while (size_reduced > 1);
-  /* printf("idx: %u, n: %lu, val is: %u\n", m_index, n_idx, */
-  /*        max_vals[n_idx][0]); */
 }
 
 const uint8_t BITS_PER_PASS = 2;
@@ -318,9 +318,8 @@ int main() {
   else
     return 0;
 
-  uint32_t m = 64;
-  /* uint32_t n = 16384; */
-  uint32_t n = 1;
+  uint32_t m = 1024;
+  uint32_t n = 16384;
 
   std::vector<uint32_t> range_to_m;
 
@@ -369,11 +368,19 @@ int main() {
 
   uint32_t nth_max = static_cast<uint32_t>(std::rand()) % m;
 
+  double cpu_time_nth;
+  double cpu_time_max;
+  double gpu_time_nth_and_max;
+  double gpu_time_max;
+
   /* ---------------  TASK 1  ------------ */
 
   {
     fill(cpu_max_locs[0], n * 2, static_cast<uint32_t>(-1));
     fill(max_vals[0], n * 2, 0u);
+
+    
+    auto t1 = h_clock::now();
 
     #pragma omp parallel for
     for (size_t i = 0; i < n; ++i) {
@@ -384,6 +391,10 @@ int main() {
         }
       }
     }
+
+    auto t2 = h_clock::now();
+
+    cpu_time_max = chr::duration_cast<chr::duration<double>>(t2 - t1).count();
 
     auto **vals = new loc_value*[n];
     vals[0] = new loc_value[n * m];
@@ -398,12 +409,18 @@ int main() {
       }
     }
 
+    t1 = h_clock::now();
+
     #pragma omp parallel for
     for (size_t i = 0; i < n; ++i) {
       auto selected = quick_select(vals[i], 0, m, nth_max);
       max_vals[i][1] = selected.val;
       cpu_max_locs[i][1] = selected.idx;
     }
+
+    t2 = h_clock::now();
+
+    cpu_time_nth = chr::duration_cast<chr::duration<double>>(t2 - t1).count();
 
     for (size_t i = 0; i < n; ++i) {
       assert(max_vals[i][0] == m - 1);
@@ -419,19 +436,19 @@ int main() {
     fill(max_locs[0], n * 2, static_cast<uint32_t>(-1));
     fill(max_vals[0], n * 2, static_cast<uint32_t>(-1));
 
-    max_data<<<n, m, m * sizeof(loc_value)>>>(data_struct, max_locs, max_vals,
-                                              m);
+    auto t1 = h_clock::now();
+
+    max_data<<<n, m, (m - 1 + WARP_SIZE) / WARP_SIZE * sizeof(loc_value)>>>(
+        data_struct, max_vals, max_locs, m);
 
     cuda_error_chk(cudaDeviceSynchronize());
 
-    printf("val is: %u\n", max_vals[0][0]);
+    auto t2 = h_clock::now();
+
+    gpu_time_max = chr::duration_cast<chr::duration<double>>(t2 - t1).count();
 
     for (size_t i = 0; i < n; ++i) {
-      /* printf("val is: %u\n", max_vals[0][0]); */
-      /* printf("val is: %u\n", max_vals[i][0]); */
       assert(max_vals[i][0] == m - 1);
-      /* printf("val is: %u\n", max_vals[0][0]); */
-      /* printf("val is: %u\n", max_vals[i][0]); */
       assert(max_locs[i][0] == cpu_max_locs[i][0]);
     }
 
@@ -444,7 +461,7 @@ int main() {
     fill(max_locs[0], n * 2, static_cast<uint32_t>(-1));
     fill(max_vals[0], n * 2, static_cast<uint32_t>(-1));
 
-    uint32_t num_threads_per_block = 256;
+    uint32_t num_threads_per_block = m / 4;
     uint32_t num_warps_per_n =
         std::min((num_threads_per_block + WARP_SIZE - 1) / WARP_SIZE,
                  ((m + WARP_SIZE - 1) / WARP_SIZE));
@@ -465,10 +482,17 @@ int main() {
                           +num_warps_per_n * m_iterations + m * 4 +
                           BINS_PER_PASS;
 
+    auto t1 = h_clock::now();
+
     sort_maxes<<<n, num_threads_per_block, shared_count * sizeof(int32_t)>>>(
         data, max_vals, max_locs, m, nth_max, num_warps_per_n);
 
     cuda_error_chk(cudaDeviceSynchronize());
+
+    auto t2 = h_clock::now();
+
+    gpu_time_nth_and_max =
+        chr::duration_cast<chr::duration<double>>(t2 - t1).count();
 
     for (size_t i = 0; i < n; ++i) {
       assert(max_vals[i][0] == m - 1);
@@ -479,6 +503,11 @@ int main() {
 
     std::cout << "==== gpu passed tests ====" << std::endl;
   }
+
+  std::cout << "cpu_time_nth: " << cpu_time_nth << "\n"
+            << "cpu_time_max: " << cpu_time_max << "\n"
+            << "gpu_time_nth_and_max: " << gpu_time_nth_and_max << "\n"
+            << "gpu_time_max: " << gpu_time_max << std::endl;
 
   // print results;
   cudaDeviceSynchronize();
