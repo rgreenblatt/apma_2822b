@@ -378,7 +378,7 @@ template <typename T> void fill(T *arr, unsigned size, T val) {
   }
 }
 
-inline double average_range(std::vector<double> vals, unsigned start,
+inline double sum_range(std::vector<double> vals, unsigned start,
                         unsigned end) {
   double sum = 0;
   for (unsigned i = start; i < end; ++i) {
@@ -608,15 +608,15 @@ int main() {
 
   unsigned start = 2;
 
-  std::cout << "cpu_time_nth: " << average_range(cpu_time_nth, start, iterations)
+  std::cout << "cpu_time_nth: " << sum_range(cpu_time_nth, start, iterations)
             << "\n"
-            << "cpu_time_max: " << average_range(cpu_time_max, start, iterations)
+            << "cpu_time_max: " << sum_range(cpu_time_max, start, iterations)
             << "\n"
             << "gpu_time_nth_and_max: "
-            << average_range(gpu_time_nth_and_max, start, iterations) << "\n"
+            << sum_range(gpu_time_nth_and_max, start, iterations) << "\n"
             << "gpu_time_max_warp_per_n: "
-            << average_range(gpu_time_max_warp_per_n, start, iterations) << "\n"
-            << "gpu_time_max: " << average_range(gpu_time_max, start, iterations)
+            << sum_range(gpu_time_max_warp_per_n, start, iterations) << "\n"
+            << "gpu_time_max: " << sum_range(gpu_time_max, start, iterations)
             << std::endl;
 
   cudaFree(data[0]);
