@@ -492,14 +492,15 @@ int main() {
       }
       auto t2 = h_clock::now();
 
+      for (unsigned i = 0; i < n; ++i) {
+        assert(max_vals[i][0] == m - 1);
+        assert(max_vals[i][1] == nth_max);
+      }
+
       cpu_time_nth.push_back(
           chr::duration_cast<chr::duration<double>>(t2 - t1).count());
     }
 
-    for (unsigned i = 0; i < n; ++i) {
-      assert(max_vals[i][0] == m - 1);
-      assert(max_vals[i][1] == nth_max);
-    }
 
     std::cout << "==== cpu passed tests ====" << std::endl;
   }
@@ -520,14 +521,15 @@ int main() {
 
         auto t2 = h_clock::now();
 
+        for (unsigned i = 0; i < n; ++i) {
+          assert(max_vals[i][0] == m - 1);
+          assert(max_locs[i][0] == cpu_max_locs[i][0]);
+        }
+
         gpu_time_max_warp_per_n.push_back(
             chr::duration_cast<chr::duration<double>>(t2 - t1).count());
       }
 
-      for (unsigned i = 0; i < n; ++i) {
-        assert(max_vals[i][0] == m - 1);
-        assert(max_locs[i][0] == cpu_max_locs[i][0]);
-      }
     }
     {
       fill(max_locs[0], n * 2, static_cast<unsigned>(-1));
@@ -543,14 +545,15 @@ int main() {
 
         auto t2 = h_clock::now();
 
+        for (unsigned i = 0; i < n; ++i) {
+          assert(max_vals[i][0] == m - 1);
+          assert(max_locs[i][0] == cpu_max_locs[i][0]);
+        }
+
         gpu_time_max.push_back(
             chr::duration_cast<chr::duration<double>>(t2 - t1).count());
       }
 
-      for (unsigned i = 0; i < n; ++i) {
-        assert(max_vals[i][0] == m - 1);
-        assert(max_locs[i][0] == cpu_max_locs[i][0]);
-      }
     }
   }
 
@@ -561,7 +564,6 @@ int main() {
     fill(max_vals[0], n * 2, static_cast<d_type>(-1));
 
     uint32_t num_threads_per_block = m / 4;
-    /* uint32_t num_threads_per_block = 32; */
     uint32_t num_warps_per_n =
         std::min((num_threads_per_block + WARP_SIZE - 1) / WARP_SIZE,
                  ((m + WARP_SIZE - 1) / WARP_SIZE));
@@ -570,11 +572,11 @@ int main() {
     uint32_t m_iterations = (m_per_warp - 1 + WARP_SIZE) / WARP_SIZE;
 
     // assumptions:
-    // - values per warp < 256
+    // - values per warp <= 256
     // - num_warps_per_n is less than the WARP_SIZE
     // - num theads is a multiple of the warp size
 
-    assert(m_per_warp < static_cast<uint8_t>(-1));
+    assert(m_per_warp <= static_cast<uint8_t>(-1));
     assert(num_threads_per_block / WARP_SIZE < WARP_SIZE);
     assert(num_threads_per_block % WARP_SIZE == 0);
 
