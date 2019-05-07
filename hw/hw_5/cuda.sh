@@ -13,5 +13,5 @@
 module load cuda/10.0.130
 
 nvidia-smi
-nvprof -o app.nvpf ./bin/app
+nvprof -f -o app.nvpf ./bin/app
 # ./bin/app
