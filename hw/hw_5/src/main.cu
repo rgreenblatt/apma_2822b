@@ -81,6 +81,7 @@ __forceinline__ __device__ loc_value warp_reduce_max(loc_value p,
   return p;
 }
 
+__host__ __device__
 inline void swap(loc_value *data, unsigned idx1, unsigned idx2,
                  loc_value &val) {
   val = data[idx1];
@@ -88,11 +89,13 @@ inline void swap(loc_value *data, unsigned idx1, unsigned idx2,
   data[idx2] = val;
 }
 
+__host__ __device__
 inline void swap(loc_value *data, unsigned idx1, unsigned idx2) {
   loc_value val;
   swap(data, idx1, idx2, val);
 }
 
+__host__ __device__
 inline unsigned partition(loc_value *data, unsigned start, unsigned end,
                           unsigned index) {
   loc_value pivot;
@@ -108,6 +111,7 @@ inline unsigned partition(loc_value *data, unsigned start, unsigned end,
   return idx_lower;
 }
 
+__host__ __device__
 inline loc_value quick_select(loc_value *data, unsigned start, unsigned end,
                               unsigned nth) {
   if (start - end == 1) {
@@ -132,12 +136,12 @@ __global__ void get_max_warp_per_n(loc_value **data, d_type **max_vals,
                                 unsigned **max_locs, unsigned m) {
 
   unsigned n_idx = blockIdx.x;
-  unsigned m_index = threadIdx.x;
+  unsigned m_idx = threadIdx.x;
 
   loc_value max_val; 
 
-  for (unsigned i = m_index; i < m; i+=WARP_SIZE) {
-    if (i == m_index) {
+  for (unsigned i = m_idx; i < m; i+=WARP_SIZE) {
+    if (i == m_idx) {
       max_val = data[n_idx][i];
     } else if (data[n_idx][i].val > max_val.val) {
       max_val = data[n_idx][i];
@@ -146,7 +150,7 @@ __global__ void get_max_warp_per_n(loc_value **data, d_type **max_vals,
 
   loc_value overall_max = warp_reduce_max(max_val, FULL_MASK);
 
-  if (!m_index) {
+  if (!m_idx) {
     max_vals[n_idx][0] = overall_max.val;
     max_locs[n_idx][0] = overall_max.idx;
   }
@@ -157,7 +161,7 @@ __global__ void get_max(loc_value **data, d_type **max_vals,
   loc_value *maxes = (loc_value *)shared_memory;
 
   unsigned n_idx = blockIdx.x;
-  unsigned m_index = threadIdx.x;
+  unsigned m_idx = threadIdx.x;
   unsigned warp_idx = threadIdx.x >> LOG_WARP_SIZE;
 
   bool first_iter = true;
@@ -172,19 +176,19 @@ __global__ void get_max(loc_value **data, d_type **max_vals,
 
     unsigned next_size_reduced = (size_reduced - 1 + WARP_SIZE) / WARP_SIZE;
 
-    unsigned mask = __ballot_sync(FULL_MASK, m_index < size_reduced);
+    unsigned mask = __ballot_sync(FULL_MASK, m_idx < size_reduced);
 
-    if (m_index < size_reduced) {
+    if (m_idx < size_reduced) {
 
       warp_max = warp_reduce_max(
-          first_iter ? data[n_idx][m_index] : maxes[m_index], mask);
+          first_iter ? data[n_idx][m_idx] : maxes[m_idx], mask);
 
       if (next_size_reduced == 1) {
-        if (!m_index) {
+        if (!m_idx) {
           max_vals[n_idx][0] = warp_max.val;
           max_locs[n_idx][0] = warp_max.idx;
         }
-      } else if (!(m_index % WARP_SIZE)) {
+      } else if (!(m_idx % WARP_SIZE)) {
         maxes[warp_idx] = warp_max;
       }
     }
@@ -208,6 +212,15 @@ union packed {
 
 __forceinline__ __device__ unsigned get_bin(d_type val, unsigned shift) {
   return (val >> shift) & (BINS_PER_PASS - 1);
+}
+
+__global__ void gpu_quick_select(loc_value **data, d_type **max_vals,
+                                 unsigned **max_locs, unsigned m,
+                                 unsigned nth) {
+  unsigned n_idx = blockIdx.x;
+  auto val = quick_select(data[n_idx], 0, m, nth);
+  max_locs[n_idx][1] = val.idx;
+  max_vals[n_idx][1] = val.val;
 }
 
 __global__ void sort_maxes(d_type **data, d_type **max_vals,
@@ -243,10 +256,10 @@ __global__ void sort_maxes(d_type **data, d_type **max_vals,
   current_size += num_warps_per_n * m_iterations;
 
   unsigned n_idx = blockIdx.x;
-  unsigned m_index = threadIdx.x;
+  unsigned m_idx = threadIdx.x;
   unsigned warp_idx = threadIdx.x >> LOG_WARP_SIZE;
 
-  unsigned m_local_index = m_index % WARP_SIZE;
+  unsigned m_local_index = m_idx % WARP_SIZE;
   unsigned m_offset = m_per_warp * warp_idx;
   unsigned m_start = m_local_index + m_offset;
   unsigned m_end = umin(m, m_per_warp * (warp_idx + 1));
@@ -256,7 +269,7 @@ __global__ void sort_maxes(d_type **data, d_type **max_vals,
     indexes[j] = j;
   }
 
-  bool is_last_thread_in_warp = (m_index + 1) % WARP_SIZE == 0;
+  bool is_last_thread_in_warp = (m_idx + 1) % WARP_SIZE == 0;
 
   packed *counts = new packed[m_iterations]();
 
@@ -306,7 +319,7 @@ __global__ void sort_maxes(d_type **data, d_type **max_vals,
 
     __syncthreads();
 
-    bool bin_reduce_condition = m_index < num_warps_per_n;
+    bool bin_reduce_condition = m_idx < num_warps_per_n;
 
     unsigned mask_warp_bin_reduce =
         __ballot_sync(FULL_MASK, bin_reduce_condition);
@@ -314,19 +327,19 @@ __global__ void sort_maxes(d_type **data, d_type **max_vals,
     // assumption is that num_warps_per_n is less than the WARP_SIZE
     if (bin_reduce_condition) {
       for (unsigned bin = 0; bin < BINS_PER_PASS; bin++) {
-        sum_over_warps[BINS_PER_PASS * m_index + bin] = warp_prefix_sum(
-            sum_over_warps[BINS_PER_PASS * m_index + bin],
-            (m_index == num_warps_per_n - 1) ? &sum_over_n[bin] : (d_type *)0,
+        sum_over_warps[BINS_PER_PASS * m_idx + bin] = warp_prefix_sum(
+            sum_over_warps[BINS_PER_PASS * m_idx + bin],
+            (m_idx == num_warps_per_n - 1) ? &sum_over_n[bin] : (d_type *)0,
             threadIdx.x, mask_warp_bin_reduce);
       }
     }
 
-    bool n_reduce_condition = m_index < BINS_PER_PASS;
+    bool n_reduce_condition = m_idx < BINS_PER_PASS;
 
     unsigned mask_warp_n_reduce = __ballot_sync(FULL_MASK, n_reduce_condition);
 
     if (n_reduce_condition) {
-      sum_over_n[m_index] = warp_prefix_sum(sum_over_n[m_index], (d_type *)0,
+      sum_over_n[m_idx] = warp_prefix_sum(sum_over_n[m_idx], (d_type *)0,
                                          threadIdx.x, mask_warp_n_reduce);
     }
 
@@ -453,6 +466,7 @@ int main() {
   std::vector<double> cpu_time_nth;
   std::vector<double> cpu_time_max;
   std::vector<double> gpu_time_nth_and_max;
+  std::vector<double> gpu_time_nth;
   std::vector<double> gpu_time_max;
   std::vector<double> gpu_time_max_warp_per_n;
 
@@ -460,11 +474,13 @@ int main() {
   /* ---------------  TASK 1  ------------ */
 
   {
-    fill(cpu_max_locs[0], n * 2, static_cast<unsigned>(-1));
-    fill(max_vals[0], n * 2, static_cast<d_type>(0));
 
 
     for (unsigned iter = 0; iter < iterations; ++iter) {
+
+      fill(cpu_max_locs[0], n * 2, static_cast<unsigned>(-1));
+      fill(max_vals[0], n * 2, static_cast<d_type>(0));
+
       auto t1 = h_clock::now();
       #pragma omp parallel for
       for (unsigned i = 0; i < n; ++i) {
@@ -477,11 +493,18 @@ int main() {
       }
       auto t2 = h_clock::now();
 
+      for (unsigned i = 0; i < n; ++i) {
+        assert(max_vals[i][0] == m - 1);
+      }
+
       cpu_time_max.push_back(
           chr::duration_cast<chr::duration<double>>(t2 - t1).count());
     }
 
     for (unsigned iter = 0; iter < iterations; ++iter) {
+
+      fill(max_vals[0], n * 2, static_cast<d_type>(-1));
+
       auto t1 = h_clock::now();
 
       #pragma omp parallel for
@@ -491,9 +514,17 @@ int main() {
         cpu_max_locs[i][1] = selected.idx;
       }
       auto t2 = h_clock::now();
+      
+      for (unsigned i = 0; i < n; ++i) {
+        for (unsigned j = 0; j < m; ++j) {
+          data_struct[i][j].val = data[i][j];
+          data_struct[i][j].idx = j;
+        }
+      }
+
 
       for (unsigned i = 0; i < n; ++i) {
-        assert(max_vals[i][0] == m - 1);
+        assert(max_vals[i][1] == nth_max);
         assert(max_vals[i][1] == nth_max);
       }
 
@@ -509,10 +540,11 @@ int main() {
 
   {
     {
-      fill(max_locs[0], n * 2, static_cast<unsigned>(-1));
-      fill(max_vals[0], n * 2, static_cast<d_type>(-1));
 
       for (unsigned iter = 0; iter < iterations; ++iter) {
+        fill(max_locs[0], n * 2, static_cast<unsigned>(-1));
+        fill(max_vals[0], n * 2, static_cast<d_type>(-1));
+
         auto t1 = h_clock::now();
 
         get_max_warp_per_n<<<n, 32>>>(data_struct, max_vals, max_locs, m);
@@ -532,10 +564,11 @@ int main() {
 
     }
     {
-      fill(max_locs[0], n * 2, static_cast<unsigned>(-1));
-      fill(max_vals[0], n * 2, static_cast<d_type>(-1));
 
       for (unsigned iter = 0; iter < iterations; ++iter) {
+        fill(max_locs[0], n * 2, static_cast<unsigned>(-1));
+        fill(max_vals[0], n * 2, static_cast<d_type>(-1));
+
         auto t1 = h_clock::now();
 
         get_max<<<n, m, (m - 1 + WARP_SIZE) / WARP_SIZE * sizeof(loc_value)>>>(
@@ -560,8 +593,6 @@ int main() {
   /* ---------------  TASK 3  ------------ */
 
   {
-    fill(max_locs[0], n * 2, static_cast<uint32_t>(-1));
-    fill(max_vals[0], n * 2, static_cast<d_type>(-1));
 
     uint32_t num_threads_per_block = m / 4;
     uint32_t num_warps_per_n =
@@ -585,6 +616,10 @@ int main() {
                           BINS_PER_PASS;
 
     for (unsigned iter = 0; iter < iterations; ++iter) {
+
+      fill(max_locs[0], n * 2, static_cast<uint32_t>(-1));
+      fill(max_vals[0], n * 2, static_cast<d_type>(-1));
+
       auto t1 = h_clock::now();
 
       sort_maxes<<<n, num_threads_per_block, shared_count * sizeof(uint32_t)>>>(
@@ -594,19 +629,50 @@ int main() {
 
       auto t2 = h_clock::now();
 
+      for (unsigned i = 0; i < n; ++i) {
+        assert(max_vals[i][0] == m - 1);
+        assert(max_vals[i][1] == nth_max);
+        assert(max_locs[i][0] == cpu_max_locs[i][0]);
+        assert(max_locs[i][1] == cpu_max_locs[i][1]);
+      }
+
       gpu_time_nth_and_max.push_back(
           chr::duration_cast<chr::duration<double>>(t2 - t1).count());
     }
 
-    for (unsigned i = 0; i < n; ++i) {
-      assert(max_vals[i][0] == m - 1);
-      assert(max_vals[i][1] == nth_max);
-      assert(max_locs[i][0] == cpu_max_locs[i][0]);
-      assert(max_locs[i][1] == cpu_max_locs[i][1]);
-    }
+    {
 
-    std::cout << "==== gpu passed tests ====" << std::endl;
+      for (unsigned iter = 0; iter < iterations; ++iter) {
+        for (unsigned i = 0; i < n; ++i) {
+          for (unsigned j = 0; j < m; ++j) {
+            data_struct[i][j].val = data[i][j];
+            data_struct[i][j].idx = j;
+          }
+        }
+
+        fill(max_locs[0], n * 2, static_cast<unsigned>(-1));
+        fill(max_vals[0], n * 2, static_cast<d_type>(-1));
+
+        auto t1 = h_clock::now();
+
+        gpu_quick_select<<<n, 1>>>(data_struct, max_vals, max_locs, m, nth_max);
+
+        cuda_error_chk(cudaDeviceSynchronize());
+
+        auto t2 = h_clock::now();
+
+        for (unsigned i = 0; i < n; ++i) {
+          assert(max_vals[i][1] == nth_max);
+          assert(max_locs[i][1] == cpu_max_locs[i][1]);
+        }
+
+        gpu_time_nth.push_back(
+            chr::duration_cast<chr::duration<double>>(t2 - t1).count());
+      }
+    }
   }
+  
+  std::cout << "==== gpu passed tests ====" << std::endl;
 
   unsigned start = 2;
 
@@ -614,11 +680,13 @@ int main() {
             << "\n"
             << "cpu_time_max: " << sum_range(cpu_time_max, start, iterations)
             << "\n"
-            << "gpu_time_nth_and_max: "
-            << sum_range(gpu_time_nth_and_max, start, iterations) << "\n"
             << "gpu_time_max_warp_per_n: "
             << sum_range(gpu_time_max_warp_per_n, start, iterations) << "\n"
             << "gpu_time_max: " << sum_range(gpu_time_max, start, iterations)
+            << "\n"
+            << "gpu_time_nth_and_max: "
+            << sum_range(gpu_time_nth_and_max, start, iterations) << "\n"
+            << "gpu_time_nth: " << sum_range(gpu_time_nth, start, iterations)
             << std::endl;
 
   cudaFree(data[0]);

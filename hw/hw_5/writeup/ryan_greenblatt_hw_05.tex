@@ -75,12 +75,15 @@ can be operated on to compute prefix sums. After the warp local operations
 
 All testing was done on the CCV with a GPU (V100) and 8 CPU cores.  Time
 required to copy data and convert between formats wasn't counted. I ran each
-test 10 times and timed each run individually so that the start up memory
-transfer cost for each approach could be evaluated.  Results are reported in
-terms of the time required for one iteration of the provided matrix.  The exact
-time and GLOPS of the computation will depend on the characteristics of the
-sparse matrix. \\
+test 10 times and averaged the last 8 runs to time required for shared memory
+migration. \\
 
+The GPU implementation for finding the maximum element was significantly faster
+than the CPU implementation. The version which uses one warp for every array
+rather than a thread for every value was slightly faster. \\
+
+The GPU radix sort was significantly slower than the CPU algorithm.
+ 
 On the GPU, the cuSPARSE implementation was the fastest.  The ELLPACK and
 standard implementations were very similar and almost as fast as the cuSPARSE
 implementation. On the CPU, the CRS implementation was the fastest. The optimal
