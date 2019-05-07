@@ -399,7 +399,7 @@ int main() {
   printf("threads = %d\n", num_threads);
 
   unsigned m = 1024;
-  unsigned n = 1024;
+  unsigned n = 16384;
 
   std::vector<d_type> range_to_m;
 
