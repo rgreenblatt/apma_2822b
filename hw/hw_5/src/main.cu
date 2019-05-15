@@ -465,8 +465,8 @@ int main() {
 
   std::vector<double> cpu_time_nth;
   std::vector<double> cpu_time_max;
-  std::vector<double> gpu_time_nth_and_max;
-  std::vector<double> gpu_time_nth;
+  std::vector<double> gpu_time_radix_sort;
+  std::vector<double> gpu_time_quick_select;
   std::vector<double> gpu_time_max;
   std::vector<double> gpu_time_max_warp_per_n;
 
@@ -636,7 +636,7 @@ int main() {
         assert(max_locs[i][1] == cpu_max_locs[i][1]);
       }
 
-      gpu_time_nth_and_max.push_back(
+      gpu_time_radix_sort.push_back(
           chr::duration_cast<chr::duration<double>>(t2 - t1).count());
     }
 
@@ -666,7 +666,7 @@ int main() {
           assert(max_locs[i][1] == cpu_max_locs[i][1]);
         }
 
-        gpu_time_nth.push_back(
+        gpu_time_quick_select.push_back(
             chr::duration_cast<chr::duration<double>>(t2 - t1).count());
       }
     }
@@ -676,7 +676,7 @@ int main() {
 
   unsigned start = 2;
 
-  std::cout << "cpu_time_nth: " << sum_range(cpu_time_nth, start, iterations)
+  std::cout << "cpu_time_quick_select: " << sum_range(cpu_time_nth, start, iterations)
             << "\n"
             << "cpu_time_max: " << sum_range(cpu_time_max, start, iterations)
             << "\n"
@@ -684,9 +684,9 @@ int main() {
             << sum_range(gpu_time_max_warp_per_n, start, iterations) << "\n"
             << "gpu_time_max: " << sum_range(gpu_time_max, start, iterations)
             << "\n"
-            << "gpu_time_nth_and_max: "
-            << sum_range(gpu_time_nth_and_max, start, iterations) << "\n"
-            << "gpu_time_nth: " << sum_range(gpu_time_nth, start, iterations)
+            << "gpu_time_radix_sort: "
+            << sum_range(gpu_time_radix_sort, start, iterations) << "\n"
+            << "gpu_time_quick_select: " << sum_range(gpu_time_quick_select, start, iterations)
             << std::endl;
 
   cudaFree(data[0]);
