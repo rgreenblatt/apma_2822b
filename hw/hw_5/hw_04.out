@@ -1,0 +1,50 @@
+## SLURM PROLOG ###############################################################
+##    Job ID : 4172474
+##  Job Name : cuda.sh
+##  Nodelist : gpu1211
+##      CPUs : 8
+##   Mem/CPU : 2800 MB
+## Directory : /gpfs_home/guest287/Documents/apma_2822b/hw/hw_5
+##   Started : Wed May 15 19:11:07 EDT 2019
+###############################################################################
+module: unloading 'cuda/10.0.130'
+module: loading 'cuda/10.0.130'
+Wed May 15 19:11:09 2019       
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 410.72       Driver Version: 410.72       CUDA Version: 10.0     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|===============================+======================+======================|
+|   0  Tesla V100-SXM2...  Off  | 00000000:61:00.0 Off |                    0 |
+| N/A   58C    P0   109W / 300W |  30700MiB / 32480MiB |    100%      Default |
++-------------------------------+----------------------+----------------------+
+|   1  Tesla V100-SXM2...  Off  | 00000000:62:00.0 Off |                    0 |
+| N/A   38C    P0    56W / 300W |      0MiB / 32480MiB |      0%      Default |
++-------------------------------+----------------------+----------------------+
+|   2  Tesla V100-SXM2...  Off  | 00000000:89:00.0 Off |                    0 |
+| N/A   55C    P0   212W / 300W |  31158MiB / 32480MiB |    100%      Default |
++-------------------------------+----------------------+----------------------+
+|   3  Tesla V100-SXM2...  Off  | 00000000:8A:00.0 Off |                    0 |
+| N/A   38C    P0    56W / 300W |      0MiB / 32480MiB |      4%      Default |
++-------------------------------+----------------------+----------------------+
+                                                                               
++-----------------------------------------------------------------------------+
+| Processes:                                                       GPU Memory |
+|  GPU       PID   Type   Process name                             Usage      |
+|=============================================================================|
+|    0    154416      C   python                                     30689MiB |
+|    2    155870      C   python                                     31147MiB |
++-----------------------------------------------------------------------------+
+==44712== NVPROF is profiling process 44712, command: ./bin/app
+ngpus = 1
+threads = 8
+==== cpu passed tests ====
+==== gpu passed tests ====
+cpu_time_quick_select: 0.0147669
+cpu_time_max: 0.00161193
+gpu_time_max_warp_per_n: 0.000357507
+gpu_time_max: 0.0004617
+gpu_time_radix_sort: 0.997017
+gpu_time_quick_select: 0.054615
+==44712== Generated result file: /gpfs_home/guest287/Documents/apma_2822b/hw/hw_5/app.nvpf
