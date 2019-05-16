@@ -15,7 +15,7 @@
 
 \title{APMA 2822b Homework 4} 
 \author{Ryan Greenblatt}
-\date{April 2019}
+\date{May 2019}
 
 \begin{document}
 
@@ -30,7 +30,7 @@
 Code is attached in the email. I have included a CMakeLists.txt file which can
 be used to compile the code on the CCV. The \verb cuda/10.0.130  module must be
 loaded. I also added the SLURM scripts I used. Note that gencode is specified
-to be "arch=compute\_70,code=sm\_70" which may cause issues on older GPUs.
+to be ``arch=compute\_70,code=sm\_70" which may cause issues on older GPUs.
 
 \subsection*{Algorithm and Implementation}
 
@@ -54,8 +54,10 @@ or equal to the element. This can be done entirely in place. Then, the nth
 element must be in the sub array of smaller elements if nth is less than the
 number of elements in the smaller array. In the other case, it must be in
 the greater or equal sub array. This can be recursively done until the 
-nth element is clear. Because this algorithm can't be easily parallelized,
-a different algorithm was used on the GPU. \\
+nth element is found. Because this algorithm can't be easily parallelized and 
+involves branching, a different algorithm was used on the GPU. The 
+quickselect algorithm was also tested on the GPU with only parallelism over the
+each different array for the purposes of comparison. \\
 
 Least significant digit radix sort was used on the GPU. This has $O(n)$
 runtime. This involves sorting an array of elements by some number of the least
@@ -71,119 +73,96 @@ over each bin in the warp local reductions, packed 32 bit unsigned integers
 can be operated on to compute prefix sums. After the warp local operations
 32 bit unsigned integers must be used to ensure no overflow occurs.
 
+\section{Analysis}
+
+A V100 GPU was used which has an approximate memory bandwidth of 800 GB/s. 
+A reasonable estimate of CPU memory bandwidth is 55 GB/s. 
+The code was tested with $N = 16384$ and $M = 1024$, so this is used in 
+analysis. \\
+
+Finding the maximum element in an array on the CPU just requires using each
+element in the array once, so the expected memory access is just the size of
+the array. A total of $N * M * 4 =  67108864$ bytes must be accessed which is
+0.0625 GB.  The expected time is $\frac{0.0625}{55} = 0.00114$. The GPU will
+require additional reduction operations. In the case of the approach which uses
+one warp per every array, there are an insignificant amount of additional
+reductions.  The memory access is well approximated by the same analysis done
+for the CPU.  The expected time is $\frac{0.0625}{800} = 0.0000781$ seconds. \\
+
+The number of iterations required by the quickselect algorithm will vary and
+the number of elements which must be accessed in each iteration will also vary.
+As such, it is difficult to estimate without making assumptions.  This estimate
+will be done assuming a constant reduction factor per iteration.  Further, it
+isn't unreasonable to estimate using an infinite sum even though the algorithm
+doesn't require infinite iterations because the additional memory accesses of
+the last iterations are small.  In addition to reading the memory, the memory
+will need to be copied to new arrays which will double the total memory
+bandwidth. The index and value must both be stored which is 8 bytes. Assuming
+that the array is reduced by half each iteration, the total amount of memory
+access is $2 \frac{N * M * 8}{1 - \frac12}  = N * M * 32 = 536870912$ in bytes
+or 0.5 GB.  The expected time is $\frac{0.5}{55} = 0.00909$ seconds. \\
+
+Radix sort will require iterating over all elements in the array for each set
+of significant digits which must be binned. In this implementation, 16
+iterations are required. Each element iterated over also required updating a
+single byte counter. In addition to iterating over the array, reductions 
+must be computed. Finally, indices and elements must be copied to the 
+appropriate place in the other array. The last few reductions will be ignored 
+because the total memory bandwidth is small. The total bytes required is:
+
+$$16 *  (N * M * (4 + 1 + \log_2(32) * (4 + 4) + 4 + 4) + \frac{N * M}{32} * 
+\log_2(32) * (4 + 4) = 14562623488$$
+
+This is 13.5625 GB. The expected time is $\frac{13.5625}{900} = 0.0151$ seconds.
+
 \section{Results}
 
 All testing was done on the CCV with a GPU (V100) and 8 CPU cores.  Time
 required to copy data and convert between formats wasn't counted. I ran each
-test 10 times and averaged the last 8 runs to time required for shared memory
-migration. \\
+test 10 times and averaged the last 8 runs to not count time required for
+shared memory migration and copying between formats. \\
 
 The GPU implementation for finding the maximum element was significantly faster
 than the CPU implementation. The version which uses one warp for every array
 rather than a thread for every value was slightly faster. \\
 
-The GPU radix sort was significantly slower than the CPU algorithm.
+The GPU radix sort was significantly slower than the CPU algorithm. However,
+the GPU radix sort is far more scalable. \\
+
+As an additional test, I also evaluated running the quickselect algorithm on
+the GPU with one block per each array. This massively underutilizes the width of
+the GPU, but turned out to be faster than the GPU radix sort. This suggests 
+that either the implementation of radix sort I wrote is very poor or radix sort 
+is ill suited to the problem.
  
-On the GPU, the cuSPARSE implementation was the fastest.  The ELLPACK and
-standard implementations were very similar and almost as fast as the cuSPARSE
-implementation. On the CPU, the CRS implementation was the fastest. The optimal
-value for ELLPACK row loop unrolling was found to be 4.  Storing the number of
-elements in each row and only looping through the required elements improved
-CPU and GPU performance.  Using a texture resulted in no improvement for CRS or
-ELLPACK.  The timing results can be seen in tables 1 and 2. \\
-
-Unified and device memory had similar performance after the first iteration.
-The first iteration using managed memory which switched from the CPU to GPU was
-substantially slower because the managed memory needed to be transfered from
-device to host. \\
-
-Interestingly, the average kernel timings reported by nvprof were substantially
-different from the timing found by the code. I used the CUDA event API to time
-CUDA kernels in the code. I tested on both my laptop and the CCV and the
-disparity wasn't at all present on my laptop. The average kernels durations as
-reported by nvprof are given in table 3 below. I think that most likely the
-kernel timings reported by nvprof are incorrect and the issue may be related to
-the nvprof error which using CUDA 10. The issue may also be occurring in CUDA
-9, but isn't properly reported.  \\ 
-
-Profiling the code using nvprof allowed for detailed inspection of the time
-required for each CUDA API call. The timings for each CUDA API call are given
-in table 4 below. \texttt{cudaFree} was found to use a large percentage of the
-overall time of the program (437.68 ms). It isn't clear to me why this would be
-the case. \texttt{cudaMalloc}, \texttt{cudaMallocManaged}, and
-\texttt{cudaMallocPitch} also took substantial program execution time.
-\texttt{cudaMemcpy} consumed most of the remaining time spent on CUDA API
-calls. \\
-
-
-\begin{table}[] 
-  \centering 
-  \begin{tabular}{|l|l|l|l|l|} 
-    \hline Method               & Average time & 1            & 2            & 3 \\
-    \hline CPU                      & 1.600510e-04 & 7.989560e-04 & 1.593470e-04 & 1.586510e-04 \\
-    \hline GPU                      & 4.646400e-05 & 5.334400e-05 & 4.668800e-05 & 4.742400e-05 \\
-    \hline GPU texture memory     & 4.848800e-05 & 1.091520e-04 & 5.129600e-05 & 4.912000e-05 \\
-    \hline CPU managed before GPU & 1.610724e-04 & 2.447670e-04 & 2.344980e-04 & 1.753500e-04 \\
-    \hline GPU managed            & 4.674400e-05 & 4.469568e-03 & 4.918400e-05 & 4.796800e-05 \\
-    \hline CPU managed after GPU  & 1.610724e-04 & 2.447670e-04 & 2.344980e-04 & 1.753500e-04 \\
-    \hline cuSPARSE                 & 3.886400e-05 & 1.065280e-04 & 4.323200e-05 & 3.977600e-05 \\ \hline
-  \end{tabular} 
-  \caption{The recorded timings for each method utilizing the CRS
-    data format. The average is the average over the 10 runs excluding the first
-    two runs. Only the first 3 runs are shown to highlight transfer times
-  associated with managed memory.} 
-\end{table}
-
-\begin{table}[] 
-  \centering 
-  \begin{tabular}{|l|l|l|l|l|} 
-    \hline Method                 & Average time & 1            & 2            & 3 \\
-    \hline CPU                    & 2.352189e-04 & 7.101640e-04 & 3.498100e-04 & 2.545160e-04 \\
-    \hline GPU                    & 4.766800e-05 & 5.331200e-05 & 4.723200e-05 & 4.729600e-05 \\
-    \hline GPU texture memory     & 4.765600e-05 & 4.881280e-04 & 4.928000e-05 & 4.761600e-05 \\
-    \hline CPU managed before GPU & 2.949605e-04 & 1.024591e-03 & 8.099850e-04 & 3.533850e-04 \\
-    \hline GPU managed            & 4.756000e-05 & 8.975392e-03 & 5.948800e-05 & 4.678400e-05 \\
-    \hline CPU managed after GPU  & 2.949605e-04 & 1.024591e-03 & 8.099850e-04 & 3.533850e-04 \\ \hline
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    variant                 & time (s) \\ \hline
+    CPU time                & 0.00161193 \\ \hline
+    GPU time warp per array & 0.000357507 \\ \hline
+    GPU time                & 0.0004617 \\ \hline
   \end{tabular}
-
-  \caption{The recorded timings for each method utilizing the ELLPACK data
-    format.  The average is the average over the 10 runs excluding the first two
-    runs.  Only the first 3 runs are shown to highlight transfer times associated
-  with managed memory.} 
+  \caption{Time to find the maximum element.}
 \end{table}
 
-\begin{table}[] 
-  \centering 
-  \begin{tabular}{|l|l|} 
-    \hline Method                 & Average kernel time \\
-    \hline ELLPACK                & 865.07us \\
-    \hline CRS                    & 260.40us \\
-    \hline ELLPACK texture memory & 82.038us \\
-    \hline CRS texture memory     & 43.023us \\
-    \hline cuSPARSE               & 38.012us \\ \hline
+\begin{table}[h]
+  \centering
+  \begin{tabular}{|l|l|}
+    \hline
+    variant               & time (s) \\ \hline
+    CPU time quick select & 0.0147669 \\ \hline
+    GPU time radix sort   & 0.997017 \\ \hline
+    GPU time quick select & 0.054615 \\ \hline
   \end{tabular}
-  \caption{The average running time of each
-    kernel as reported by nvprof. I think these
-  timings are likely wrong.}
+  \caption{Time to find the nth element. Note that the radix sort also finds the
+  full ordering including the max element}
 \end{table}
 
-\begin{table}[] 
-  \centering 
-  \begin{tabular}{|l|l|} 
-    \hline API call           & Time \\
-    \hline cudaFree           & 437.68ms \\
-    \hline cudaMalloc         & 296.62ms \\
-    \hline cudaMemcpy         & 30.429ms \\
-    \hline cudaMallocManaged  & 20.848ms \\
-    \hline cudaEventSynchroni & 16.806ms \\
-    \hline cudaDeviceSynchron & 8.6555ms \\
-    \hline cuDeviceGetAttribu & 1.2526ms \\
-    \hline cudaLaunchKernel   & 607.89us \\
-    \hline cuDeviceTotalMem   & 551.48us \\
-    \hline cudaEventRecord    & 321.05us \\ \hline
-  \end{tabular} 
-  \caption{The total time for all API calls
-  which took longer than 200 us.}
-\end{table}
+\section{Conclusions}
+
+I learned that \verb cuda-gdb   is very useful when debugging GPU code. I also
+learned that radix sort can be very tricky to implement massively in parallel.
 
 \end{document}

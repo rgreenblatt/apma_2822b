@@ -7,7 +7,7 @@
 #SBATCH -n 8
 
 #SBATCH -t 00:05:00
-#SBATCH -o hw_04.out
+#SBATCH -o hw_05.out
 
 # Load CUDA module
 module load cuda/10.0.130
