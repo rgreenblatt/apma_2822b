@@ -80,9 +80,9 @@
       std::cout << msg;                                                        \
       std::cout.flush();                                                       \
     }                                                                          \
-    timer_type rtf_t0 = my_timer();                                             \
+    timer_type rtf_t0 = my_timer();                                            \
     fn;                                                                        \
-    time_inc = my_timer() - rtf_t0;                                             \
+    time_inc = my_timer() - rtf_t0;                                            \
     time_total += time_inc;                                                    \
     if (myproc == 0) {                                                         \
       std::cout << time_inc << "s, total time: " << time_total << std::endl;   \
@@ -139,8 +139,8 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
   }
 
   double largest_imbalance = 0, std_dev = 0;
-  compute_imbalance<GlobalOrdinal>(my_box, largest_imbalance,
-                                   std_dev, ydoc, true);
+  compute_imbalance<GlobalOrdinal>(my_box, largest_imbalance, std_dev, ydoc,
+                                   true);
 
   // Create a representation of the mesh:
   // Note that 'simple_mesh_description' is a virtual or conceptual
@@ -213,11 +213,11 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 
   timer_type dirbc_time;
   RUN_TIMED_FUNCTION("imposing Dirichlet BC...",
-                     impose_dirichlet(0.0, A, b, mesh.bc_rows_0),
-                     dirbc_time, t_total);
+                     impose_dirichlet(0.0, A, b, mesh.bc_rows_0), dirbc_time,
+                     t_total);
   RUN_TIMED_FUNCTION("imposing Dirichlet BC...",
-                     impose_dirichlet(1.0, A, b, mesh.bc_rows_1),
-                     dirbc_time, t_total);
+                     impose_dirichlet(1.0, A, b, mesh.bc_rows_1), dirbc_time,
+                     t_total);
 
 #ifdef MINIFE_DEBUG
   write_matrix("A.mtx", A);
