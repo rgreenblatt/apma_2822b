@@ -10,4 +10,3 @@ cd $PBS_O_WORKDIR
 # The script below is based on a 6 node, 144 MPI rank run on NERSC's Hopper
 echo "running small problem on 6 nodes, 144 cores"
 aprun -cc cpu -n 144 ./miniFE.x -nx 614 -ny 614 -nz 614
-

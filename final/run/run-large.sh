@@ -10,4 +10,3 @@ cd $PBS_O_WORKDIR
 # The script below is based on a 2048 node, 49152 MPI rank run on NERSC's Hopper
 echo "running large problem on 2048 nodes, 49152 cores"
 aprun -cc cpu -n 49152 ./miniFE.x -nx 4293 -ny 4293 -nz 4293
-

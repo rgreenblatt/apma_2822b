@@ -10,4 +10,3 @@ cd $PBS_O_WORKDIR
 # This problem is ~10,000 times larger than the small problem.
 echo "running large problem on ? nodes, ? cores"
 mpirun -n ? ./miniFE.x -nx 13236 -ny 13236 -nz 13236
-
