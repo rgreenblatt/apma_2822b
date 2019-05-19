@@ -103,7 +103,7 @@ void sum_into_vector(size_t num_indices,
   for (size_t i = 0; i < num_indices; ++i) {
     if (indices[i] < first || indices[i] > last)
       continue;
-    size_t idx = indices[i] - first;
+    size_t idx = static_cast<size_t>(indices[i] - first);
     vec_coefs[idx] += coefs[i];
   }
 }
@@ -143,15 +143,18 @@ void waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
   }
 #endif
 
-  size_t n = x.coefs.size();
+  unsigned n = static_cast<unsigned>(x.coefs.size());
   const ScalarType *xcoefs = &x.coefs[0];
   const ScalarType *ycoefs = &y.coefs[0];
   ScalarType *wcoefs = &w.coefs[0];
 
-#pragma omp parallel for
-  for (size_t i = 0; i < n; ++i) {
+#ifdef USE_CUDA
+  cuda_waxpby(wcoefs, alpha, xcoefs, beta, ycoefs, n);
+#else
+  for (unsigned i = 0; i < n; ++i) {
     waxpby_op(wcoefs, alpha, xcoefs, beta, ycoefs, i);
   }
+#endif
 }
 
 // Like waxpby above, except operates on two sets of arguments.
@@ -186,7 +189,7 @@ void fused_waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
                     beta2, ycoefs, y2coefs, n);
 #else
 #pragma omp parallel for
-  for (size_t i = 0; i < n; ++i) {
+  for (unsigned i = 0; i < n; ++i) {
     waxpby_op(wcoefs, alpha, xcoefs, beta, ycoefs, i);
     waxpby_op(w2coefs, alpha2, x2coefs, beta2, y2coefs, i);
   }
@@ -202,7 +205,11 @@ void fused_waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
 //
 template <typename Vector>
 typename TypeTraits<typename Vector::ScalarType>::magnitude_type
-dot(const Vector &x, const Vector &y) {
+dot(const Vector &x, const Vector &y, cublasHandle_t handle=0);
+
+template <typename Vector>
+typename TypeTraits<typename Vector::ScalarType>::magnitude_type
+dot(const Vector &x, const Vector &y, cublasHandle_t handle) {
   size_t n = x.coefs.size();
 
 #ifdef MINIFE_DEBUG
@@ -221,10 +228,15 @@ dot(const Vector &x, const Vector &y) {
   const Scalar *ycoefs = &y.coefs[0];
   magnitude result = 0;
 
+
+#ifdef USE_CUDA
+  cuda_dot(handle, xcoefs, ycoefs, &result, static_cast<unsigned>(n));
+#else
 #pragma omp parallel for reduction(+ : result)
   for (size_t i = 0; i < n; ++i) {
     result += xcoefs[i] * ycoefs[i];
   }
+#endif
 
 #ifdef HAVE_MPI
   magnitude local_dot = result, global_dot = 0;

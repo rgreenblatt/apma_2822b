@@ -85,8 +85,8 @@ void get_global_min_max(GlobalOrdinal local_n, GlobalOrdinal &global_n,
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 #endif
 
-  std::vector<GlobalOrdinal> all_n(numprocs, 0);
-  all_n[myproc] = local_n;
+  std::vector<GlobalOrdinal> all_n(static_cast<size_t>(numprocs), 0);
+  all_n[static_cast<size_t>(myproc)] = local_n;
 #ifdef HAVE_MPI
   std::vector<GlobalOrdinal> tmp(all_n);
   MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
@@ -101,15 +101,15 @@ void get_global_min_max(GlobalOrdinal local_n, GlobalOrdinal &global_n,
   max_proc = 0;
 
   for (int i = 0; i < numprocs; ++i) {
-    global_n += all_n[i];
+    global_n += all_n[static_cast<size_t>(i)];
     // min_proc will be the lowest-numbered proc with n = min_n
-    if (all_n[i] < min_n) {
-      min_n = all_n[i];
+    if (all_n[static_cast<size_t>(i)] < min_n) {
+      min_n = all_n[static_cast<size_t>(i)];
       min_proc = i;
     }
     // max_proc will be the highest-numbered proc with n = max_n
-    if (all_n[i] >= max_n) {
-      max_n = all_n[i];
+    if (all_n[static_cast<size_t>(i)] >= max_n) {
+      max_n = all_n[static_cast<size_t>(i)];
       max_proc = i;
     }
   }
@@ -135,7 +135,7 @@ Scalar compute_std_dev_as_percentage(Ordinal local_nrows, Scalar avg_nrows) {
   //
   //(But for now, use MPI_Allgather and compute on all procs.)
 
-  std::vector<Scalar> all_nrows(numprocs, 0);
+  std::vector<Scalar> all_nrows(static_cast<size_t>(numprocs), 0);
   MPI_Allgather(&local_nrows, 1, mpi_dtype, &all_nrows[0], 1, mpi_dtype,
                 MPI_COMM_WORLD);
 

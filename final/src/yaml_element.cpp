@@ -25,7 +25,8 @@ YAML_Element::~YAML_Element() {
  * QUESTION: if an element is not added because the key already exists,
  * will this lead to memory leakage?
  */
-YAML_Element *YAML_Element::add(const std::string &key_arg, double value_arg) {
+template <typename T>
+YAML_Element *YAML_Element::add(const std::string &key_arg, T value_arg) {
   this->value = "";
   string converted_value = convert_to_string(value_arg);
   YAML_Element *element = new YAML_Element(key_arg, converted_value);
@@ -33,51 +34,22 @@ YAML_Element *YAML_Element::add(const std::string &key_arg, double value_arg) {
   return element;
 }
 
-YAML_Element *YAML_Element::add(const std::string &key_arg, int value_arg) {
-  this->value = "";
-  string converted_value = convert_to_string(value_arg);
-  YAML_Element *element = new YAML_Element(key_arg, converted_value);
-  children.push_back(element);
-  return element;
-}
-
-#ifndef MINIFE_NO_LONG_LONG
-
-YAML_Element *YAML_Element::add(const std::string &key_arg,
-                                long long value_arg) {
-  this->value = "";
-  string converted_value = convert_to_string(value_arg);
-  YAML_Element *element = new YAML_Element(key_arg, converted_value);
-  children.push_back(element);
-  return element;
-}
-
-#endif
-
-YAML_Element *YAML_Element::add(const std::string &key_arg, size_t value_arg) {
-  this->value = "";
-  string converted_value = convert_to_string(value_arg);
-  YAML_Element *element = new YAML_Element(key_arg, converted_value);
-  children.push_back(element);
-  return element;
-}
-
-YAML_Element *YAML_Element::add(const std::string &key_arg,
-                                unsigned value_arg) {
-  this->value = "";
-  string converted_value = convert_to_string(value_arg);
-  YAML_Element *element = new YAML_Element(key_arg, converted_value);
-  children.push_back(element);
-  return element;
-}
-
-YAML_Element *YAML_Element::add(const std::string &key_arg,
-                                const std::string &value_arg) {
-  this->value = "";
-  YAML_Element *element = new YAML_Element(key_arg, value_arg);
-  children.push_back(element);
-  return element;
-}
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         int value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         long int value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         long long int value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         double value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         const std::string value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         const char * value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         float value_arg);
+template YAML_Element *YAML_Element::add(const std::string &key_arg,
+                                         unsigned long value_arg);
 
 /*
  * returns pointer to the YAML_Element for the given key.

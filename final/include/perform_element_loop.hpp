@@ -54,7 +54,7 @@ void perform_element_loop(const simple_mesh_description<GlobalOrdinal> &mesh,
   // into the global sparse linear-system.
 
   GlobalOrdinal num_elems = get_num_ids<GlobalOrdinal>(local_elem_box);
-  std::vector<GlobalOrdinal> elemIDs(num_elems);
+  std::vector<GlobalOrdinal> elemIDs(static_cast<size_t>(num_elems));
 
   BoxIterator iter = BoxIterator::begin(local_elem_box);
   BoxIterator end = BoxIterator::end(local_elem_box);

@@ -53,14 +53,14 @@ size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
   GlobalOrdinal min_nrows = 0, max_nrows = 0, global_nrows = 0;
   int min_proc = 0, max_proc = 0;
 
-  GlobalOrdinal local_nrows = A.rows.size();
+  GlobalOrdinal local_nrows = static_cast<GlobalOrdinal>(A.rows.size());
 
   get_global_min_max(local_nrows, global_nrows, min_nrows, min_proc, max_nrows,
                      max_proc);
 
   // Gather stats on global, min/max matrix num-nonzeros:
 
-  GlobalOrdinal local_nnz = A.num_nonzeros();
+  GlobalOrdinal local_nnz = static_cast<GlobalOrdinal>(A.num_nonzeros());
   GlobalOrdinal dglobal_nnz = 0, dmin_nnz = 0, dmax_nnz = 0;
 
   get_global_min_max(local_nnz, dglobal_nnz, dmin_nnz, min_proc, dmax_nnz,
@@ -76,7 +76,7 @@ size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
   size_t global_nnz = static_cast<size_t>(std::ceil(dglobal_nnz));
   size_t min_nnz = static_cast<size_t>(std::ceil(dmin_nnz));
   size_t max_nnz = static_cast<size_t>(std::ceil(dmax_nnz));
-  size_t global_num_rows = global_nrows;
+  auto global_num_rows = global_nrows;
 
   if (myproc == 0) {
     ydoc.add("Matrix attributes", "");
@@ -91,8 +91,10 @@ size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
 
     double invGB = 1.0 / (1024 * 1024 * 1024);
     double memGB =
-        invGB * static_cast<double>(global_nrows * sizeof(GlobalOrdinal));
-    memGB += invGB * static_cast<double>(global_nrows * sizeof(LocalOrdinal));
+        invGB * static_cast<double>(static_cast<size_t>(global_nrows) *
+                                    sizeof(GlobalOrdinal));
+    memGB += invGB * static_cast<double>(static_cast<size_t>(global_nrows) *
+                                         sizeof(LocalOrdinal));
     memGB += invGB * static_cast<double>(global_nnz * sizeof(GlobalOrdinal));
     memGB += invGB * static_cast<double>(global_nnz * sizeof(Scalar));
     ydoc.get("Matrix attributes")->add("Global Memory (GB)", memGB);
@@ -100,8 +102,8 @@ size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
     ydoc.get("Matrix attributes")
         ->add("Pll Memory Overhead (MB)", mem_overhead_MB);
 
-    size_t min_num_rows = min_nrows;
-    size_t max_num_rows = max_nrows;
+    auto min_num_rows = min_nrows;
+    auto max_num_rows = max_nrows;
     ydoc.get("Matrix attributes")->add("Rows per proc MIN", min_num_rows);
     ydoc.get("Matrix attributes")->add("Rows per proc MAX", max_num_rows);
     ydoc.get("Matrix attributes")->add("Rows per proc AVG", avg_nrows);

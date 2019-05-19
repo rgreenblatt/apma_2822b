@@ -28,5 +28,7 @@ template <class T> void UMAllocator<T>::deallocate(T *p, size_t) {
 }
 
 template struct UMAllocator<MINIFE_LOCAL_ORDINAL>;
+#if MINIFE_LOCAL_ORDINAL != MINIFE_GLOBAL_ORDINAL
 template struct UMAllocator<MINIFE_GLOBAL_ORDINAL>;
+#endif
 template struct UMAllocator<MINIFE_SCALAR>;

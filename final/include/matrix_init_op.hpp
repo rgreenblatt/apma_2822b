@@ -31,8 +31,8 @@
 #pragma once
 
 #include "box_utils.hpp"
-#include "simple_mesh_description.hpp"
 #include "csr_matrix.hpp"
+#include "simple_mesh_description.hpp"
 
 #include <algorithm>
 
@@ -111,8 +111,8 @@ struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR, MINIFE_LOCAL_ORDINAL,
                 << nnz << ")" << std::endl;
     }
 
-    matrix.packed_cols.resize(nnz);
-    matrix.packed_coefs.resize(nnz);
+    matrix.packed_cols.resize(static_cast<size_t>(nnz));
+    matrix.packed_coefs.resize(static_cast<size_t>(nnz));
     dest_rowoffsets[n] = nnz;
   }
 

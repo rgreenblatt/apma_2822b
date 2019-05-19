@@ -44,10 +44,11 @@ struct Vector {
   typedef GlobalOrdinal GlobalOrdinalType;
 
   Vector(GlobalOrdinal startIdx, LocalOrdinal local_sz)
-      : startIndex(startIdx), local_size(local_sz), coefs(local_size) {
+      : startIndex(startIdx), local_size(local_sz),
+        coefs(static_cast<size_t>(local_size)) {
     MemInitOp<Scalar> mem_init;
     mem_init.ptr = &coefs[0];
-    mem_init.n = local_size;
+    mem_init.n = static_cast<size_t>(local_size);
 
 #pragma omp parallel for
     for (size_t i = 0; i < mem_init.n; ++i) {

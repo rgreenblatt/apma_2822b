@@ -117,7 +117,7 @@ int verify_solution(
   max_error.err = 0.0;
 
   for (size_t i = 0; i < rows.size(); ++i) {
-    Scalar computed_soln = x.coefs[rows[i]];
+    Scalar computed_soln = x.coefs[static_cast<size_t>(rows[i])];
     Scalar x = row_coords[i * 3];
     Scalar y = row_coords[i * 3 + 1];
     Scalar z = row_coords[i * 3 + 2];

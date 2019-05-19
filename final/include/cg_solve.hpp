@@ -37,21 +37,17 @@
 
 #include "my_timer.hpp"
 #include "vector_functions.hpp"
+#include "sparse_matrix_functions.hpp"
+#include "cuda_utils.cuh"
+#include "cusparse.h"
 
 #include "outstream.hpp"
 
 namespace miniFE {
 
-/* template <typename Scalar> */
-/* void print_vec(const std::vector<Scalar> &vec, const std::string &name) { */
-/*   for (size_t i = 0; i < vec.size(); ++i) { */
-/*     std::cout << name << "[" << i << "]: " << vec[i] << std::endl; */
-/*   } */
-/* } */
-
 template <typename VectorType>
 bool breakdown(typename VectorType::ScalarType inner, const VectorType &v,
-               const VectorType &w) {
+               const VectorType &w, cublasHandle_t cublas_handle) {
   typedef typename VectorType::ScalarType Scalar;
   typedef typename TypeTraits<Scalar>::magnitude_type magnitude;
 
@@ -62,8 +58,8 @@ bool breakdown(typename VectorType::ScalarType inner, const VectorType &v,
   // v and w are considered orthogonal if
   //  |inner| < 100 * ||v||_2 * ||w||_2 * epsilon
 
-  magnitude vnorm = std::sqrt(dot(v, v));
-  magnitude wnorm = std::sqrt(dot(w, w));
+  magnitude vnorm = std::sqrt(dot(v, v, cublas_handle));
+  magnitude wnorm = std::sqrt(dot(w, w, cublas_handle));
   return std::abs(inner) <=
          100 * vnorm * wnorm * std::numeric_limits<magnitude>::epsilon();
 }
@@ -106,6 +102,17 @@ void cg_solve(
   VectorType p(0, ncols);
   VectorType Ap(b.startIndex, nrows);
 
+  cublasHandle_t cublas_handle = 0;
+  cusparseHandle_t cusparse_handle = 0;
+  cusparseMatDescr_t descr = 0;
+#ifdef USE_CUDA
+  cublas_error_chk(cublasCreate_v2(&cublas_handle));
+  cusparse_error_chk(cusparseCreate(&cusparse_handle));
+  cusparse_error_chk(cusparseCreateMatDescr(&descr));
+  cusparse_error_chk(cusparseSetMatType(descr, CUSPARSE_MATRIX_TYPE_GENERAL));
+  cusparse_error_chk(cusparseSetMatIndexBase(descr, CUSPARSE_INDEX_BASE_ZERO));
+#endif
+
   normr = 0;
   magnitude_type rtrans = 0;
   magnitude_type oldrtrans = 0;
@@ -125,10 +132,8 @@ void cg_solve(
   waxpby(one, x, zero, x, p);
   TOCK(tWAXPY);
 
-  //  print_vec(p.coefs, "p");
-
   TICK();
-  matvec(A, p, Ap);
+  matvec(A, p, Ap, cusparse_handle, descr);
   TOCK(tMATVEC);
 
   TICK();
@@ -136,10 +141,8 @@ void cg_solve(
   TOCK(tWAXPY);
 
   TICK();
-  rtrans = dot(r, r);
+  rtrans = dot(r, r, cublas_handle);
   TOCK(tDOT);
-
-  // std::cout << "rtrans="<<rtrans<<std::endl;
 
   normr = std::sqrt(rtrans);
 
@@ -157,12 +160,14 @@ void cg_solve(
   for (LocalOrdinalType k = 1; k <= max_iter && normr > tolerance; ++k) {
     if (k == 1) {
       TICK();
+
       waxpby(one, r, zero, r, p);
+
       TOCK(tWAXPY);
     } else {
       oldrtrans = rtrans;
       TICK();
-      rtrans = dot(r, r);
+      rtrans = dot(r, r, cublas_handle);
       TOCK(tDOT);
       magnitude_type beta = rtrans / oldrtrans;
       TICK();
@@ -177,20 +182,21 @@ void cg_solve(
                 << std::endl;
     }
 
+
     magnitude_type alpha = 0;
     magnitude_type p_ap_dot = 0;
 
 #ifdef MINIFE_FUSED
     TICK();
-    p_ap_dot = matvec_and_dot(A, p, Ap);
+    p_ap_dot = matvec_and_dot(A, p, Ap, cusparse_handle, cublas_handle, descr);
     TOCK(tMATVECDOT);
 #else
     TICK();
-    matvec(A, p, Ap);
+    matvec(A, p, Ap, cusparse_handle, descr);
     TOCK(tMATVEC);
 
     TICK();
-    p_ap_dot = dot(Ap, p);
+    p_ap_dot = dot(Ap, p, cublas_handle);
     TOCK(tDOT);
 #endif
 
@@ -199,7 +205,7 @@ void cg_solve(
     os.flush();
 #endif
     if (p_ap_dot < brkdown_tol) {
-      if (p_ap_dot < 0 || breakdown(p_ap_dot, Ap, p)) {
+      if (p_ap_dot < 0 || breakdown(p_ap_dot, Ap, p, cublas_handle)) {
         std::cerr << "miniFE::cg_solve ERROR, numerical breakdown!"
                   << std::endl;
 #ifdef MINIFE_DEBUG
@@ -232,6 +238,11 @@ void cg_solve(
 
     num_iters = k;
   }
+
+#ifdef USE_CUDA
+  cublas_error_chk(cublasDestroy_v2(cublas_handle));
+  cusparse_error_chk(cusparseDestroy(cusparse_handle));
+#endif
 
   my_cg_times[WAXPY] = tWAXPY;
   my_cg_times[DOT] = tDOT;

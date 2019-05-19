@@ -51,8 +51,7 @@ inline void copy_box(const Box &from_box, Box &to_box) {
 }
 
 template <typename GlobalOrdinal>
-void get_int_coords(GlobalOrdinal ID, int nx, int ny, int &x, int &y,
-                    int &z) {
+void get_int_coords(GlobalOrdinal ID, int nx, int ny, int &x, int &y, int &z) {
   z = static_cast<int>(ID / (nx * ny));
   y = static_cast<int>((ID % (nx * ny)) / nx);
   x = static_cast<int>(ID % nx);
@@ -214,20 +213,21 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 
   GlobalOrdinal local_num_ids = num_my_ids;
-  typename std::vector<GlobalOrdinal> global_offsets(numprocs);
+  typename std::vector<GlobalOrdinal> global_offsets(
+      static_cast<size_t>(numprocs));
   MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
   MPI_Allgather(&local_num_ids, 1, mpi_dtype, &global_offsets[0], 1, mpi_dtype,
                 MPI_COMM_WORLD);
   GlobalOrdinal offset = 0;
   for (int i = 0; i < numprocs; ++i) {
-    GlobalOrdinal tmp = global_offsets[i];
-    global_offsets[i] = offset;
+    GlobalOrdinal tmp = global_offsets[static_cast<size_t>(i)];
+    global_offsets[static_cast<size_t>(i)] = offset;
     offset += tmp;
   }
 
-  GlobalOrdinal my_first_row = global_offsets[myproc];
+  GlobalOrdinal my_first_row = global_offsets[static_cast<size_t>(myproc)];
 
-  std::vector<int> all_boxes(6 * numprocs);
+  std::vector<int> all_boxes(6 * static_cast<size_t>(numprocs));
   int *local_box_ranges = const_cast<int *>(&box.ranges[0]);
   MPI_Allgather(local_box_ranges, 6, MPI_INT, &all_boxes[0], 6, MPI_INT,
                 MPI_COMM_WORLD);
@@ -239,7 +239,8 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
 
   for (size_t i = 1; i < all_ids.size(); ++i) {
     if (all_ids[i] != all_ids[i - 1] + 1) {
-      id_to_row.insert(std::make_pair(all_ids[i], my_first_row + i));
+      id_to_row.insert(std::make_pair(
+          all_ids[i], my_first_row + static_cast<GlobalOrdinal>(i)));
     }
   }
 
@@ -249,7 +250,7 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
       continue;
     Box box_i;
     for (int r = 0; r < 6; ++r)
-      box_i.ranges[r] = all_boxes[i * 6 + r];
+      box_i.ranges[r] = all_boxes[static_cast<size_t>(i * 6 + r)];
     //    bool neighbor= is_neighbor(box, box_i);
     // if(myproc==2) {
     //  std::cout<<"i: "<<i<<" "<<neighbor<<" ";
@@ -262,13 +263,14 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
     get_ids(global_nx, global_ny, global_nz, box_i, all_ids,
             include_ghost_layer);
 
-    GlobalOrdinal first_row = global_offsets[i];
+    GlobalOrdinal first_row = global_offsets[static_cast<size_t>(i)];
     if (all_ids.size() > 0) {
       id_to_row.insert(std::make_pair(all_ids[0], first_row));
     }
     for (size_t j = 1; j < all_ids.size(); ++j) {
       if (all_ids[j] != all_ids[j - 1] + 1) {
-        id_to_row.insert(std::make_pair(all_ids[j], first_row + j));
+        id_to_row.insert(std::make_pair(
+            all_ids[j], first_row + static_cast<GlobalOrdinal>(j)));
       }
     }
   }

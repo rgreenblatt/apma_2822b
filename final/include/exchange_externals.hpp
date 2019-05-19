@@ -121,7 +121,7 @@ void exchange_externals(MatrixType &A, VectorType &x) {
          << ", elements_to_send[i]==" << elements_to_send[i] << std::endl;
     }
 #endif
-    send_buffer[i] = x.coefs[elements_to_send[i]];
+    send_buffer[i] = x.coefs[static_cast<size_t>(elements_to_send[i])];
   }
 
   //
@@ -224,7 +224,7 @@ void begin_exchange_externals(MatrixType &A, VectorType &x) {
 
   size_t total_to_be_sent = elements_to_send.size();
   for (size_t i = 0; i < total_to_be_sent; ++i)
-    send_buffer[i] = x.coefs[elements_to_send[i]];
+    send_buffer[i] = x.coefs[static_cast<size_t>(elements_to_send[i])];
 
   //
   // Send to each neighbor
@@ -249,7 +249,8 @@ inline void finish_exchange_externals(int num_neighbors) {
 
   MPI_Status status;
   for (int i = 0; i < num_neighbors; ++i) {
-    if (MPI_Wait(&exch_ext_requests[i], &status) != MPI_SUCCESS) {
+    if (MPI_Wait(&exch_ext_requests[static_cast<size_t>(i)], &status) !=
+        MPI_SUCCESS) {
       std::cerr << "MPI_Wait error\n" << std::endl;
       MPI_Abort(MPI_COMM_WORLD, -1);
     }

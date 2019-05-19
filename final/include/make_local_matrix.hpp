@@ -60,9 +60,10 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
 
   // Extract Matrix pieces
 
-  size_t local_nrow = A.rows.size();
+  GlobalOrdinal local_nrow = static_cast<GlobalOrdinal>(A.rows.size());
   GlobalOrdinal start_row = local_nrow > 0 ? A.rows[0] : -1;
-  GlobalOrdinal stop_row = local_nrow > 0 ? A.rows[local_nrow - 1] : -1;
+  GlobalOrdinal stop_row =
+      local_nrow > 0 ? A.rows[static_cast<size_t>(local_nrow) - 1] : -1;
 
   // We need to convert the index values for the rows on this processor
   // to a local index space. We need to:
@@ -106,14 +107,15 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // Go through list of externals to find out which processors must be accessed.
   ////////////////////////////////////////////////////////////////////////
 
-  std::vector<GlobalOrdinal> tmp_buffer(numprocs,
+  std::vector<GlobalOrdinal> tmp_buffer(static_cast<size_t>(numprocs),
                                         0); // Temp buffer space needed below
 
   // Build list of global index offset
 
-  std::vector<GlobalOrdinal> global_index_offsets(numprocs, 0);
+  std::vector<GlobalOrdinal> global_index_offsets(static_cast<size_t>(numprocs),
+                                                  0);
 
-  tmp_buffer[myproc] = start_row; // This is my start row
+  tmp_buffer[static_cast<size_t>(myproc)] = start_row; // This is my start row
 
   // This call sends the start_row of each ith processor to the ith
   // entry of global_index_offsets on all processors.
@@ -127,13 +129,14 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
                 MPI_SUM, MPI_COMM_WORLD);
 
   // Go through list of externals and find the processor that owns each
-  std::vector<int> external_processor(num_external);
+  std::vector<int> external_processor(static_cast<size_t>(num_external));
 
   for (LocalOrdinal i = 0; i < num_external; ++i) {
-    GlobalOrdinal cur_ind = external_index[i];
+    GlobalOrdinal cur_ind = external_index[static_cast<size_t>(i)];
     for (int j = numprocs - 1; j >= 0; --j) {
-      if (global_index_offsets[j] <= cur_ind && global_index_offsets[j] >= 0) {
-        external_processor[i] = j;
+      if (global_index_offsets[static_cast<size_t>(j)] <= cur_ind &&
+          global_index_offsets[static_cast<size_t>(j)] >= 0) {
+        external_processor[static_cast<size_t>(i)] = j;
         break;
       }
     }
@@ -147,22 +150,23 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // have consecutive indices).
   /////////////////////////////////////////////////////////////////////////
 
-  size_t count = local_nrow;
+  GlobalOrdinal count = local_nrow;
   std::vector<GlobalOrdinal> &external_local_index = A.external_local_index;
-  external_local_index.assign(num_external, -1);
+  external_local_index.assign(static_cast<size_t>(num_external), -1);
 
   for (LocalOrdinal i = 0; i < num_external; ++i) {
-    if (external_local_index[i] == -1) {
-      external_local_index[i] = count++;
+    if (external_local_index[static_cast<size_t>(i)] == -1) {
+      external_local_index[static_cast<size_t>(i)] = count++;
 
       for (LocalOrdinal j = i + 1; j < num_external; ++j) {
-        if (external_processor[j] == external_processor[i])
-          external_local_index[j] = count++;
+        if (external_processor[static_cast<size_t>(j)] ==
+            external_processor[static_cast<size_t>(i)])
+          external_local_index[static_cast<size_t>(j)] = count++;
       }
     }
   }
 
-  for (size_t i = 0; i < local_nrow; ++i) {
+  for (size_t i = 0; i < static_cast<size_t>(local_nrow); ++i) {
     GlobalOrdinal *Acols = NULL;
     Scalar *Acoefs = NULL;
     size_t row_len = 0;
@@ -171,16 +175,18 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
     for (size_t j = 0; j < row_len; ++j) {
       if (Acols[j] < 0) { // Change index values of externals
         GlobalOrdinal cur_ind = -Acols[j] - 1;
-        Acols[j] = external_local_index[externals[cur_ind]];
+        Acols[j] =
+            external_local_index[static_cast<size_t>(externals[cur_ind])];
       }
     }
   }
 
-  std::vector<int> new_external_processor(num_external, 0);
+  std::vector<int> new_external_processor(static_cast<size_t>(num_external), 0);
 
   for (int i = 0; i < num_external; ++i) {
-    new_external_processor[external_local_index[i] - local_nrow] =
-        external_processor[i];
+    new_external_processor[static_cast<size_t>(
+        external_local_index[static_cast<size_t>(i)] - local_nrow)] =
+        external_processor[static_cast<size_t>(i)];
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -195,17 +201,20 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   ///
   ////////////////////////////////////////////////////////////////////////
 
-  std::vector<GlobalOrdinal> tmp_neighbors(numprocs, 0);
+  std::vector<GlobalOrdinal> tmp_neighbors(static_cast<size_t>(numprocs), 0);
 
   int num_recv_neighbors = 0;
   int length = 1;
 
   for (LocalOrdinal i = 0; i < num_external; ++i) {
-    if (tmp_neighbors[new_external_processor[i]] == 0) {
+    if (tmp_neighbors[static_cast<size_t>(
+            new_external_processor[static_cast<size_t>(i)])] == 0) {
       ++num_recv_neighbors;
-      tmp_neighbors[new_external_processor[i]] = 1;
+      tmp_neighbors[static_cast<size_t>(
+          new_external_processor[static_cast<size_t>(i)])] = 1;
     }
-    tmp_neighbors[new_external_processor[i]] += numprocs;
+    tmp_neighbors[static_cast<size_t>(
+        new_external_processor[static_cast<size_t>(i)])] += numprocs;
   }
 
   /// sum over all processor all the tmp_neighbors arrays ///
@@ -216,13 +225,14 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // decode the combined 'tmp_neighbors' (stored in tmp_buffer)
   // array from all the processors
 
-  GlobalOrdinal num_send_neighbors = tmp_buffer[myproc] % numprocs;
+  GlobalOrdinal num_send_neighbors =
+      tmp_buffer[static_cast<size_t>(myproc)] % numprocs;
 
   /// decode 'tmp_buffer[myproc] to deduce total number of elements
   //  we must send
 
   GlobalOrdinal total_to_be_sent =
-      (tmp_buffer[myproc] - num_send_neighbors) / numprocs;
+      (tmp_buffer[static_cast<size_t>(myproc)] - num_send_neighbors) / numprocs;
 
   ///////////////////////////////////////////////////////////////////////
   ///
@@ -234,8 +244,9 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   std::vector<int> recv_list;
   recv_list.push_back(new_external_processor[0]);
   for (LocalOrdinal i = 1; i < num_external; ++i) {
-    if (new_external_processor[i - 1] != new_external_processor[i]) {
-      recv_list.push_back(new_external_processor[i]);
+    if (new_external_processor[static_cast<size_t>(i) - 1] !=
+        new_external_processor[static_cast<size_t>(i)]) {
+      recv_list.push_back(new_external_processor[static_cast<size_t>(i)]);
     }
   }
 
@@ -243,7 +254,7 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // Send a 0 length message to each of our recv neighbors
   //
 
-  std::vector<int> send_list(num_send_neighbors, 0);
+  std::vector<int> send_list(static_cast<size_t>(num_send_neighbors), 0);
 
   //
   // first post receives, these are immediate receives
@@ -252,17 +263,17 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   //
   int MPI_MY_TAG = 99;
 
-  std::vector<MPI_Request> request(num_send_neighbors);
+  std::vector<MPI_Request> request(static_cast<size_t>(num_send_neighbors));
   for (int i = 0; i < num_send_neighbors; ++i) {
-    MPI_Irecv(&tmp_buffer[i], 1, mpi_dtype, MPI_ANY_SOURCE, MPI_MY_TAG,
-              MPI_COMM_WORLD, &request[i]);
+    MPI_Irecv(&tmp_buffer[static_cast<size_t>(i)], 1, mpi_dtype, MPI_ANY_SOURCE,
+              MPI_MY_TAG, MPI_COMM_WORLD, &request[static_cast<size_t>(i)]);
   }
 
   // send messages
 
   for (int i = 0; i < num_recv_neighbors; ++i) {
-    MPI_Send(&tmp_buffer[i], 1, mpi_dtype, recv_list[i], MPI_MY_TAG,
-             MPI_COMM_WORLD);
+    MPI_Send(&tmp_buffer[static_cast<size_t>(i)], 1, mpi_dtype,
+             recv_list[static_cast<size_t>(i)], MPI_MY_TAG, MPI_COMM_WORLD);
   }
 
   ///
@@ -271,11 +282,11 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
 
   MPI_Status status;
   for (int i = 0; i < num_send_neighbors; ++i) {
-    if (MPI_Wait(&request[i], &status) != MPI_SUCCESS) {
+    if (MPI_Wait(&request[static_cast<size_t>(i)], &status) != MPI_SUCCESS) {
       std::cerr << "MPI_Wait error\n" << std::endl;
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
-    send_list[i] = status.MPI_SOURCE;
+    send_list[static_cast<size_t>(i)] = status.MPI_SOURCE;
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -289,30 +300,33 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   for (int j = 0; j < num_send_neighbors; ++j) {
     int found = 0;
     for (int i = 0; i < num_recv_neighbors; ++i) {
-      if (recv_list[i] == send_list[j])
+      if (recv_list[static_cast<size_t>(i)] ==
+          send_list[static_cast<size_t>(j)])
         found = 1;
     }
 
     if (found == 0) {
-      recv_list.push_back(send_list[j]);
+      recv_list.push_back(send_list[static_cast<size_t>(j)]);
       ++num_recv_neighbors;
     }
   }
 
   num_send_neighbors = num_recv_neighbors;
-  request.resize(num_send_neighbors);
+  request.resize(static_cast<size_t>(num_send_neighbors));
 
-  A.elements_to_send.assign(total_to_be_sent, 0);
-  A.send_buffer.assign(total_to_be_sent, 0);
+  A.elements_to_send.assign(static_cast<size_t>(total_to_be_sent), 0);
+  A.send_buffer.assign(static_cast<size_t>(total_to_be_sent), 0);
 
   //
   // Create 'new_external' which explicitly put the external elements in the
   // order given by 'external_local_index'
   //
 
-  std::vector<GlobalOrdinal> new_external(num_external);
+  std::vector<GlobalOrdinal> new_external(static_cast<size_t>(num_external));
   for (LocalOrdinal i = 0; i < num_external; ++i) {
-    new_external[external_local_index[i] - local_nrow] = external_index[i];
+    new_external[static_cast<size_t>(
+        external_local_index[static_cast<size_t>(i)] - local_nrow)] =
+        external_index[static_cast<size_t>(i)];
   }
 
   /////////////////////////////////////////////////////////////////////////
@@ -322,26 +336,26 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   //
   /////////////////////////////////////////////////////////////////////////
 
-  std::vector<int> lengths(num_recv_neighbors);
+  std::vector<int> lengths(static_cast<size_t>(num_recv_neighbors));
 
   ++MPI_MY_TAG;
 
   // First post receives
 
   for (int i = 0; i < num_recv_neighbors; ++i) {
-    int partner = recv_list[i];
-    MPI_Irecv(&lengths[i], 1, MPI_INT, partner, MPI_MY_TAG, MPI_COMM_WORLD,
-              &request[i]);
+    int partner = recv_list[static_cast<size_t>(i)];
+    MPI_Irecv(&lengths[static_cast<size_t>(i)], 1, MPI_INT, partner, MPI_MY_TAG,
+              MPI_COMM_WORLD, &request[static_cast<size_t>(i)]);
   }
 
   std::vector<int> &neighbors = A.neighbors;
   std::vector<LocalOrdinal> &recv_length = A.recv_length;
   std::vector<LocalOrdinal> &send_length = A.send_length;
 
-  neighbors.resize(num_recv_neighbors, 0);
-  A.request.resize(num_recv_neighbors);
-  recv_length.resize(num_recv_neighbors, 0);
-  send_length.resize(num_recv_neighbors, 0);
+  neighbors.resize(static_cast<size_t>(num_recv_neighbors), 0);
+  A.request.resize(static_cast<size_t>(num_recv_neighbors));
+  recv_length.resize(static_cast<size_t>(num_recv_neighbors), 0);
+  send_length.resize(static_cast<size_t>(num_recv_neighbors), 0);
 
   LocalOrdinal j = 0;
   for (int i = 0; i < num_recv_neighbors; ++i) {
@@ -351,28 +365,31 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
     // go through list of external elements until updating
     // processor changes
 
-    while ((j < num_external) && (new_external_processor[j] == recv_list[i])) {
+    while ((j < num_external) &&
+           (new_external_processor[static_cast<size_t>(j)] ==
+            recv_list[static_cast<size_t>(i)])) {
       ++newlength;
       ++j;
       if (j == num_external)
         break;
     }
 
-    recv_length[i] = newlength;
-    neighbors[i] = recv_list[i];
+    recv_length[static_cast<size_t>(i)] = newlength;
+    neighbors[static_cast<size_t>(i)] = recv_list[static_cast<size_t>(i)];
 
     length = j - start;
-    MPI_Send(&length, 1, MPI_INT, recv_list[i], MPI_MY_TAG, MPI_COMM_WORLD);
+    MPI_Send(&length, 1, MPI_INT, recv_list[static_cast<size_t>(i)], MPI_MY_TAG,
+             MPI_COMM_WORLD);
   }
 
   // Complete the receives of the number of externals
 
   for (int i = 0; i < num_recv_neighbors; ++i) {
-    if (MPI_Wait(&request[i], &status) != MPI_SUCCESS) {
+    if (MPI_Wait(&request[static_cast<size_t>(i)], &status) != MPI_SUCCESS) {
       std::cerr << "MPI_Wait error\n" << std::endl;
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
-    send_length[i] = lengths[i];
+    send_length[static_cast<size_t>(i)] = lengths[static_cast<size_t>(i)];
   }
 
   ////////////////////////////////////////////////////////////////////////
@@ -384,9 +401,11 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
 
   j = 0;
   for (int i = 0; i < num_recv_neighbors; ++i) {
-    MPI_Irecv(&A.elements_to_send[j], send_length[i], mpi_dtype, neighbors[i],
-              MPI_MY_TAG, MPI_COMM_WORLD, &request[i]);
-    j += send_length[i];
+    MPI_Irecv(&A.elements_to_send[static_cast<size_t>(j)],
+              send_length[static_cast<size_t>(i)], mpi_dtype,
+              neighbors[static_cast<size_t>(i)], MPI_MY_TAG, MPI_COMM_WORLD,
+              &request[static_cast<size_t>(i)]);
+    j += send_length[static_cast<size_t>(i)];
   }
 
   j = 0;
@@ -398,20 +417,22 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
     // until updating processor changes. This is redundant, but
     // saves us from recording this information.
 
-    while ((j < num_external) && (new_external_processor[j] == recv_list[i])) {
+    while ((j < num_external) &&
+           (new_external_processor[static_cast<size_t>(j)] ==
+            recv_list[static_cast<size_t>(i)])) {
       ++newlength;
       ++j;
       if (j == num_external)
         break;
     }
-    MPI_Send(&new_external[start], j - start, mpi_dtype, recv_list[i],
-             MPI_MY_TAG, MPI_COMM_WORLD);
+    MPI_Send(&new_external[static_cast<size_t>(start)], j - start, mpi_dtype,
+             recv_list[static_cast<size_t>(i)], MPI_MY_TAG, MPI_COMM_WORLD);
   }
 
   // receive from each neighbor the global index list of external elements
 
   for (int i = 0; i < num_recv_neighbors; ++i) {
-    if (MPI_Wait(&request[i], &status) != MPI_SUCCESS) {
+    if (MPI_Wait(&request[static_cast<size_t>(i)], &status) != MPI_SUCCESS) {
       std::cerr << "MPI_Wait error\n" << std::endl;
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
@@ -420,7 +441,7 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   /// replace global indices by local indices ///
 
   for (GlobalOrdinal i = 0; i < total_to_be_sent; ++i) {
-    A.elements_to_send[i] -= start_row;
+    A.elements_to_send[static_cast<size_t>(i)] -= start_row;
   }
 
   //////////////////

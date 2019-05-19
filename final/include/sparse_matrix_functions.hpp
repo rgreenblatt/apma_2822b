@@ -37,6 +37,7 @@
 #include <sstream>
 #include <vector>
 
+#include "cuda_sparse_matrix_functions.hpp"
 #include "elem_data.hpp"
 #include "exchange_externals.hpp"
 #include "matrix_copy_op.hpp"
@@ -88,7 +89,7 @@ void sort_with_companions(ptrdiff_t len, T *array, U *companions) {
       companions[j] = companions[j - 1];
       j = j - 1;
     }
-    array[j] = index;
+    array[j] = static_cast<T>(index);
     companions[j] = companion;
   }
 }
@@ -143,9 +144,6 @@ void sum_into_row(size_t row_len, GlobalOrdinal *row_indices, Scalar *row_coefs,
         std::lower_bound(row_indices, row_indices + row_len, input_indices[i]);
     if (loc - row_indices < static_cast<GlobalOrdinal>(row_len) &&
         *loc == input_indices[i]) {
-      // if(flag && *loc==6)
-      // std::cout<<"  ("<<*loc<<":"<<row_coefs[loc-row_indices]<<" +=
-      // "<<input_coefs[i]<<")"<<std::endl;
       row_coefs[loc - row_indices] += input_coefs[i];
     }
   }
@@ -182,7 +180,6 @@ void sum_in_symm_elem_matrix(
   // indices is length num (which should be nodes-per-elem)
   // coefs is the upper triangle of the element diffusion matrix
   // which should be length num*(num+1)/2
-  // std::cout<<std::endl;
 
   size_t row_offset = 0;
   for (size_t i = 0; i < num; ++i) {
@@ -207,7 +204,6 @@ void sum_in_symm_elem_matrix(
     size_t offset = i;
     for (size_t j = 0; j < i; ++j) {
       Scalar coef = coefs[offset];
-      // std::cout<<"i: "<<i<<", j: "<<j<<", offset: "<<offset<<std::endl;
       sum_into_row(mat_row_len, mat_row_cols, mat_row_coefs, 1, &indices[j],
                    &coef);
       offset += num - (j + 1);
@@ -324,10 +320,13 @@ void rearrange_matrix_local_external(MatrixType &A) {
   // tmp_row_offsets_external describe the locations of the external entries.
   //
   for (size_t i = 0; i < nrows; ++i) {
-    GlobalOrdinal *row_begin = &A.packed_cols[A.row_offsets[i]];
-    GlobalOrdinal *row_end = &A.packed_cols[A.row_offsets[i + 1]];
+    GlobalOrdinal *row_begin =
+        &A.packed_cols[static_cast<size_t>(A.row_offsets[i])];
+    GlobalOrdinal *row_end =
+        &A.packed_cols[static_cast<size_t>(A.row_offsets[i + 1])];
 
-    Scalar *coef_row_begin = &A.packed_coefs[A.row_offsets[i]];
+    Scalar *coef_row_begin =
+        &A.packed_coefs[static_cast<size_t>(A.row_offsets[i])];
 
     tmp_row_offsets[i * 2] = A.row_offsets[i];
     tmp_row_offsets[i * 2 + 1] = A.row_offsets[i + 1];
@@ -352,16 +351,18 @@ void rearrange_matrix_local_external(MatrixType &A) {
 
   // Next, copy the external entries into separate arrays.
 
-  std::vector<GlobalOrdinal> ext_cols(num_extern_nz);
-  std::vector<Scalar> ext_coefs(num_extern_nz);
+  std::vector<GlobalOrdinal> ext_cols(static_cast<size_t>(num_extern_nz));
+  std::vector<Scalar> ext_coefs(static_cast<size_t>(num_extern_nz));
   std::vector<LocalOrdinal> ext_offsets(nrows + 1);
   LocalOrdinal offset = 0;
   for (size_t i = 0; i < nrows; ++i) {
     ext_offsets[i] = offset;
     for (LocalOrdinal j = tmp_row_offsets_external[i * 2];
          j < tmp_row_offsets_external[i * 2 + 1]; ++j) {
-      ext_cols[offset] = A.packed_cols[j];
-      ext_coefs[offset++] = A.packed_coefs[j];
+      ext_cols[static_cast<size_t>(offset)] =
+          A.packed_cols[static_cast<size_t>(j)];
+      ext_coefs[static_cast<size_t>(offset++)] =
+          A.packed_coefs[static_cast<size_t>(j)];
     }
   }
   ext_offsets[nrows] = offset;
@@ -374,8 +375,10 @@ void rearrange_matrix_local_external(MatrixType &A) {
     A.row_offsets[i] = offset;
     for (LocalOrdinal j = tmp_row_offsets[i * 2];
          j < tmp_row_offsets[i * 2 + 1]; ++j) {
-      A.packed_cols[offset] = A.packed_cols[j];
-      A.packed_coefs[offset++] = A.packed_coefs[j];
+      A.packed_cols[static_cast<size_t>(offset)] =
+          A.packed_cols[static_cast<size_t>(j)];
+      A.packed_coefs[static_cast<size_t>(offset++)] =
+          A.packed_coefs[static_cast<size_t>(j)];
     }
   }
   A.row_offsets[nrows] = offset;
@@ -385,8 +388,10 @@ void rearrange_matrix_local_external(MatrixType &A) {
 
   for (LocalOrdinal i = offset;
        i < offset + static_cast<LocalOrdinal>(ext_cols.size()); ++i) {
-    A.packed_cols[i] = ext_cols[i - offset];
-    A.packed_coefs[i] = ext_coefs[i - offset];
+    A.packed_cols[static_cast<size_t>(i)] =
+        ext_cols[static_cast<size_t>(i - offset)];
+    A.packed_coefs[static_cast<size_t>(i)] =
+        ext_coefs[static_cast<size_t>(i - offset)];
   }
 
   A.row_offsets_external.resize(nrows + 1);
@@ -432,7 +437,7 @@ void impose_dirichlet(
   for (; bc_iter != bc_end; ++bc_iter) {
     GlobalOrdinal row = *bc_iter;
     if (row >= first_local_row && row <= last_local_row) {
-      size_t local_row = row - first_local_row;
+      size_t local_row = static_cast<size_t>(row - first_local_row);
       b.coefs[local_row] = prescribed_value;
       zero_row_and_put_1_on_diagonal(A, row);
     }
@@ -472,7 +477,9 @@ static timer_type exchtime = 0;
 //
 template <typename MatrixType, typename VectorType>
 typename TypeTraits<typename VectorType::ScalarType>::magnitude_type
-matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y) {
+matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y,
+               cusparseHandle_t cusparse_handle, cublasHandle_t cublas_handle,
+               cusparseMatDescr_t descr) {
   timer_type t0 = my_timer();
   exchange_externals(A, x);
   exchtime += my_timer() - t0;
@@ -489,13 +496,16 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y) {
   const ScalarType *Acoefs = &A.packed_coefs[0];
   const ScalarType *xcoefs = &x.coefs[0];
   ScalarType *ycoefs = &y.coefs[0];
-  ScalarType beta = 0;
-
   magnitude result = 0;
 
+#ifdef USE_CUDA
+  result =
+      cuda_matvec_and_dot(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n, A.num_cols,
+                          A.num_nonzeros(), cusparse_handle, cublas_handle, descr);
+#else
 #pragma omp parallel for reduction(+ : result)
   for (size_t row = 0; row < n; ++row) {
-    ScalarType sum = beta * ycoefs[row];
+    ScalarType sum = 0;
 
     for (LocalOrdinalType i = Arowoffsets[row]; i < Arowoffsets[row + 1]; ++i) {
       sum += Acoefs[i] * xcoefs[Acols[i]];
@@ -504,6 +514,7 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y) {
     ycoefs[row] = sum;
     result += xcoefs[row] * sum;
   }
+#endif
 
 #ifdef HAVE_MPI
   magnitude local_dot = result, global_dot = 0;
@@ -523,24 +534,29 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y) {
 // y - result vector
 //
 template <typename MatrixType, typename VectorType> struct matvec_std {
-  void operator()(MatrixType &A, VectorType &x, VectorType &y) {
+  void operator()(MatrixType &A, VectorType &x, VectorType &y,
+                  cusparseHandle_t cusparse_handle, cusparseMatDescr_t descr) {
     exchange_externals(A, x);
 
     typedef typename MatrixType::ScalarType ScalarType;
     typedef typename MatrixType::GlobalOrdinalType GlobalOrdinalType;
     typedef typename MatrixType::LocalOrdinalType LocalOrdinalType;
 
-    size_t n = A.rows.size();
     const LocalOrdinalType *Arowoffsets = &A.row_offsets[0];
     const GlobalOrdinalType *Acols = &A.packed_cols[0];
     const ScalarType *Acoefs = &A.packed_coefs[0];
     const ScalarType *xcoefs = &x.coefs[0];
     ScalarType *ycoefs = &y.coefs[0];
-    ScalarType beta = 0;
 
+    size_t n = A.rows.size();
+
+#ifdef USE_CUDA
+    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n, A.num_cols,
+                          A.num_nonzeros(), cusparse_handle, descr);
+#else
 #pragma omp parallel for
     for (size_t row = 0; row < n; ++row) {
-      ScalarType sum = beta * ycoefs[row];
+      ScalarType sum = 0;
 
       for (LocalOrdinalType i = Arowoffsets[row]; i < Arowoffsets[row + 1];
            ++i) {
@@ -549,17 +565,20 @@ template <typename MatrixType, typename VectorType> struct matvec_std {
 
       ycoefs[row] = sum;
     }
+#endif
   }
 };
 
 template <typename MatrixType, typename VectorType>
-void matvec(MatrixType &A, VectorType &x, VectorType &y) {
+void matvec(MatrixType &A, VectorType &x, VectorType &y,
+            cusparseHandle_t handle, cusparseMatDescr_t descr) {
   matvec_std<MatrixType, VectorType> mv;
-  mv(A, x, y);
+  mv(A, x, y, handle, descr);
 }
 
 template <typename MatrixType, typename VectorType> struct matvec_overlap {
-  void operator()(MatrixType &A, VectorType &x, VectorType &y) {
+  void operator()(MatrixType &A, VectorType &x, VectorType &y,
+                  cusparseHandle_t cusparse_handle, cusparseMatDescr_t descr) {
 #ifdef HAVE_MPI
     begin_exchange_externals(A, x);
 #endif
@@ -576,6 +595,10 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
     ScalarType *ycoefs = &y.coefs[0];
     ScalarType beta = 0;
 
+#ifdef USE_CUDA
+    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n, A.num_cols,
+                A.num_nonzeros(), cusparse_handle, descr);
+#else
     for (size_t row = 0; row < n; ++row) {
       ScalarType sum = beta * ycoefs[row];
 
@@ -587,6 +610,7 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
 
       ycoefs[row] = sum;
     }
+#endif
 
 #ifdef HAVE_MPI
     finish_exchange_externals(static_cast<int>(A.neighbors.size()));
@@ -594,6 +618,7 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
     Arowoffsets = &A.row_offsets_external[0];
     beta = 1;
 
+    // TODO
     for (size_t row = 0; row < n; ++row) {
       ScalarType sum = beta * ycoefs[row];
 

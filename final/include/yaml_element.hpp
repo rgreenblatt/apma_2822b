@@ -61,26 +61,9 @@ public:
   ~YAML_Element();
   //! Key accessor method
   std::string getKey() { return key; }
-  //! Add a child element to an element list associated with this element, value
-  //! of type double
-  YAML_Element *add(const std::string &key_arg, double value_arg);
-  //! Add a child element to an element list associated with this element, value
-  //! of type int
-  YAML_Element *add(const std::string &key_arg, int value_arg);
-#ifndef MINIFE_NO_LONG_LONG
-  //! Add a child element to an element list associated with this element, value
-  //! of type long long
-  YAML_Element *add(const std::string &key_arg, long long value_arg);
-#endif
-  //! Add a child element to an element list associated with this element, value
-  //! of type size_t
-  YAML_Element *add(const std::string &key_arg, size_t value_arg);
-  //! Add a child element to an element list associated with this element, value
-  //! of type unsigned
-  YAML_Element *add(const std::string &key_arg, unsigned value_arg);
-  //! Add a child element to an element list associated with this element, value
-  //! of type string
-  YAML_Element *add(const std::string &key_arg, const std::string &value_arg);
+  //! Add a child element to an element list associated with this element
+  template <typename T>
+  YAML_Element *add(const std::string &key_arg, T value_arg);
   //! get the element in the list with the given key
   YAML_Element *get(const std::string &key_arg);
   std::string printYAML(std::string space);

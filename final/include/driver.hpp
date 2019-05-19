@@ -55,9 +55,6 @@
 #include "compute_matrix_stats.hpp"
 #include "imbalance.hpp"
 #include "make_local_matrix.hpp"
-#if MINIFE_KERNELS != 0
-#include "time_kernels.hpp"
-#endif
 #include "my_timer.hpp"
 #include "outstream.hpp"
 #include "utils.hpp"

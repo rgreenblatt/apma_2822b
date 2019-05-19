@@ -93,11 +93,11 @@ int generate_matrix_structure(
       throw std::runtime_error(str1);
     }
 
-    std::vector<GlobalOrdinal> rows(nrows);
-    std::vector<LocalOrdinal> row_offsets(nrows + 1);
-    std::vector<int> row_coords(nrows * 3);
+    std::vector<GlobalOrdinal> rows(static_cast<size_t>(nrows));
+    std::vector<LocalOrdinal> row_offsets(static_cast<size_t>(nrows) + 1);
+    std::vector<int> row_coords(static_cast<size_t>(nrows) * 3);
 
-    unsigned roffset = 0;
+    GlobalOrdinal roffset = 0;
     LocalOrdinal nnz = 0;
 
     for (int iz = box[2][0]; iz < box[2][1]; ++iz) {

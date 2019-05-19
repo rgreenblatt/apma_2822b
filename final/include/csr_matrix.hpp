@@ -79,13 +79,13 @@ struct CSRMatrix {
   std::vector<MPI_Request> request;
 #endif
 
-  size_t num_nonzeros() const { return row_offsets[row_offsets.size() - 1]; }
+  LocalOrdinal num_nonzeros() const { return row_offsets[row_offsets.size() - 1]; }
 
   void reserve_space(GlobalOrdinal nrows, unsigned ncols_per_row) {
-    rows.resize(nrows);
-    row_offsets.resize(nrows + 1);
-    packed_cols.reserve(nrows * ncols_per_row);
-    packed_coefs.reserve(nrows * ncols_per_row);
+    rows.resize(static_cast<size_t>(nrows));
+    row_offsets.resize(static_cast<size_t>(nrows) + 1);
+    packed_cols.reserve(static_cast<size_t>(nrows) * ncols_per_row);
+    packed_coefs.reserve(static_cast<size_t>(nrows) * ncols_per_row);
   }
 
   void get_row_pointers(GlobalOrdinalType row, size_t &row_length,
@@ -94,7 +94,7 @@ struct CSRMatrix {
     // first see if we can get the local-row index using fast direct lookup:
     if (rows.size() >= 1) {
       ptrdiff_t idx = row - rows[0];
-      if (idx < static_cast<ptrdiff_t>(rows.size()) && rows[idx] == row) {
+      if (idx < static_cast<ptrdiff_t>(rows.size()) && rows[static_cast<size_t>(idx)] == row) {
         local_row = idx;
       }
     }
@@ -102,8 +102,7 @@ struct CSRMatrix {
     // if we didn't get the local-row index using direct lookup, try a
     // more expensive binary-search:
     if (local_row == -1) {
-      auto row_iter =
-          std::lower_bound(rows.begin(), rows.end(), row);
+      auto row_iter = std::lower_bound(rows.begin(), rows.end(), row);
 
       // if we still haven't found row, it's not local so jump out:
       if (row_iter == rows.end() || *row_iter != row) {
@@ -114,10 +113,11 @@ struct CSRMatrix {
       local_row = row_iter - rows.begin();
     }
 
-    LocalOrdinalType offset = row_offsets[local_row];
-    row_length = row_offsets[local_row + 1] - offset;
-    cols = &packed_cols[offset];
-    coefs = &packed_coefs[offset];
+    LocalOrdinalType offset = row_offsets[static_cast<size_t>(local_row)];
+    row_length = static_cast<size_t>(
+        row_offsets[static_cast<size_t>(local_row) + 1] - offset);
+    cols = &packed_cols[static_cast<size_t>(offset)];
+    coefs = &packed_coefs[static_cast<size_t>(offset)];
   }
 };
 
