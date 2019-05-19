@@ -91,7 +91,7 @@ template <typename Scalar> struct CSRMatrix {
     // first see if we can get the local-row index using fast direct lookup:
     if (rows.size() >= 1) {
       ptrdiff_t idx = row - rows[0];
-      if (idx < static_cast<ptrdiff_t>(rows.size()) &&
+      if (idx >= 0 && idx < static_cast<ptrdiff_t>(rows.size()) &&
           rows[static_cast<size_t>(idx)] == row) {
         local_row = idx;
       }
@@ -113,9 +113,10 @@ template <typename Scalar> struct CSRMatrix {
 
     int offset = row_offsets[static_cast<size_t>(local_row)];
     row_length = static_cast<size_t>(
-        row_offsets[static_cast<size_t>(local_row) + 1] - offset);
+        row_offsets[static_cast<size_t>(local_row + 1)] - offset);
     cols = &packed_cols[static_cast<size_t>(offset)];
     coefs = &packed_coefs[static_cast<size_t>(offset)];
+
   }
 };
 

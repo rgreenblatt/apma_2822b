@@ -187,8 +187,9 @@ void sum_in_symm_elem_matrix(size_t num, const int *indices,
     Scalar *mat_row_coefs = NULL;
 
     mat.get_row_pointers(row, mat_row_len, mat_row_cols, mat_row_coefs);
-    if (mat_row_len == 0)
+    if (mat_row_len == 0) {
       continue;
+    }
 
     sum_into_row(mat_row_len, mat_row_cols, mat_row_coefs, row_len,
                  row_col_inds, row_coefs);
@@ -218,8 +219,10 @@ void sum_in_elem_matrix(size_t num, const int *indices,
 template <typename Scalar, typename MatrixType, typename VectorType>
 void sum_into_global_linear_system(ElemData<Scalar> &elem_data, MatrixType &A,
                                    VectorType &b) {
+
   sum_in_symm_elem_matrix(elem_data.nodes_per_elem, elem_data.elem_node_ids,
                           elem_data.elem_diffusion_matrix, A);
+
   sum_into_vector(elem_data.nodes_per_elem, elem_data.elem_node_ids,
                   elem_data.elem_source_vector, b);
 }
@@ -237,9 +240,9 @@ void sum_in_elem_matrix(size_t num, const int *indices,
   }
 }
 
-template <typename int, typename Scalar, typename MatrixType,
+template <typename Scalar, typename MatrixType,
           typename VectorType>
-void sum_into_global_linear_system(ElemData<int, Scalar> &elem_data,
+void sum_into_global_linear_system(ElemData<Scalar> &elem_data,
                                    LockingMatrix<MatrixType> &A,
                                    LockingVector<VectorType> &b) {
   sum_in_elem_matrix(elem_data.nodes_per_elem, elem_data.elem_node_ids,
