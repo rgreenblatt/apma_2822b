@@ -585,16 +585,23 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
     Arowoffsets = &A.row_offsets_external[0];
     beta = 1;
 
-    // TODO
+#ifdef USE_CUDA
+    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, static_cast<int>(n),
+                static_cast<int>(A.num_cols),
+                static_cast<int>(A.num_nonzeros()), cusparse_handle, descr);
+#else
     for (size_t row = 0; row < n; ++row) {
       ScalarType sum = beta * ycoefs[row];
 
+#pragma omp parallel for
       for (int i = Arowoffsets[row]; i < Arowoffsets[row + 1]; ++i) {
         sum += Acoefs[i] * xcoefs[Acols[i]];
       }
 
       ycoefs[row] = sum;
     }
+#endif
+
 #endif
   }
 };
