@@ -68,4 +68,10 @@ void cuda_dot(cublasHandle_t handle, const double *xcoefs, const double *ycoefs,
 
   cublas_error_chk(cublasDdot(handle, n, xcoefs, 1, ycoefs, 1, result));
 }
+
+void cuda_dot(cublasHandle_t handle, const float *xcoefs, const float *ycoefs,
+              float *result, int n) {
+
+  cublas_error_chk(cublasSdot(handle, n, xcoefs, 1, ycoefs, 1, result));
+}
 } // namespace miniFE

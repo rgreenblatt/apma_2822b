@@ -17,6 +17,9 @@ template <typename ScalarType>
 void cuda_waxpby(ScalarType *wcoefs, ScalarType alpha, const ScalarType *xcoefs,
                  ScalarType beta, const ScalarType *ycoefs, int n);
 
-void cuda_dot(cublasHandle_t handle, const double *xcoefs, const double *ycoefs,
-              double *result, int n);
+void cuda_dot(cublasHandle_t handle, const double *xcoefs,
+              const double *ycoefs, double  *result, int n);
+
+void cuda_dot(cublasHandle_t handle, const float *xcoefs,
+              const float *ycoefs, float  *result, int n);
 } // namespace miniFE
