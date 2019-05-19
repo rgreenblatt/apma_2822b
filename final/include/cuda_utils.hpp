@@ -93,6 +93,10 @@ static const char *cusparse_get_error_string(cusparseStatus_t error) {
 
   case CUSPARSE_STATUS_ZERO_PIVOT:
     return "CUSPARSE_STATUS_ZERO_PIVOT";
+
+  //added in cuda 10.1
+  /* case CUSPARSE_STATUS_NOT_SUPPORTED: */
+  /*   return "CUSPARSE_STATUS_NOT_SUPPORTED"; */
   }
 
   return "<unknown>";
@@ -109,5 +113,5 @@ inline void cusparse_assert(cusparseStatus_t code, const char *file, int line) {
 }
 
 namespace miniFE {
-  void select_cuda_device(int mpi_rank);
+void select_cuda_device(int mpi_rank);
 }
