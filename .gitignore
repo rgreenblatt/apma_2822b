@@ -1,3 +1,4 @@
+*.yaml
 *.aux
 *.fdb_latexmk
 *.fls
