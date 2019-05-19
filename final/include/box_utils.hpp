@@ -50,15 +50,14 @@ inline void copy_box(const Box &from_box, Box &to_box) {
   }
 }
 
-template <typename GlobalOrdinal>
-void get_int_coords(GlobalOrdinal ID, int nx, int ny, int &x, int &y, int &z) {
+void get_int_coords(int ID, int nx, int ny, int &x, int &y, int &z) {
   z = static_cast<int>(ID / (nx * ny));
   y = static_cast<int>((ID % (nx * ny)) / nx);
   x = static_cast<int>(ID % nx);
 }
 
-template <typename GlobalOrdinal, typename Scalar>
-void get_coords(GlobalOrdinal ID, int nx, int ny, int nz, Scalar &x, Scalar &y,
+template <typename Scalar>
+void get_coords(int ID, int nx, int ny, int nz, Scalar &x, Scalar &y,
                 Scalar &z) {
   const int xdiv = nx > 1 ? nx - 1 : 1;
   const int ydiv = ny > 1 ? ny - 1 : 1;
@@ -73,17 +72,16 @@ void get_coords(GlobalOrdinal ID, int nx, int ny, int nz, Scalar &x, Scalar &y,
   x = static_cast<double>(ID % nx) / xdiv;
 }
 
-template <typename GlobalOrdinal> GlobalOrdinal get_num_ids(const Box &box) {
+int get_num_ids(const Box &box) {
   int nx = box[0][1] - box[0][0];
   int ny = box[1][1] - box[1][0];
   int nz = box[2][1] - box[2][0];
-  GlobalOrdinal tmp = nx * ny;
+  int tmp = nx * ny;
   tmp *= nz;
   return tmp;
 }
 
-template <typename GlobalOrdinal>
-GlobalOrdinal get_id(int nx, int ny, int nz, int x, int y, int z) {
+int get_id(int nx, int ny, int nz, int x, int y, int z) {
   if (x < 0 || y < 0 || z < 0)
     return -1;
   if (x >= nx || y >= ny || z >= nz)
@@ -91,15 +89,14 @@ GlobalOrdinal get_id(int nx, int ny, int nz, int x, int y, int z) {
 
   // form x + nx*y + nx*ny*z:
 
-  GlobalOrdinal tmp = nx * ny;
+  int tmp = nx * ny;
   tmp *= z;
   tmp = x + nx * y + tmp;
   return tmp;
 }
 
-template <typename GlobalOrdinal>
 void get_ids(int nx, int ny, int nz, const Box &box,
-             std::vector<GlobalOrdinal> &ids,
+             std::vector<int> &ids,
              bool include_ghost_layer = false) {
   ids.clear();
   int minz = box[2][0];
@@ -127,15 +124,14 @@ void get_ids(int nx, int ny, int nz, const Box &box,
   for (int z = minz; z < maxz; ++z) {
     for (int y = miny; y < maxy; ++y) {
       for (int x = minx; x < maxx; ++x) {
-        ids.push_back(get_id<GlobalOrdinal>(nx, ny, nz, x, y, z));
+        ids.push_back(get_id(nx, ny, nz, x, y, z));
       }
     }
   }
 }
 
-template <typename GlobalOrdinal>
 void get_ghost_ids(int nx, int ny, int nz, const Box &box,
-                   std::vector<GlobalOrdinal> &ids) {
+                   std::vector<int> &ids) {
   ids.clear();
   int minz, maxz, miny, maxy, minx, maxx;
   int orig_minz = minz = box[2][0];
@@ -167,7 +163,7 @@ void get_ghost_ids(int nx, int ny, int nz, const Box &box,
         // we are in the ghost layer if any one of x,y,z are in the ghost layer
         if (!x_in_ghost_layer && !y_in_ghost_layer && !z_in_ghost_layer)
           continue;
-        ids.push_back(get_id<GlobalOrdinal>(nx, ny, nz, x, y, z));
+        ids.push_back(get_id(nx, ny, nz, x, y, z));
       }
     }
   }
@@ -197,13 +193,12 @@ bool is_neighbor(const Box &box1, const Box &box2) {
   return x_neighbor && y_neighbor && z_neighbor;
 }
 
-template <typename GlobalOrdinal>
 void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
                           const Box &box,
-                          std::map<GlobalOrdinal, GlobalOrdinal> &id_to_row) {
-  GlobalOrdinal num_my_ids = get_num_ids<GlobalOrdinal>(box);
+                          std::map<int, int> &id_to_row) {
+  int num_my_ids = get_num_ids(box);
 
-  typename std::vector<GlobalOrdinal> all_ids;
+  std::vector<int> all_ids;
   bool include_ghost_layer = false;
   get_ids(global_nx, global_ny, global_nz, box, all_ids, include_ghost_layer);
 
@@ -212,20 +207,19 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 
-  GlobalOrdinal local_num_ids = num_my_ids;
-  typename std::vector<GlobalOrdinal> global_offsets(
-      static_cast<size_t>(numprocs));
-  MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
+  int local_num_ids = num_my_ids;
+  std::vector<int> global_offsets(static_cast<size_t>(numprocs));
+  MPI_Datatype mpi_dtype = MPI_INT;
   MPI_Allgather(&local_num_ids, 1, mpi_dtype, &global_offsets[0], 1, mpi_dtype,
                 MPI_COMM_WORLD);
-  GlobalOrdinal offset = 0;
+  int offset = 0;
   for (int i = 0; i < numprocs; ++i) {
-    GlobalOrdinal tmp = global_offsets[static_cast<size_t>(i)];
+    int tmp = global_offsets[static_cast<size_t>(i)];
     global_offsets[static_cast<size_t>(i)] = offset;
     offset += tmp;
   }
 
-  GlobalOrdinal my_first_row = global_offsets[static_cast<size_t>(myproc)];
+  int my_first_row = global_offsets[static_cast<size_t>(myproc)];
 
   std::vector<int> all_boxes(6 * static_cast<size_t>(numprocs));
   int *local_box_ranges = const_cast<int *>(&box.ranges[0]);
@@ -240,7 +234,7 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
   for (size_t i = 1; i < all_ids.size(); ++i) {
     if (all_ids[i] != all_ids[i - 1] + 1) {
       id_to_row.insert(std::make_pair(
-          all_ids[i], my_first_row + static_cast<GlobalOrdinal>(i)));
+          all_ids[i], my_first_row + static_cast<int>(i)));
     }
   }
 
@@ -263,21 +257,21 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
     get_ids(global_nx, global_ny, global_nz, box_i, all_ids,
             include_ghost_layer);
 
-    GlobalOrdinal first_row = global_offsets[static_cast<size_t>(i)];
+    int first_row = global_offsets[static_cast<size_t>(i)];
     if (all_ids.size() > 0) {
       id_to_row.insert(std::make_pair(all_ids[0], first_row));
     }
     for (size_t j = 1; j < all_ids.size(); ++j) {
       if (all_ids[j] != all_ids[j - 1] + 1) {
         id_to_row.insert(std::make_pair(
-            all_ids[j], first_row + static_cast<GlobalOrdinal>(j)));
+            all_ids[j], first_row + static_cast<int>(j)));
       }
     }
   }
 
   // std::cout<<"proc "<<myproc<<": num_neighbors: "<<num_neighbors<<",
   // id_to_row.size(): "<<id_to_row.size()<<std::endl; typename
-  // std::map<GlobalOrdinal,GlobalOrdinal>::iterator iter = id_to_row.begin(),
+  // std::map<int,int>::iterator iter = id_to_row.begin(),
   // end = id_to_row.end(); for(; iter!=end; ++iter) {
   //  std::cout<<"proc "<<myproc<<": "<<iter->first<<" ::
   //  "<<iter->second<<std::endl;

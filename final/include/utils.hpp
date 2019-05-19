@@ -52,8 +52,8 @@ void initialize_mpi(int argc, char **argv, int &numprocs, int &myproc);
 
 void finalize_mpi();
 
-template <typename Scalar, typename Ordinal>
-Scalar percentage_difference(Ordinal value, Scalar average) {
+template <typename Scalar>
+Scalar percentage_difference(int value, Scalar average) {
   // result will be the difference between value and average, represented as
   // a percentage of average.
   // Examples:
@@ -72,10 +72,8 @@ Scalar percentage_difference(Ordinal value, Scalar average) {
   return result;
 }
 
-template <typename GlobalOrdinal>
-void get_global_min_max(GlobalOrdinal local_n, GlobalOrdinal &global_n,
-                        GlobalOrdinal &min_n, int &min_proc,
-                        GlobalOrdinal &max_n, int &max_proc) {
+void get_global_min_max(int local_n, int &global_n, int &min_n, int &min_proc,
+                        int &max_n, int &max_proc) {
   // Given a local_n, compute global_n, min/max, etc. All computed results
   // will be returned on all processors.
   //
@@ -85,11 +83,11 @@ void get_global_min_max(GlobalOrdinal local_n, GlobalOrdinal &global_n,
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 #endif
 
-  std::vector<GlobalOrdinal> all_n(static_cast<size_t>(numprocs), 0);
+  std::vector<int> all_n(static_cast<size_t>(numprocs), 0);
   all_n[static_cast<size_t>(myproc)] = local_n;
 #ifdef HAVE_MPI
-  std::vector<GlobalOrdinal> tmp(all_n);
-  MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
+  std::vector<int> tmp(all_n);
+  MPI_Datatype mpi_dtype = MPI_INT;
   MPI_Allreduce(&tmp[0], &all_n[0], numprocs, mpi_dtype, MPI_MAX,
                 MPI_COMM_WORLD);
 #endif
@@ -115,8 +113,8 @@ void get_global_min_max(GlobalOrdinal local_n, GlobalOrdinal &global_n,
   }
 }
 
-template <typename Scalar, typename Ordinal>
-Scalar compute_std_dev_as_percentage(Ordinal local_nrows, Scalar avg_nrows) {
+template <typename Scalar>
+Scalar compute_std_dev_as_percentage(int local_nrows, Scalar avg_nrows) {
 // compute and return a standard deviation for the deviation of local_nrows from
 // the average. the std. dev. will be expressed as a percentage of avg_nrows.
 //
@@ -161,11 +159,8 @@ Scalar compute_std_dev_as_percentage(Ordinal local_nrows, Scalar avg_nrows) {
 #endif
 }
 
-template <typename GlobalOrdinal>
-GlobalOrdinal
-find_row_for_id(GlobalOrdinal id,
-                const std::map<GlobalOrdinal, GlobalOrdinal> &ids_to_rows) {
-  typename std::map<GlobalOrdinal, GlobalOrdinal>::const_iterator iter =
+int find_row_for_id(int id, const std::map<int, int> &ids_to_rows) {
+  std::map<int, int>::const_iterator iter =
       ids_to_rows.lower_bound(id);
 
   if (iter == ids_to_rows.end() || iter->first != id) {
@@ -187,7 +182,7 @@ find_row_for_id(GlobalOrdinal id,
     return -99;
   }
 
-  GlobalOrdinal offset = id - iter->first;
+  int offset = id - iter->first;
 
   if (offset < 0) {
     std::cout << "ERROR, negative offset in find_row_for_id for id=" << id

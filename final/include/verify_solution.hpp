@@ -55,9 +55,8 @@ template <typename Scalar> struct err_info {
 
 template <typename VectorType>
 int verify_solution(
-    const simple_mesh_description<typename VectorType::GlobalOrdinalType> &mesh,
+    const simple_mesh_description &mesh,
     const VectorType &x, double tolerance, bool verify_whole_domain = false) {
-  typedef typename VectorType::GlobalOrdinalType GlobalOrdinal;
   typedef typename VectorType::ScalarType Scalar;
 
   int global_nodes_x = mesh.global_box[0][1] + 1;
@@ -76,14 +75,14 @@ int verify_solution(
   if (box[2][1] > box[2][0] && box[2][1] == mesh.global_box[2][1])
     ++box[2][1];
 
-  std::vector<GlobalOrdinal> rows;
+  std::vector<int> rows;
   std::vector<Scalar> row_coords;
 
   int roffset = 0;
   for (int iz = box[2][0]; iz < box[2][1]; ++iz) {
     for (int iy = box[1][0]; iy < box[1][1]; ++iy) {
       for (int ix = box[0][0]; ix < box[0][1]; ++ix) {
-        GlobalOrdinal row_id = get_id<GlobalOrdinal>(
+        int row_id = get_id(
             global_nodes_x, global_nodes_y, global_nodes_z, ix, iy, iz);
         Scalar x, y, z;
         get_coords(row_id, global_nodes_x, global_nodes_y, global_nodes_z, x, y,

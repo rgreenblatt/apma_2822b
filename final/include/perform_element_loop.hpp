@@ -39,8 +39,8 @@
 
 namespace miniFE {
 
-template <typename GlobalOrdinal, typename MatrixType, typename VectorType>
-void perform_element_loop(const simple_mesh_description<GlobalOrdinal> &mesh,
+template <typename MatrixType, typename VectorType>
+void perform_element_loop(const simple_mesh_description &mesh,
                           const Box &local_elem_box, MatrixType &A,
                           VectorType &b, Parameters & /*params*/) {
   typedef typename MatrixType::ScalarType Scalar;
@@ -53,14 +53,14 @@ void perform_element_loop(const simple_mesh_description<GlobalOrdinal> &mesh,
   // get element-IDs in preparation for later assembling the FE operators
   // into the global sparse linear-system.
 
-  GlobalOrdinal num_elems = get_num_ids<GlobalOrdinal>(local_elem_box);
-  std::vector<GlobalOrdinal> elemIDs(static_cast<size_t>(num_elems));
+  int num_elems = get_num_ids(local_elem_box);
+  std::vector<int> elemIDs(static_cast<size_t>(num_elems));
 
   BoxIterator iter = BoxIterator::begin(local_elem_box);
   BoxIterator end = BoxIterator::end(local_elem_box);
 
   for (size_t i = 0; iter != end; ++iter, ++i) {
-    elemIDs[i] = get_id<GlobalOrdinal>(global_elems_x, global_elems_y,
+    elemIDs[i] = get_id(global_elems_x, global_elems_y,
                                        global_elems_z, iter.x, iter.y, iter.z);
     //#ifdef MINIFE_DEBUG
     // std::cout << "elem ID " << elemIDs[i] << "
@@ -69,7 +69,7 @@ void perform_element_loop(const simple_mesh_description<GlobalOrdinal> &mesh,
 
   // Now do the actual finite-element assembly loop:
 
-  ElemData<GlobalOrdinal, Scalar> elem_data;
+  ElemData<Scalar> elem_data;
 
   compute_gradient_values(elem_data.grad_vals);
 

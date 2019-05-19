@@ -75,8 +75,8 @@ void write_vector(const std::string &filename, const VectorType &vec) {
         ofs << vec.local_size << std::endl;
       }
 
-      typename VectorType::GlobalOrdinalType first = vec.startIndex;
-      for (typename VectorType::LocalOrdinalType i = 0; i < vec.local_size;
+      int first = vec.startIndex;
+      for (int i = 0; i < vec.local_size;
            ++i) {
         ofs << first + i << " " << coefs[i] << std::endl;
       }
@@ -89,14 +89,13 @@ void write_vector(const std::string &filename, const VectorType &vec) {
 
 template <typename VectorType>
 void sum_into_vector(size_t num_indices,
-                     const typename VectorType::GlobalOrdinalType *indices,
+                     int *indices,
                      const typename VectorType::ScalarType *coefs,
                      VectorType &vec) {
-  typedef typename VectorType::GlobalOrdinalType GlobalOrdinal;
   typedef typename VectorType::ScalarType Scalar;
 
-  GlobalOrdinal first = vec.startIndex;
-  GlobalOrdinal last = first + vec.local_size - 1;
+  int first = vec.startIndex;
+  int last = first + vec.local_size - 1;
 
   AllocVec<Scalar> &vec_coefs = vec.coefs;
 
@@ -111,7 +110,7 @@ void sum_into_vector(size_t num_indices,
 #ifdef MINIFE_HAVE_TBB
 template <typename VectorType>
 void sum_into_vector(size_t num_indices,
-                     const typename VectorType::GlobalOrdinalType *indices,
+                     const int *indices,
                      const typename VectorType::ScalarType *coefs,
                      LockingVector<VectorType> &vec) {
   vec.sum_in(num_indices, indices, coefs);
@@ -213,7 +212,7 @@ dot(const Vector &x, const Vector &y, cublasHandle_t handle) {
   size_t n = x.coefs.size();
 
 #ifdef MINIFE_DEBUG
-  if (y.local_size < static_cast<typename Vector::LocalOrdinalType>(n)) {
+  if (y.local_size < static_cast<int>(n)) {
     std::cerr << "miniFE::dot ERROR, y must be at least as long as x."
               << std::endl;
     n = y.local_size;

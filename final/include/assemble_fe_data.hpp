@@ -38,9 +38,8 @@ namespace miniFE {
 
 template <typename MatrixType, typename VectorType>
 void assemble_FE_data(
-    const simple_mesh_description<typename MatrixType::GlobalOrdinalType> &mesh,
+    const simple_mesh_description &mesh,
     MatrixType &A, VectorType &b, Parameters &params) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
 
   int global_elems_x = mesh.global_box[0][1];
   int global_elems_y = mesh.global_box[1][1];
@@ -49,7 +48,7 @@ void assemble_FE_data(
   Box local_elem_box;
   copy_box(mesh.local_box, local_elem_box);
 
-  if (get_num_ids<GlobalOrdinal>(local_elem_box) < 1) {
+  if (get_num_ids(local_elem_box) < 1) {
     return;
   }
 

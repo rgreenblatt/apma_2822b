@@ -45,24 +45,22 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
   typedef typename MatrixType::ScalarType Scalar;
 
   if (numprocs < 2) {
-    A.num_cols = static_cast<LocalOrdinal>(A.rows.size());
+    A.num_cols = static_cast<int>(A.rows.size());
     A.has_local_indices = true;
     return;
   }
 
-  std::map<GlobalOrdinal, GlobalOrdinal> externals;
-  LocalOrdinal num_external = 0;
+  std::map<int, int> externals;
+  int num_external = 0;
 
   // Extract Matrix pieces
 
-  GlobalOrdinal local_nrow = static_cast<GlobalOrdinal>(A.rows.size());
-  GlobalOrdinal start_row = local_nrow > 0 ? A.rows[0] : -1;
-  GlobalOrdinal stop_row =
+  int local_nrow = static_cast<int>(A.rows.size());
+  int start_row = local_nrow > 0 ? A.rows[0] : -1;
+  int stop_row =
       local_nrow > 0 ? A.rows[static_cast<size_t>(local_nrow) - 1] : -1;
 
   // We need to convert the index values for the rows on this processor
@@ -80,16 +78,16 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // Scan the indices and transform to local
   ///////////////////////////////////////////
 
-  std::vector<GlobalOrdinal> &external_index = A.external_index;
+  std::vector<int> &external_index = A.external_index;
 
   for (size_t i = 0; i < A.rows.size(); ++i) {
-    GlobalOrdinal *Acols = NULL;
+    int *Acols = NULL;
     Scalar *Acoefs = NULL;
     size_t row_len = 0;
     A.get_row_pointers(A.rows[i], row_len, Acols, Acoefs);
 
     for (size_t j = 0; j < row_len; ++j) {
-      GlobalOrdinal cur_ind = Acols[j];
+      int cur_ind = Acols[j];
       if (start_row <= cur_ind && cur_ind <= stop_row) {
         Acols[j] -= start_row;
       } else { // Must find out if we have already set up this point
@@ -107,12 +105,12 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // Go through list of externals to find out which processors must be accessed.
   ////////////////////////////////////////////////////////////////////////
 
-  std::vector<GlobalOrdinal> tmp_buffer(static_cast<size_t>(numprocs),
+  std::vector<int> tmp_buffer(static_cast<size_t>(numprocs),
                                         0); // Temp buffer space needed below
 
   // Build list of global index offset
 
-  std::vector<GlobalOrdinal> global_index_offsets(static_cast<size_t>(numprocs),
+  std::vector<int> global_index_offsets(static_cast<size_t>(numprocs),
                                                   0);
 
   tmp_buffer[static_cast<size_t>(myproc)] = start_row; // This is my start row
@@ -124,15 +122,15 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // Note: There might be a better algorithm for doing this, but this
   //       will work...
 
-  MPI_Datatype mpi_dtype = TypeTraits<GlobalOrdinal>::mpi_type();
+  MPI_Datatype mpi_dtype = TypeTraits<int>::mpi_type();
   MPI_Allreduce(&tmp_buffer[0], &global_index_offsets[0], numprocs, mpi_dtype,
                 MPI_SUM, MPI_COMM_WORLD);
 
   // Go through list of externals and find the processor that owns each
   std::vector<int> external_processor(static_cast<size_t>(num_external));
 
-  for (LocalOrdinal i = 0; i < num_external; ++i) {
-    GlobalOrdinal cur_ind = external_index[static_cast<size_t>(i)];
+  for (int i = 0; i < num_external; ++i) {
+    int cur_ind = external_index[static_cast<size_t>(i)];
     for (int j = numprocs - 1; j >= 0; --j) {
       if (global_index_offsets[static_cast<size_t>(j)] <= cur_ind &&
           global_index_offsets[static_cast<size_t>(j)] >= 0) {
@@ -150,15 +148,15 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // have consecutive indices).
   /////////////////////////////////////////////////////////////////////////
 
-  GlobalOrdinal count = local_nrow;
-  std::vector<GlobalOrdinal> &external_local_index = A.external_local_index;
+  int count = local_nrow;
+  std::vector<int> &external_local_index = A.external_local_index;
   external_local_index.assign(static_cast<size_t>(num_external), -1);
 
-  for (LocalOrdinal i = 0; i < num_external; ++i) {
+  for (int i = 0; i < num_external; ++i) {
     if (external_local_index[static_cast<size_t>(i)] == -1) {
       external_local_index[static_cast<size_t>(i)] = count++;
 
-      for (LocalOrdinal j = i + 1; j < num_external; ++j) {
+      for (int j = i + 1; j < num_external; ++j) {
         if (external_processor[static_cast<size_t>(j)] ==
             external_processor[static_cast<size_t>(i)])
           external_local_index[static_cast<size_t>(j)] = count++;
@@ -167,14 +165,14 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   }
 
   for (size_t i = 0; i < static_cast<size_t>(local_nrow); ++i) {
-    GlobalOrdinal *Acols = NULL;
+    int *Acols = NULL;
     Scalar *Acoefs = NULL;
     size_t row_len = 0;
     A.get_row_pointers(A.rows[i], row_len, Acols, Acoefs);
 
     for (size_t j = 0; j < row_len; ++j) {
       if (Acols[j] < 0) { // Change index values of externals
-        GlobalOrdinal cur_ind = -Acols[j] - 1;
+        int cur_ind = -Acols[j] - 1;
         Acols[j] =
             external_local_index[static_cast<size_t>(externals[cur_ind])];
       }
@@ -201,12 +199,12 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   ///
   ////////////////////////////////////////////////////////////////////////
 
-  std::vector<GlobalOrdinal> tmp_neighbors(static_cast<size_t>(numprocs), 0);
+  std::vector<int> tmp_neighbors(static_cast<size_t>(numprocs), 0);
 
   int num_recv_neighbors = 0;
   int length = 1;
 
-  for (LocalOrdinal i = 0; i < num_external; ++i) {
+  for (int i = 0; i < num_external; ++i) {
     if (tmp_neighbors[static_cast<size_t>(
             new_external_processor[static_cast<size_t>(i)])] == 0) {
       ++num_recv_neighbors;
@@ -225,13 +223,13 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // decode the combined 'tmp_neighbors' (stored in tmp_buffer)
   // array from all the processors
 
-  GlobalOrdinal num_send_neighbors =
+  int num_send_neighbors =
       tmp_buffer[static_cast<size_t>(myproc)] % numprocs;
 
   /// decode 'tmp_buffer[myproc] to deduce total number of elements
   //  we must send
 
-  GlobalOrdinal total_to_be_sent =
+  int total_to_be_sent =
       (tmp_buffer[static_cast<size_t>(myproc)] - num_send_neighbors) / numprocs;
 
   ///////////////////////////////////////////////////////////////////////
@@ -243,7 +241,7 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
 
   std::vector<int> recv_list;
   recv_list.push_back(new_external_processor[0]);
-  for (LocalOrdinal i = 1; i < num_external; ++i) {
+  for (int i = 1; i < num_external; ++i) {
     if (new_external_processor[static_cast<size_t>(i) - 1] !=
         new_external_processor[static_cast<size_t>(i)]) {
       recv_list.push_back(new_external_processor[static_cast<size_t>(i)]);
@@ -322,8 +320,8 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // order given by 'external_local_index'
   //
 
-  std::vector<GlobalOrdinal> new_external(static_cast<size_t>(num_external));
-  for (LocalOrdinal i = 0; i < num_external; ++i) {
+  std::vector<int> new_external(static_cast<size_t>(num_external));
+  for (int i = 0; i < num_external; ++i) {
     new_external[static_cast<size_t>(
         external_local_index[static_cast<size_t>(i)] - local_nrow)] =
         external_index[static_cast<size_t>(i)];
@@ -349,15 +347,15 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   }
 
   std::vector<int> &neighbors = A.neighbors;
-  std::vector<LocalOrdinal> &recv_length = A.recv_length;
-  std::vector<LocalOrdinal> &send_length = A.send_length;
+  std::vector<int> &recv_length = A.recv_length;
+  std::vector<int> &send_length = A.send_length;
 
   neighbors.resize(static_cast<size_t>(num_recv_neighbors), 0);
   A.request.resize(static_cast<size_t>(num_recv_neighbors));
   recv_length.resize(static_cast<size_t>(num_recv_neighbors), 0);
   send_length.resize(static_cast<size_t>(num_recv_neighbors), 0);
 
-  LocalOrdinal j = 0;
+  int j = 0;
   for (int i = 0; i < num_recv_neighbors; ++i) {
     int start = j;
     int newlength = 0;
@@ -410,8 +408,8 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
 
   j = 0;
   for (int i = 0; i < num_recv_neighbors; ++i) {
-    LocalOrdinal start = j;
-    LocalOrdinal newlength = 0;
+    int start = j;
+    int newlength = 0;
 
     // Go through list of external elements
     // until updating processor changes. This is redundant, but
@@ -440,7 +438,7 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
 
   /// replace global indices by local indices ///
 
-  for (GlobalOrdinal i = 0; i < total_to_be_sent; ++i) {
+  for (int i = 0; i < total_to_be_sent; ++i) {
     A.elements_to_send[static_cast<size_t>(i)] -= start_row;
   }
 
@@ -448,10 +446,10 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // Finish up !!
   //////////////////
 
-  A.num_cols = static_cast<LocalOrdinal>(local_nrow + num_external);
+  A.num_cols = static_cast<int>(local_nrow + num_external);
 
 #else
-  A.num_cols = static_cast<LocalOrdinal>(A.rows.size());
+  A.num_cols = static_cast<int>(A.rows.size());
 #endif
 
   A.has_local_indices = true;

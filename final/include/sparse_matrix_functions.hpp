@@ -59,11 +59,11 @@ namespace miniFE {
 template <typename MatrixType>
 void init_matrix(
     MatrixType &M,
-    const std::vector<typename MatrixType::GlobalOrdinalType> &rows,
-    const std::vector<typename MatrixType::LocalOrdinalType> &row_offsets,
+    const std::vector<int> &rows,
+    const std::vector<int> &row_offsets,
     const std::vector<int> &row_coords, int global_nodes_x, int global_nodes_y,
-    int global_nodes_z, typename MatrixType::GlobalOrdinalType global_nrows,
-    const simple_mesh_description<typename MatrixType::GlobalOrdinalType>
+    int global_nodes_z, int global_nrows,
+    const simple_mesh_description
         &mesh) {
   MatrixInitOp<MatrixType> mat_init(rows, row_offsets, row_coords,
                                     global_nodes_x, global_nodes_y,
@@ -96,7 +96,6 @@ void sort_with_companions(ptrdiff_t len, T *array, U *companions) {
 
 template <typename MatrixType>
 void write_matrix(const std::string &filename, MatrixType &mat) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinalType;
   typedef typename MatrixType::ScalarType ScalarType;
 
   int numprocs = 1, myproc = 0;
@@ -120,7 +119,7 @@ void write_matrix(const std::string &filename, MatrixType &mat) {
       }
       for (size_t i = 0; i < nrows; ++i) {
         size_t row_len = 0;
-        GlobalOrdinalType *cols = NULL;
+        int *cols = NULL;
         ScalarType *coefs = NULL;
         mat.get_row_pointers(mat.rows[i], row_len, cols, coefs);
 
@@ -135,14 +134,14 @@ void write_matrix(const std::string &filename, MatrixType &mat) {
   }
 }
 
-template <typename GlobalOrdinal, typename Scalar>
-void sum_into_row(size_t row_len, GlobalOrdinal *row_indices, Scalar *row_coefs,
-                  size_t num_inputs, const GlobalOrdinal *input_indices,
+template <typename Scalar>
+void sum_into_row(size_t row_len, int *row_indices, Scalar *row_coefs,
+                  size_t num_inputs, const int *input_indices,
                   const Scalar *input_coefs) {
   for (size_t i = 0; i < num_inputs; ++i) {
-    GlobalOrdinal *loc =
+    int *loc =
         std::lower_bound(row_indices, row_indices + row_len, input_indices[i]);
-    if (loc - row_indices < static_cast<GlobalOrdinal>(row_len) &&
+    if (loc - row_indices < static_cast<int>(row_len) &&
         *loc == input_indices[i]) {
       row_coefs[loc - row_indices] += input_coefs[i];
     }
@@ -150,16 +149,15 @@ void sum_into_row(size_t row_len, GlobalOrdinal *row_indices, Scalar *row_coefs,
 }
 
 template <typename MatrixType>
-void sum_into_row(typename MatrixType::GlobalOrdinalType row,
+void sum_into_row(int row,
                   size_t num_indices,
-                  const typename MatrixType::GlobalOrdinalType *col_inds,
+                  const int *col_inds,
                   const typename MatrixType::ScalarType *coefs,
                   MatrixType &mat) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
   typedef typename MatrixType::ScalarType Scalar;
 
   size_t row_len = 0;
-  GlobalOrdinal *mat_row_cols = NULL;
+  int *mat_row_cols = NULL;
   Scalar *mat_row_coefs = NULL;
 
   mat.get_row_pointers(row, row_len, mat_row_cols, mat_row_coefs);
@@ -172,10 +170,9 @@ void sum_into_row(typename MatrixType::GlobalOrdinalType row,
 
 template <typename MatrixType>
 void sum_in_symm_elem_matrix(
-    size_t num, const typename MatrixType::GlobalOrdinalType *indices,
+    size_t num, const int *indices,
     const typename MatrixType::ScalarType *coefs, MatrixType &mat) {
   typedef typename MatrixType::ScalarType Scalar;
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
 
   // indices is length num (which should be nodes-per-elem)
   // coefs is the upper triangle of the element diffusion matrix
@@ -183,15 +180,15 @@ void sum_in_symm_elem_matrix(
 
   size_t row_offset = 0;
   for (size_t i = 0; i < num; ++i) {
-    GlobalOrdinal row = indices[i];
+    int row = indices[i];
 
     const Scalar *row_coefs = &coefs[row_offset];
-    const GlobalOrdinal *row_col_inds = &indices[i];
+    const int *row_col_inds = &indices[i];
     size_t row_len = num - i;
     row_offset += row_len;
 
     size_t mat_row_len = 0;
-    GlobalOrdinal *mat_row_cols = NULL;
+    int *mat_row_cols = NULL;
     Scalar *mat_row_coefs = NULL;
 
     mat.get_row_pointers(row, mat_row_len, mat_row_cols, mat_row_coefs);
@@ -213,7 +210,7 @@ void sum_in_symm_elem_matrix(
 
 template <typename MatrixType>
 void sum_in_elem_matrix(size_t num,
-                        const typename MatrixType::GlobalOrdinalType *indices,
+                        const int *indices,
                         const typename MatrixType::ScalarType *coefs,
                         MatrixType &mat) {
   size_t offset = 0;
@@ -224,9 +221,9 @@ void sum_in_elem_matrix(size_t num,
   }
 }
 
-template <typename GlobalOrdinal, typename Scalar, typename MatrixType,
+template <typename Scalar, typename MatrixType,
           typename VectorType>
-void sum_into_global_linear_system(ElemData<GlobalOrdinal, Scalar> &elem_data,
+void sum_into_global_linear_system(ElemData<Scalar> &elem_data,
                                    MatrixType &A, VectorType &b) {
   sum_in_symm_elem_matrix(elem_data.nodes_per_elem, elem_data.elem_node_ids,
                           elem_data.elem_diffusion_matrix, A);
@@ -237,7 +234,7 @@ void sum_into_global_linear_system(ElemData<GlobalOrdinal, Scalar> &elem_data,
 #ifdef MINIFE_HAVE_TBB
 template <typename MatrixType>
 void sum_in_elem_matrix(size_t num,
-                        const typename MatrixType::GlobalOrdinalType *indices,
+                        const int *indices,
                         const typename MatrixType::ScalarType *coefs,
                         LockingMatrix<MatrixType> &mat) {
   size_t offset = 0;
@@ -248,9 +245,9 @@ void sum_in_elem_matrix(size_t num,
   }
 }
 
-template <typename GlobalOrdinal, typename Scalar, typename MatrixType,
+template <typename int, typename Scalar, typename MatrixType,
           typename VectorType>
-void sum_into_global_linear_system(ElemData<GlobalOrdinal, Scalar> &elem_data,
+void sum_into_global_linear_system(ElemData<int, Scalar> &elem_data,
                                    LockingMatrix<MatrixType> &A,
                                    LockingVector<VectorType> &b) {
   sum_in_elem_matrix(elem_data.nodes_per_elem, elem_data.elem_node_ids,
@@ -269,23 +266,21 @@ void add_to_diagonal(typename MatrixType::ScalarType value, MatrixType &mat) {
 
 template <typename MatrixType>
 double parallel_memory_overhead_MB(const MatrixType &A) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
   double mem_MB = 0;
 
 #ifdef HAVE_MPI
   double invMB = 1.0 / (1024 * 1024);
   mem_MB = invMB *
-           static_cast<double>(A.external_index.size() * sizeof(GlobalOrdinal));
+           static_cast<double>(A.external_index.size() * sizeof(int));
   mem_MB += invMB * static_cast<double>(A.external_local_index.size() *
-                                        sizeof(GlobalOrdinal));
+                                        sizeof(int));
   mem_MB += invMB * static_cast<double>(A.elements_to_send.size() *
-                                        sizeof(GlobalOrdinal));
+                                        sizeof(int));
   mem_MB += invMB * static_cast<double>(A.neighbors.size() * sizeof(int));
   mem_MB +=
-      invMB * static_cast<double>(A.recv_length.size() * sizeof(LocalOrdinal));
+      invMB * static_cast<double>(A.recv_length.size() * sizeof(int));
   mem_MB +=
-      invMB * static_cast<double>(A.send_length.size() * sizeof(LocalOrdinal));
+      invMB * static_cast<double>(A.send_length.size() * sizeof(int));
 
   double tmp = mem_MB;
   MPI_Allreduce(&tmp, &mem_MB, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -303,16 +298,14 @@ void rearrange_matrix_local_external(MatrixType &A) {
   // A.row_offsets will describe where the local entries occur, and
   // A.row_offsets_external will describe where the external entries occur.
 
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
   typedef typename MatrixType::ScalarType Scalar;
 
   size_t nrows = A.rows.size();
-  std::vector<LocalOrdinal> tmp_row_offsets(nrows * 2);
-  std::vector<LocalOrdinal> tmp_row_offsets_external(nrows * 2);
+  std::vector<int> tmp_row_offsets(nrows * 2);
+  std::vector<int> tmp_row_offsets_external(nrows * 2);
 
-  LocalOrdinal num_local_nz = 0;
-  LocalOrdinal num_extern_nz = 0;
+  int num_local_nz = 0;
+  int num_extern_nz = 0;
 
   // First sort within each row of A, so that local entries come
   // before external entries within each row.
@@ -320,9 +313,9 @@ void rearrange_matrix_local_external(MatrixType &A) {
   // tmp_row_offsets_external describe the locations of the external entries.
   //
   for (size_t i = 0; i < nrows; ++i) {
-    GlobalOrdinal *row_begin =
+    int *row_begin =
         &A.packed_cols[static_cast<size_t>(A.row_offsets[i])];
-    GlobalOrdinal *row_end =
+    int *row_end =
         &A.packed_cols[static_cast<size_t>(A.row_offsets[i + 1])];
 
     Scalar *coef_row_begin =
@@ -337,10 +330,10 @@ void rearrange_matrix_local_external(MatrixType &A) {
 
     sort_with_companions(row_len, row_begin, coef_row_begin);
 
-    GlobalOrdinal *row_iter = std::lower_bound(row_begin, row_end, nrows);
+    int *row_iter = std::lower_bound(row_begin, row_end, nrows);
 
-    LocalOrdinal offset =
-        static_cast<LocalOrdinal>(A.row_offsets[i] + row_iter - row_begin);
+    int offset =
+        static_cast<int>(A.row_offsets[i] + row_iter - row_begin);
     tmp_row_offsets[i * 2 + 1] = offset;
     tmp_row_offsets_external[i * 2] = offset;
 
@@ -351,13 +344,13 @@ void rearrange_matrix_local_external(MatrixType &A) {
 
   // Next, copy the external entries into separate arrays.
 
-  std::vector<GlobalOrdinal> ext_cols(static_cast<size_t>(num_extern_nz));
+  std::vector<int> ext_cols(static_cast<size_t>(num_extern_nz));
   std::vector<Scalar> ext_coefs(static_cast<size_t>(num_extern_nz));
-  std::vector<LocalOrdinal> ext_offsets(nrows + 1);
-  LocalOrdinal offset = 0;
+  std::vector<int> ext_offsets(nrows + 1);
+  int offset = 0;
   for (size_t i = 0; i < nrows; ++i) {
     ext_offsets[i] = offset;
-    for (LocalOrdinal j = tmp_row_offsets_external[i * 2];
+    for (int j = tmp_row_offsets_external[i * 2];
          j < tmp_row_offsets_external[i * 2 + 1]; ++j) {
       ext_cols[static_cast<size_t>(offset)] =
           A.packed_cols[static_cast<size_t>(j)];
@@ -373,7 +366,7 @@ void rearrange_matrix_local_external(MatrixType &A) {
   offset = 0;
   for (size_t i = 0; i < nrows; ++i) {
     A.row_offsets[i] = offset;
-    for (LocalOrdinal j = tmp_row_offsets[i * 2];
+    for (int j = tmp_row_offsets[i * 2];
          j < tmp_row_offsets[i * 2 + 1]; ++j) {
       A.packed_cols[static_cast<size_t>(offset)] =
           A.packed_cols[static_cast<size_t>(j)];
@@ -386,8 +379,8 @@ void rearrange_matrix_local_external(MatrixType &A) {
   // Finally, copy the external entries back into A.packed_cols and
   // A.packed_coefs, starting at the end of the local entries.
 
-  for (LocalOrdinal i = offset;
-       i < offset + static_cast<LocalOrdinal>(ext_cols.size()); ++i) {
+  for (int i = offset;
+       i < offset + static_cast<int>(ext_cols.size()); ++i) {
     A.packed_cols[static_cast<size_t>(i)] =
         ext_cols[static_cast<size_t>(i - offset)];
     A.packed_coefs[static_cast<size_t>(i)] =
@@ -402,12 +395,11 @@ void rearrange_matrix_local_external(MatrixType &A) {
 //------------------------------------------------------------------------
 template <typename MatrixType>
 void zero_row_and_put_1_on_diagonal(
-    MatrixType &A, typename MatrixType::GlobalOrdinalType row) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
+    MatrixType &A, int row) {
   typedef typename MatrixType::ScalarType Scalar;
 
   size_t row_len = 0;
-  GlobalOrdinal *cols = NULL;
+  int *cols = NULL;
   Scalar *coefs = NULL;
   A.get_row_pointers(row, row_len, cols, coefs);
 
@@ -424,18 +416,17 @@ template <typename MatrixType, typename VectorType>
 void impose_dirichlet(
     typename MatrixType::ScalarType prescribed_value, MatrixType &A,
     VectorType &b,
-    const std::set<typename MatrixType::GlobalOrdinalType> &bc_rows) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
+    const std::set<int> &bc_rows) {
   typedef typename MatrixType::ScalarType Scalar;
 
-  GlobalOrdinal first_local_row = A.rows.size() > 0 ? A.rows[0] : 0;
-  GlobalOrdinal last_local_row =
+  int first_local_row = A.rows.size() > 0 ? A.rows[0] : 0;
+  int last_local_row =
       A.rows.size() > 0 ? A.rows[A.rows.size() - 1] : -1;
 
-  typename std::set<GlobalOrdinal>::const_iterator bc_iter = bc_rows.begin(),
+  typename std::set<int>::const_iterator bc_iter = bc_rows.begin(),
                                                    bc_end = bc_rows.end();
   for (; bc_iter != bc_end; ++bc_iter) {
-    GlobalOrdinal row = *bc_iter;
+    int row = *bc_iter;
     if (row >= first_local_row && row <= last_local_row) {
       size_t local_row = static_cast<size_t>(row - first_local_row);
       b.coefs[local_row] = prescribed_value;
@@ -444,13 +435,13 @@ void impose_dirichlet(
   }
 
   for (size_t i = 0; i < A.rows.size(); ++i) {
-    GlobalOrdinal row = A.rows[i];
+    int row = A.rows[i];
 
     if (bc_rows.find(row) != bc_rows.end())
       continue;
 
     size_t row_length = 0;
-    GlobalOrdinal *cols = NULL;
+    int *cols = NULL;
     Scalar *coefs = NULL;
     A.get_row_pointers(row, row_length, cols, coefs);
 
@@ -487,12 +478,10 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y,
   typedef typename TypeTraits<typename VectorType::ScalarType>::magnitude_type
       magnitude;
   typedef typename MatrixType::ScalarType ScalarType;
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinalType;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinalType;
 
   size_t n = A.rows.size();
-  const LocalOrdinalType *Arowoffsets = &A.row_offsets[0];
-  const GlobalOrdinalType *Acols = &A.packed_cols[0];
+  const int *Arowoffsets = &A.row_offsets[0];
+  const int *Acols = &A.packed_cols[0];
   const ScalarType *Acoefs = &A.packed_coefs[0];
   const ScalarType *xcoefs = &x.coefs[0];
   ScalarType *ycoefs = &y.coefs[0];
@@ -508,7 +497,7 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y,
   for (size_t row = 0; row < n; ++row) {
     ScalarType sum = 0;
 
-    for (LocalOrdinalType i = Arowoffsets[row]; i < Arowoffsets[row + 1]; ++i) {
+    for (int i = Arowoffsets[row]; i < Arowoffsets[row + 1]; ++i) {
       sum += Acoefs[i] * xcoefs[Acols[i]];
     }
 
@@ -540,11 +529,9 @@ template <typename MatrixType, typename VectorType> struct matvec_std {
     exchange_externals(A, x);
 
     typedef typename MatrixType::ScalarType ScalarType;
-    typedef typename MatrixType::GlobalOrdinalType GlobalOrdinalType;
-    typedef typename MatrixType::LocalOrdinalType LocalOrdinalType;
 
-    const LocalOrdinalType *Arowoffsets = &A.row_offsets[0];
-    const GlobalOrdinalType *Acols = &A.packed_cols[0];
+    const int *Arowoffsets = &A.row_offsets[0];
+    const int *Acols = &A.packed_cols[0];
     const ScalarType *Acoefs = &A.packed_coefs[0];
     const ScalarType *xcoefs = &x.coefs[0];
     ScalarType *ycoefs = &y.coefs[0];
@@ -560,7 +547,7 @@ template <typename MatrixType, typename VectorType> struct matvec_std {
     for (size_t row = 0; row < n; ++row) {
       ScalarType sum = 0;
 
-      for (LocalOrdinalType i = Arowoffsets[row]; i < Arowoffsets[row + 1];
+      for (int i = Arowoffsets[row]; i < Arowoffsets[row + 1];
            ++i) {
         sum += Acoefs[i] * xcoefs[Acols[i]];
       }
@@ -586,12 +573,10 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
 #endif
 
     typedef typename MatrixType::ScalarType ScalarType;
-    typedef typename MatrixType::GlobalOrdinalType GlobalOrdinalType;
-    typedef typename MatrixType::LocalOrdinalType LocalOrdinalType;
 
     size_t n = A.rows.size();
-    const LocalOrdinalType *Arowoffsets = &A.row_offsets[0];
-    const GlobalOrdinalType *Acols = &A.packed_cols[0];
+    const int *Arowoffsets = &A.row_offsets[0];
+    const int *Acols = &A.packed_cols[0];
     const ScalarType *Acoefs = &A.packed_coefs[0];
     const ScalarType *xcoefs = &x.coefs[0];
     ScalarType *ycoefs = &y.coefs[0];
@@ -606,7 +591,7 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
       ScalarType sum = beta * ycoefs[row];
 
 #pragma omp parallel for
-      for (LocalOrdinalType i = Arowoffsets[row]; i < Arowoffsets[row + 1];
+      for (int i = Arowoffsets[row]; i < Arowoffsets[row + 1];
            ++i) {
         sum += Acoefs[i] * xcoefs[Acols[i]];
       }
@@ -625,7 +610,7 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
     for (size_t row = 0; row < n; ++row) {
       ScalarType sum = beta * ycoefs[row];
 
-      for (LocalOrdinalType i = Arowoffsets[row]; i < Arowoffsets[row + 1];
+      for (int i = Arowoffsets[row]; i < Arowoffsets[row + 1];
            ++i) {
         sum += Acoefs[i] * xcoefs[Acols[i]];
       }

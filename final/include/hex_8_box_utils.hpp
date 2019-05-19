@@ -39,9 +39,8 @@
 
 namespace miniFE {
 
-template <typename GlobalOrdinal>
-void get_hex8_node_ids(int nx, int ny, GlobalOrdinal node0,
-                       GlobalOrdinal *elem_node_ids) {
+void get_hex8_node_ids(int nx, int ny, int node0,
+                       int *elem_node_ids) {
   // Given box dimensions nx and ny, and a starting node
   //(local-node-0 for a hex8), compute the other nodes
   // of the hex8 using the exodus ordering convention.
@@ -95,10 +94,10 @@ void get_hex8_node_coords_3d(Scalar x, Scalar y, Scalar z, Scalar hx, Scalar hy,
   elem_node_coords[23] = z + hz;
 }
 
-template <typename GlobalOrdinal, typename Scalar>
+template <typename Scalar>
 void get_elem_nodes_and_coords(
-    const simple_mesh_description<GlobalOrdinal> &mesh, GlobalOrdinal elemID,
-    GlobalOrdinal *node_ords, Scalar *node_coords) {
+    const simple_mesh_description &mesh, int elemID,
+    int *node_ords, Scalar *node_coords) {
   int global_nodes_x = mesh.global_box[0][1] + 1;
   int global_nodes_y = mesh.global_box[1][1] + 1;
   int global_nodes_z = mesh.global_box[2][1] + 1;
@@ -112,8 +111,8 @@ void get_elem_nodes_and_coords(
   int elem_int_x, elem_int_y, elem_int_z;
   get_int_coords(elemID, global_nodes_x - 1, global_nodes_y - 1, elem_int_x,
                  elem_int_y, elem_int_z);
-  GlobalOrdinal nodeID =
-      get_id<GlobalOrdinal>(global_nodes_x, global_nodes_y, global_nodes_z,
+  int nodeID =
+      get_id(global_nodes_x, global_nodes_y, global_nodes_z,
                             elem_int_x, elem_int_y, elem_int_z);
 
 #ifdef MINIFE_DEBUG_VERBOSE
@@ -141,7 +140,7 @@ void get_elem_nodes_and_coords(
   int global_elems_z = mesh.global_box[2][1];
 
   Scalar ix, iy, iz;
-  get_coords<GlobalOrdinal, Scalar>(nodeID, global_nodes_x, global_nodes_y,
+  get_coords<Scalar>(nodeID, global_nodes_x, global_nodes_y,
                                     global_nodes_z, ix, iy, iz);
   Scalar hx = 1.0 / global_elems_x;
   Scalar hy = 1.0 / global_elems_y;
@@ -157,10 +156,10 @@ void get_elem_nodes_and_coords(
 #endif
 }
 
-template <typename GlobalOrdinal, typename Scalar>
+template <typename Scalar>
 void get_elem_nodes_and_coords(
-    const simple_mesh_description<GlobalOrdinal> &mesh, GlobalOrdinal elemID,
-    ElemData<GlobalOrdinal, Scalar> &elem_data) {
+    const simple_mesh_description &mesh, int elemID,
+    ElemData<Scalar> &elem_data) {
   get_elem_nodes_and_coords(mesh, elemID, elem_data.elem_node_ids,
                             elem_data.elem_node_coords);
 }

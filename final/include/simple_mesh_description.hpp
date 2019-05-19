@@ -39,7 +39,7 @@
 
 namespace miniFE {
 
-template <typename GlobalOrdinal> class simple_mesh_description {
+class simple_mesh_description {
 public:
   simple_mesh_description(const Box &global_box_in, const Box &local_box_in) {
     Box local_node_box;
@@ -96,7 +96,7 @@ public:
 
       for (int iz = minz; iz < maxz; ++iz) {
         for (int iy = miny; iy < maxy; ++iy) {
-          GlobalOrdinal nodeID = get_id<GlobalOrdinal>(max_node_x, max_node_y,
+          int nodeID = get_id(max_node_x, max_node_y,
                                                        max_node_z, 0, iy, iz);
 #ifdef MINIFE_DEBUG
           std::cout << "x=0 BC, node " << nodeID << ", (0," << iy << "," << iz
@@ -125,7 +125,7 @@ public:
 
       for (int iz = minz; iz < maxz; ++iz) {
         for (int ix = minx; ix < maxx; ++ix) {
-          GlobalOrdinal nodeID = get_id<GlobalOrdinal>(max_node_x, max_node_y,
+          int nodeID = get_id(max_node_x, max_node_y,
                                                        max_node_z, ix, 0, iz);
 #ifdef MINIFE_DEBUG
           std::cout << "y=0 BC, node " << nodeID << ", (" << ix << ",0," << iz
@@ -154,7 +154,7 @@ public:
 
       for (int iy = miny; iy < maxy; ++iy) {
         for (int ix = minx; ix < maxx; ++ix) {
-          GlobalOrdinal nodeID = get_id<GlobalOrdinal>(max_node_x, max_node_y,
+          int nodeID = get_id(max_node_x, max_node_y,
                                                        max_node_z, ix, iy, 0);
 #ifdef MINIFE_DEBUG
           std::cout << "z=0 BC, node " << nodeID << ", (" << ix << "," << iy
@@ -183,9 +183,9 @@ public:
 
       for (int iy = miny; iy < maxy; ++iy) {
         for (int iz = minz; iz < maxz; ++iz) {
-          GlobalOrdinal nodeID = get_id<GlobalOrdinal>(max_node_x, max_node_y,
+          int nodeID = get_id(max_node_x, max_node_y,
                                                        max_node_z, x1, iy, iz);
-          GlobalOrdinal row = map_id_to_row(nodeID);
+          int row = map_id_to_row(nodeID);
 #ifdef MINIFE_DEBUG
           std::cout << "x=1 BC, node " << nodeID << ", row " << row << ", ("
                     << x1 << "," << iy << "," << iz << ")" << std::endl;
@@ -213,7 +213,7 @@ public:
 
       for (int ix = minx; ix < maxx; ++ix) {
         for (int iz = minz; iz < maxz; ++iz) {
-          GlobalOrdinal nodeID = get_id<GlobalOrdinal>(max_node_x, max_node_y,
+          int nodeID = get_id(max_node_x, max_node_y,
                                                        max_node_z, ix, y1, iz);
 #ifdef MINIFE_DEBUG
           std::cout << "y=1 BC, node " << nodeID << ", (" << ix << "," << y1
@@ -242,7 +242,7 @@ public:
 
       for (int ix = minx; ix < maxx; ++ix) {
         for (int iy = miny; iy < maxy; ++iy) {
-          GlobalOrdinal nodeID = get_id<GlobalOrdinal>(max_node_x, max_node_y,
+          int nodeID = get_id(max_node_x, max_node_y,
                                                        max_node_z, ix, iy, z1);
 #ifdef MINIFE_DEBUG
           std::cout << "z=1 BC, node " << nodeID << ", (" << ix << "," << iy
@@ -254,13 +254,13 @@ public:
     }
   }
 
-  GlobalOrdinal map_id_to_row(const GlobalOrdinal &id) const {
+  int map_id_to_row(const int &id) const {
     return find_row_for_id(id, map_ids_to_rows);
   }
 
-  std::set<GlobalOrdinal> bc_rows_0;
-  std::set<GlobalOrdinal> bc_rows_1;
-  std::map<GlobalOrdinal, GlobalOrdinal> map_ids_to_rows;
+  std::set<int> bc_rows_0;
+  std::set<int> bc_rows_1;
+  std::map<int, int> map_ids_to_rows;
   Box global_box;
   Box local_box;
 }; // class simple_mesh_description

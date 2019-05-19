@@ -31,18 +31,16 @@
 #pragma once
 
 template <typename MatrixType> struct MatrixCopyOp {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinalType;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinalType;
   typedef typename MatrixType::ScalarType ScalarType;
 
-  const GlobalOrdinalType *src_rows;
-  const LocalOrdinalType *src_rowoffsets;
-  const GlobalOrdinalType *src_cols;
+  const int *src_rows;
+  const int *src_rowoffsets;
+  const int *src_cols;
   const ScalarType *src_coefs;
 
-  GlobalOrdinalType *dest_rows;
-  LocalOrdinalType *dest_rowoffsets;
-  GlobalOrdinalType *dest_cols;
+  int *dest_rows;
+  int *dest_rowoffsets;
+  int *dest_cols;
   ScalarType *dest_coefs;
   int n;
 

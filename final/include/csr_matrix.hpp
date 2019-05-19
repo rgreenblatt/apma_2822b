@@ -41,7 +41,7 @@
 
 namespace miniFE {
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+template <typename Scalar>
 struct CSRMatrix {
   CSRMatrix()
       : has_local_indices(false), rows(), row_offsets(), row_offsets_external(),
@@ -57,39 +57,37 @@ struct CSRMatrix {
   ~CSRMatrix() {}
 
   typedef Scalar ScalarType;
-  typedef LocalOrdinal LocalOrdinalType;
-  typedef GlobalOrdinal GlobalOrdinalType;
 
   bool has_local_indices;
-  AllocVec<GlobalOrdinal> rows;
-  AllocVec<LocalOrdinal> row_offsets;
-  AllocVec<LocalOrdinal> row_offsets_external;
-  AllocVec<GlobalOrdinal> packed_cols;
+  AllocVec<int> rows;
+  AllocVec<int> row_offsets;
+  AllocVec<int> row_offsets_external;
+  AllocVec<int> packed_cols;
   AllocVec<Scalar> packed_coefs;
-  LocalOrdinal num_cols;
+  int num_cols;
 
 #ifdef HAVE_MPI
-  std::vector<GlobalOrdinal> external_index;
-  std::vector<GlobalOrdinal> external_local_index;
-  std::vector<GlobalOrdinal> elements_to_send;
+  std::vector<int> external_index;
+  std::vector<int> external_local_index;
+  std::vector<int> elements_to_send;
   std::vector<int> neighbors;
-  std::vector<LocalOrdinal> recv_length;
-  std::vector<LocalOrdinal> send_length;
+  std::vector<int> recv_length;
+  std::vector<int> send_length;
   std::vector<Scalar> send_buffer;
   std::vector<MPI_Request> request;
 #endif
 
-  LocalOrdinal num_nonzeros() const { return row_offsets[row_offsets.size() - 1]; }
+  int num_nonzeros() const { return row_offsets[row_offsets.size() - 1]; }
 
-  void reserve_space(GlobalOrdinal nrows, unsigned ncols_per_row) {
+  void reserve_space(int nrows, unsigned ncols_per_row) {
     rows.resize(static_cast<size_t>(nrows));
     row_offsets.resize(static_cast<size_t>(nrows) + 1);
     packed_cols.reserve(static_cast<size_t>(nrows) * ncols_per_row);
     packed_coefs.reserve(static_cast<size_t>(nrows) * ncols_per_row);
   }
 
-  void get_row_pointers(GlobalOrdinalType row, size_t &row_length,
-                        GlobalOrdinalType *&cols, ScalarType *&coefs) {
+  void get_row_pointers(int row, size_t &row_length,
+                        int *&cols, ScalarType *&coefs) {
     ptrdiff_t local_row = -1;
     // first see if we can get the local-row index using fast direct lookup:
     if (rows.size() >= 1) {
@@ -113,7 +111,7 @@ struct CSRMatrix {
       local_row = row_iter - rows.begin();
     }
 
-    LocalOrdinalType offset = row_offsets[static_cast<size_t>(local_row)];
+    int offset = row_offsets[static_cast<size_t>(local_row)];
     row_length = static_cast<size_t>(
         row_offsets[static_cast<size_t>(local_row) + 1] - offset);
     cols = &packed_cols[static_cast<size_t>(offset)];

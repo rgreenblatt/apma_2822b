@@ -37,13 +37,11 @@
 
 namespace miniFE {
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+template <typename Scalar>
 struct Vector {
   typedef Scalar ScalarType;
-  typedef LocalOrdinal LocalOrdinalType;
-  typedef GlobalOrdinal GlobalOrdinalType;
 
-  Vector(GlobalOrdinal startIdx, LocalOrdinal local_sz)
+  Vector(int startIdx, int local_sz)
       : startIndex(startIdx), local_size(local_sz),
         coefs(static_cast<size_t>(local_size)) {
     MemInitOp<Scalar> mem_init;
@@ -58,8 +56,8 @@ struct Vector {
 
   ~Vector() {}
 
-  GlobalOrdinal startIndex;
-  LocalOrdinal local_size;
+  int startIndex;
+  int local_size;
   AllocVec<Scalar> coefs;
 };
 

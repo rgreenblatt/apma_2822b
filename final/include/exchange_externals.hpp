@@ -58,17 +58,15 @@ void exchange_externals(MatrixType &A, VectorType &x) {
     return;
 
   typedef typename MatrixType::ScalarType Scalar;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
 
   // Extract Matrix pieces
 
   size_t local_nrow = A.rows.size();
   size_t num_neighbors = A.neighbors.size();
-  const std::vector<LocalOrdinal> &recv_length = A.recv_length;
-  const std::vector<LocalOrdinal> &send_length = A.send_length;
+  const std::vector<int> &recv_length = A.recv_length;
+  const std::vector<int> &send_length = A.send_length;
   const std::vector<int> &neighbors = A.neighbors;
-  const std::vector<GlobalOrdinal> &elements_to_send = A.elements_to_send;
+  const std::vector<int> &elements_to_send = A.elements_to_send;
 
   std::vector<Scalar> &send_buffer = A.send_buffer;
 
@@ -116,7 +114,7 @@ void exchange_externals(MatrixType &A, VectorType &x) {
 #ifdef MINIFE_DEBUG
     // expensive index range-check:
     if (elements_to_send[i] < 0 ||
-        elements_to_send[i] > static_cast<GlobalOrdinal>(x.coefs.size())) {
+        elements_to_send[i] > static_cast<int>(x.coefs.size())) {
       os << "error, out-of-range. x.coefs.size()==" << x.coefs.size()
          << ", elements_to_send[i]==" << elements_to_send[i] << std::endl;
     }
@@ -177,17 +175,15 @@ void begin_exchange_externals(MatrixType &A, VectorType &x) {
     return;
 
   typedef typename MatrixType::ScalarType Scalar;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
 
   // Extract Matrix pieces
 
   size_t local_nrow = A.rows.size();
   size_t num_neighbors = A.neighbors.size();
-  const std::vector<LocalOrdinal> &recv_length = A.recv_length;
-  const std::vector<LocalOrdinal> &send_length = A.send_length;
+  const std::vector<int> &recv_length = A.recv_length;
+  const std::vector<int> &send_length = A.send_length;
   const std::vector<int> &neighbors = A.neighbors;
-  const std::vector<GlobalOrdinal> &elements_to_send = A.elements_to_send;
+  const std::vector<int> &elements_to_send = A.elements_to_send;
 
   std::vector<Scalar> send_buffer(elements_to_send.size(), 0);
 

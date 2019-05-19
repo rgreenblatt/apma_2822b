@@ -50,7 +50,6 @@ const int NONE = 3;
 const int LOWER = 0;
 const int UPPER = 1;
 
-template <typename GlobalOrdinal>
 void compute_imbalance(const Box &local_box, double &largest_imbalance,
                        double &std_dev, YAML_Doc &doc, bool record_in_doc) {
   int numprocs = 1, myproc = 0;
@@ -59,8 +58,8 @@ void compute_imbalance(const Box &local_box, double &largest_imbalance,
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
 #endif
 
-  GlobalOrdinal local_nrows = get_num_ids<GlobalOrdinal>(local_box);
-  GlobalOrdinal min_nrows = 0, max_nrows = 0, global_nrows = 0;
+  int local_nrows = get_num_ids(local_box);
+  int min_nrows = 0, max_nrows = 0, global_nrows = 0;
   int min_proc = myproc, max_proc = myproc;
   get_global_min_max(local_nrows, global_nrows, min_nrows, min_proc, max_nrows,
                      max_proc);
@@ -71,15 +70,14 @@ void compute_imbalance(const Box &local_box, double &largest_imbalance,
   // largest_imbalance will be the difference between the min (or max)
   // rows-per-processor and avg_nrows, represented as a percentage:
   largest_imbalance =
-      percentage_difference<double>(static_cast<double>(min_nrows), avg_nrows);
+      percentage_difference<double>(min_nrows, avg_nrows);
 
   double tmp =
-      percentage_difference<double>(static_cast<double>(max_nrows), avg_nrows);
+      percentage_difference<double>(max_nrows, avg_nrows);
   if (tmp > largest_imbalance)
     largest_imbalance = tmp;
 
-  std_dev = compute_std_dev_as_percentage<double, GlobalOrdinal>(local_nrows,
-                                                                 avg_nrows);
+  std_dev = compute_std_dev_as_percentage<double>(local_nrows, avg_nrows);
 
   if (myproc == 0 && record_in_doc) {
     doc.add("Rows-per-proc Load Imbalance", "");
@@ -169,7 +167,6 @@ std::pair<int, int> decide_how_to_shrink(const Box &global_box,
   return result;
 }
 
-template <typename GlobalOrdinal>
 void add_imbalance(const Box &global_box, Box &local_box, float imbalance,
                    YAML_Doc &doc) {
   int numprocs = 1, myproc = 0;
@@ -183,12 +180,12 @@ void add_imbalance(const Box &global_box, Box &local_box, float imbalance,
   }
 
   double cur_imbalance = 0, cur_std_dev = 0;
-  compute_imbalance<GlobalOrdinal>(local_box, cur_imbalance, cur_std_dev, doc,
+  compute_imbalance(local_box, cur_imbalance, cur_std_dev, doc,
                                    false);
 
   while (cur_imbalance < imbalance) {
-    GlobalOrdinal local_nrows = get_num_ids<GlobalOrdinal>(local_box);
-    GlobalOrdinal min_nrows = 0, max_nrows = 0, global_nrows = 0;
+    int local_nrows = get_num_ids(local_box);
+    int min_nrows = 0, max_nrows = 0, global_nrows = 0;
     int min_proc = myproc, max_proc = myproc;
     get_global_min_max(local_nrows, global_nrows, min_nrows, min_proc,
                        max_nrows, max_proc);
@@ -293,7 +290,7 @@ void add_imbalance(const Box &global_box, Box &local_box, float imbalance,
       }
     }
 
-    compute_imbalance<GlobalOrdinal>(local_box, cur_imbalance, cur_std_dev, doc,
+    compute_imbalance(local_box, cur_imbalance, cur_std_dev, doc,
                                      false);
   }
 }

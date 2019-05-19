@@ -67,15 +67,14 @@ bool breakdown(typename VectorType::ScalarType inner, const VectorType &v,
 template <typename OperatorType, typename VectorType, typename Matvec>
 void cg_solve(
     OperatorType &A, const VectorType &b, VectorType &x, Matvec matvec,
-    typename OperatorType::LocalOrdinalType max_iter,
+    int max_iter,
     typename TypeTraits<typename OperatorType::ScalarType>::magnitude_type
         &tolerance,
-    typename OperatorType::LocalOrdinalType &num_iters,
+    int &num_iters,
     typename TypeTraits<typename OperatorType::ScalarType>::magnitude_type
         &normr,
     timer_type *my_cg_times) {
   typedef typename OperatorType::ScalarType ScalarType;
-  typedef typename OperatorType::LocalOrdinalType LocalOrdinalType;
   typedef typename TypeTraits<ScalarType>::magnitude_type magnitude_type;
 
   timer_type t0 = 0, tWAXPY = 0, tDOT = 0, tMATVEC = 0, tMATVECDOT = 0;
@@ -95,8 +94,8 @@ void cg_solve(
     return;
   }
 
-  LocalOrdinalType nrows = static_cast<LocalOrdinalType>(A.rows.size());
-  LocalOrdinalType ncols = A.num_cols;
+  int nrows = static_cast<int>(A.rows.size());
+  int ncols = A.num_cols;
 
   VectorType r(b.startIndex, nrows);
   VectorType p(0, ncols);
@@ -117,7 +116,7 @@ void cg_solve(
   magnitude_type rtrans = 0;
   magnitude_type oldrtrans = 0;
 
-  LocalOrdinalType print_freq = max_iter / 10;
+  int print_freq = max_iter / 10;
   if (print_freq > 50) {
     print_freq = 50;
   }
@@ -157,7 +156,7 @@ void cg_solve(
   os << "brkdown_tol = " << brkdown_tol << std::endl;
 #endif
 
-  for (LocalOrdinalType k = 1; k <= max_iter && normr > tolerance; ++k) {
+  for (int k = 1; k <= max_iter && normr > tolerance; ++k) {
     if (k == 1) {
       TICK();
 

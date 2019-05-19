@@ -34,12 +34,12 @@
 
 namespace miniFE {
 
-template <typename GlobalOrdinal, typename Scalar> struct ElemData {
+template <typename Scalar> struct ElemData {
   ElemData() : nodes_per_elem(Hex8::numNodesPerElem) {}
   ~ElemData() {}
 
   const size_t nodes_per_elem;
-  GlobalOrdinal elem_node_ids[Hex8::numNodesPerElem];
+  int elem_node_ids[Hex8::numNodesPerElem];
   Scalar grad_vals[Hex8::numGaussPointsPerDim * Hex8::numGaussPointsPerDim *
                    Hex8::numGaussPointsPerDim * Hex8::numNodesPerElem *
                    Hex8::spatialDim];
@@ -50,12 +50,12 @@ template <typename GlobalOrdinal, typename Scalar> struct ElemData {
   Scalar elem_source_vector[Hex8::numNodesPerElem];
 };
 
-template <typename GlobalOrdinal, typename Scalar> struct ElemDataPtr {
+template <typename Scalar> struct ElemDataPtr {
   ElemDataPtr() : nodes_per_elem(Hex8::numNodesPerElem) {}
   ~ElemDataPtr() {}
 
   const size_t nodes_per_elem;
-  GlobalOrdinal elem_node_ids[Hex8::numNodesPerElem];
+  int elem_node_ids[Hex8::numNodesPerElem];
   Scalar grad_vals[Hex8::numGaussPointsPerDim * Hex8::numGaussPointsPerDim *
                    Hex8::numGaussPointsPerDim * Hex8::numNodesPerElem *
                    Hex8::spatialDim];

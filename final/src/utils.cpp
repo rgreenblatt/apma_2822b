@@ -47,7 +47,6 @@
 
 #include "param_utils.hpp"
 #include "parameters.hpp"
-#include "utils.hpp"
 
 namespace miniFE {
 

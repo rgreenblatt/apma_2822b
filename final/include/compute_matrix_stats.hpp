@@ -46,22 +46,20 @@ namespace miniFE {
 template <typename MatrixType>
 size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
                             YAML_Doc &ydoc) {
-  typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
-  typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
   typedef typename MatrixType::ScalarType Scalar;
 
-  GlobalOrdinal min_nrows = 0, max_nrows = 0, global_nrows = 0;
+  int min_nrows = 0, max_nrows = 0, global_nrows = 0;
   int min_proc = 0, max_proc = 0;
 
-  GlobalOrdinal local_nrows = static_cast<GlobalOrdinal>(A.rows.size());
+  int local_nrows = static_cast<int>(A.rows.size());
 
   get_global_min_max(local_nrows, global_nrows, min_nrows, min_proc, max_nrows,
                      max_proc);
 
   // Gather stats on global, min/max matrix num-nonzeros:
 
-  GlobalOrdinal local_nnz = static_cast<GlobalOrdinal>(A.num_nonzeros());
-  GlobalOrdinal dglobal_nnz = 0, dmin_nnz = 0, dmax_nnz = 0;
+  int local_nnz = static_cast<int>(A.num_nonzeros());
+  int dglobal_nnz = 0, dmin_nnz = 0, dmax_nnz = 0;
 
   get_global_min_max(local_nnz, dglobal_nnz, dmin_nnz, min_proc, dmax_nnz,
                      max_proc);
@@ -84,18 +82,18 @@ size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
     ydoc.get("Matrix attributes")->add("Global NNZ", global_nnz);
 
     // compute how much memory the matrix occupies:
-    // num-bytes = sizeof(GlobalOrdinal)*global_nrows   for A.rows
-    //          + sizeof(LocalOrdinal)*global_nrows    for A.rows_offsets
-    //          + sizeof(GlobalOrdinal)*global_nnz     for A.packed_cols
+    // num-bytes = sizeof(int)*global_nrows   for A.rows
+    //          + sizeof(int)*global_nrows    for A.rows_offsets
+    //          + sizeof(int)*global_nnz     for A.packed_cols
     //          + sizeof(Scalar)*global_nnz            for A.packed_coefs
 
     double invGB = 1.0 / (1024 * 1024 * 1024);
     double memGB =
         invGB * static_cast<double>(static_cast<size_t>(global_nrows) *
-                                    sizeof(GlobalOrdinal));
+                                    sizeof(int));
     memGB += invGB * static_cast<double>(static_cast<size_t>(global_nrows) *
-                                         sizeof(LocalOrdinal));
-    memGB += invGB * static_cast<double>(global_nnz * sizeof(GlobalOrdinal));
+                                         sizeof(int));
+    memGB += invGB * static_cast<double>(global_nnz * sizeof(int));
     memGB += invGB * static_cast<double>(global_nnz * sizeof(Scalar));
     ydoc.get("Matrix attributes")->add("Global Memory (GB)", memGB);
 

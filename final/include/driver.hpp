@@ -117,7 +117,7 @@
 
 namespace miniFE {
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
+template <typename Scalar>
 int driver(const Box &global_box, Box &my_box, Parameters &params,
            YAML_Doc &ydoc) {
   int global_nx = global_box[0][1];
@@ -131,12 +131,12 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 #endif
 
   if (params.load_imbalance > 0) {
-    add_imbalance<GlobalOrdinal>(global_box, my_box, params.load_imbalance,
+    add_imbalance(global_box, my_box, params.load_imbalance,
                                  ydoc);
   }
 
   double largest_imbalance = 0, std_dev = 0;
-  compute_imbalance<GlobalOrdinal>(my_box, largest_imbalance, std_dev, ydoc,
+  compute_imbalance(my_box, largest_imbalance, std_dev, ydoc,
                                    true);
 
   // Create a representation of the mesh:
@@ -152,7 +152,7 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
   timer_type t_start = my_timer();
   timer_type t0 = my_timer();
 
-  simple_mesh_description<GlobalOrdinal> mesh(global_box, my_box);
+  simple_mesh_description mesh(global_box, my_box);
 
   timer_type mesh_fill = my_timer() - t0;
   timer_type t_total = my_timer() - t_start;
@@ -165,7 +165,7 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 
   // Declare matrix object:
 
-  typedef CSRMatrix<Scalar, LocalOrdinal, GlobalOrdinal> MatrixType;
+  typedef CSRMatrix<Scalar> MatrixType;
 
   MatrixType A;
 
@@ -174,11 +174,11 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
                      generate_matrix_structure(mesh, A), gen_structure,
                      t_total);
 
-  LocalOrdinal local_nrows = static_cast<LocalOrdinal>(A.rows.size());
-  GlobalOrdinal my_first_row = local_nrows > 0 ? A.rows[0] : -1;
+  int local_nrows = static_cast<int>(A.rows.size());
+  int my_first_row = local_nrows > 0 ? A.rows[0] : -1;
 
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal> b(my_first_row, local_nrows);
-  Vector<Scalar, LocalOrdinal, GlobalOrdinal> x(my_first_row, local_nrows);
+  Vector<Scalar> b(my_first_row, local_nrows);
+  Vector<Scalar> x(my_first_row, local_nrows);
 
   // Assemble finite-element sub-matrices and sub-vectors into the global
   // linear system:
@@ -232,21 +232,23 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 
   // Prepare to perform conjugate gradient solve:
 
-  LocalOrdinal max_iters = 200;
-  LocalOrdinal num_iters = 0;
+  int max_iters = 200;
+  int num_iters = 0;
   typedef typename TypeTraits<Scalar>::magnitude_type magnitude;
   magnitude rnorm = 0;
   magnitude tol = std::numeric_limits<magnitude>::epsilon();
 
   timer_type cg_times[NUM_TIMERS];
 
-  typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal> VectorType;
+  typedef Vector<Scalar> VectorType;
 
   t_total = my_timer() - t_start;
 
   bool matvec_with_comm_overlap = params.mv_overlap_comm_comp == 1;
 
   int verify_result = 0;
+
+  std::cout << "total vector size: " << x.coefs.size() << std::endl;
 
   if (myproc == 0) {
     std::cout << "Starting CG solver ... " << std::endl;
@@ -289,14 +291,14 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
     ydoc.get("Global Run Parameters")
         ->add("ScalarType", TypeTraits<Scalar>::name());
     ydoc.get("Global Run Parameters")
-        ->add("GlobalOrdinalType", TypeTraits<GlobalOrdinal>::name());
+        ->add("intType", TypeTraits<int>::name());
     ydoc.get("Global Run Parameters")
-        ->add("LocalOrdinalType", TypeTraits<LocalOrdinal>::name());
+        ->add("intType", TypeTraits<int>::name());
     ydoc.add(title, "");
     ydoc.get(title)->add("Iterations", num_iters);
     ydoc.get(title)->add("Final Resid Norm", rnorm);
 
-    GlobalOrdinal global_nrows = global_nx;
+    int global_nrows = global_nx;
     global_nrows *= global_ny * global_nz;
 
     // flops-per-mv, flops-per-dot, flops-per-waxpy:

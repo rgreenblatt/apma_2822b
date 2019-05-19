@@ -53,22 +53,10 @@
 #include "utils.hpp"
 #include "yaml_doc.hpp"
 
-/* #if MINIFE_INFO != 0 */
-/* #include "minife_info.hpp" */
-/* #else */
-/* #include "minife_no_info.hpp" */
-/* #endif */
-
 // The following macros should be specified as compile-macros in the
 // makefile. They are defaulted here just in case...
 #ifndef MINIFE_SCALAR
 #define MINIFE_SCALAR double
-#endif
-#ifndef MINIFE_LOCAL_ORDINAL
-#define MINIFE_LOCAL_ORDINAL int
-#endif
-#ifndef MINIFE_GLOBAL_ORDINAL
-#define MINIFE_GLOBAL_ORDINAL int
 #endif
 
 // ************************************************************************
@@ -107,13 +95,12 @@ int main(int argc, char **argv) {
 
   Box &my_box = local_boxes[static_cast<size_t>(myproc)];
 
-  MINIFE_GLOBAL_ORDINAL num_my_ids =
-      miniFE::get_num_ids<MINIFE_GLOBAL_ORDINAL>(my_box);
-  MINIFE_GLOBAL_ORDINAL min_ids = num_my_ids;
+  int num_my_ids =
+      miniFE::get_num_ids(my_box);
+  int min_ids = num_my_ids;
 
 #ifdef HAVE_MPI
-  MPI_Datatype mpi_dtype =
-      miniFE::TypeTraits<MINIFE_GLOBAL_ORDINAL>::mpi_type();
+  MPI_Datatype mpi_dtype = MPI_INT;
   MPI_Allreduce(&num_my_ids, &min_ids, 1, mpi_dtype, MPI_MIN, MPI_COMM_WORLD);
 #endif
 
@@ -145,14 +132,13 @@ int main(int argc, char **argv) {
   }
 
   // Most of the program is performed in the 'driver' function, which is
-  // templated on < Scalar, LocalOrdinal, GlobalOrdinal >.
-  // To run miniFE with float instead of double, or 'long long' instead of int,
-  // etc., change these template-parameters by changing the macro definitions in
+  // templated on <Scalar>.
+  // To run miniFE with float instead of double
+  // change the template-parameters by changing the macro definitions in
   // the makefile or on the make command-line.
 
   int return_code =
-      miniFE::driver<MINIFE_SCALAR, MINIFE_LOCAL_ORDINAL,
-                     MINIFE_GLOBAL_ORDINAL>(global_box, my_box, params, doc);
+      miniFE::driver<MINIFE_SCALAR>(global_box, my_box, params, doc);
 
   miniFE::timer_type total_time = miniFE::my_timer() - start_time;
 
@@ -192,7 +178,7 @@ void add_configuration_to_yaml(YAML_Doc &doc, int numprocs) {
   /*   doc.get("Platform")->add("kernel release",MINIFE_KERNEL_RELEASE); */
   /*   doc.get("Platform")->add("processor",MINIFE_PROCESSOR); */
 
-  doc.add("Build","");
+  doc.add("Build", "");
   /* doc.get("Build")->add("CXX",MINIFE_CXX); */
   /* #if MINIFE_INFO != 0 */
   /* doc.get("Build")->add("compiler version",MINIFE_CXX_VERSION); */

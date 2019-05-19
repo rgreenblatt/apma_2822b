@@ -48,7 +48,7 @@ namespace miniFE {
 
 template <typename MatrixType>
 int generate_matrix_structure(
-    const simple_mesh_description<typename MatrixType::GlobalOrdinalType> &mesh,
+    const simple_mesh_description &mesh,
     MatrixType &A) {
   int myproc = 0;
 #ifdef HAVE_MPI
@@ -57,9 +57,6 @@ int generate_matrix_structure(
 
   int threw_exc = 0;
   try {
-
-    typedef typename MatrixType::GlobalOrdinalType GlobalOrdinal;
-    typedef typename MatrixType::LocalOrdinalType LocalOrdinal;
 
     int global_nodes_x = mesh.global_box[0][1] + 1;
     int global_nodes_y = mesh.global_box[1][1] + 1;
@@ -77,10 +74,10 @@ int generate_matrix_structure(
     if (box[2][1] > box[2][0] && box[2][1] == mesh.global_box[2][1])
       ++box[2][1];
 
-    GlobalOrdinal global_nrows = global_nodes_x;
+    int global_nrows = global_nodes_x;
     global_nrows *= global_nodes_y * global_nodes_z;
 
-    GlobalOrdinal nrows = get_num_ids<GlobalOrdinal>(box);
+    int nrows = get_num_ids(box);
     try {
       A.reserve_space(nrows, 27);
     } catch (std::exception &exc) {
@@ -93,17 +90,17 @@ int generate_matrix_structure(
       throw std::runtime_error(str1);
     }
 
-    std::vector<GlobalOrdinal> rows(static_cast<size_t>(nrows));
-    std::vector<LocalOrdinal> row_offsets(static_cast<size_t>(nrows) + 1);
+    std::vector<int> rows(static_cast<size_t>(nrows));
+    std::vector<int> row_offsets(static_cast<size_t>(nrows) + 1);
     std::vector<int> row_coords(static_cast<size_t>(nrows) * 3);
 
-    GlobalOrdinal roffset = 0;
-    LocalOrdinal nnz = 0;
+    int roffset = 0;
+    int nnz = 0;
 
     for (int iz = box[2][0]; iz < box[2][1]; ++iz) {
       for (int iy = box[1][0]; iy < box[1][1]; ++iy) {
         for (int ix = box[0][0]; ix < box[0][1]; ++ix) {
-          GlobalOrdinal row_id = get_id<GlobalOrdinal>(
+          int row_id = get_id(
               global_nodes_x, global_nodes_y, global_nodes_z, ix, iy, iz);
           rows[roffset] = mesh.map_id_to_row(row_id);
           row_coords[roffset * 3] = ix;
@@ -114,7 +111,7 @@ int generate_matrix_structure(
           for (int sz = -1; sz <= 1; ++sz) {
             for (int sy = -1; sy <= 1; ++sy) {
               for (int sx = -1; sx <= 1; ++sx) {
-                GlobalOrdinal col_id = get_id<GlobalOrdinal>(
+                int col_id = get_id(
                     global_nodes_x, global_nodes_y, global_nodes_z, ix + sx,
                     iy + sy, iz + sz);
                 if (col_id >= 0 && col_id < global_nrows) {
