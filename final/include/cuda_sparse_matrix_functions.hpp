@@ -49,11 +49,11 @@ double cuda_matvec_and_dot(const double *Acoefs, const int *Arowoffsets,
 }
 
 float cuda_matvec_and_dot(const float *Acoefs, const int *Arowoffsets,
-                           const int *Acols, const float *xcoefs,
-                           float *ycoefs, int n_rows, int n_cols, int nnz,
-                           cusparseHandle_t cusparse_handle,
-                           cublasHandle_t cublas_handle,
-                           cusparseMatDescr_t descr) {
+                          const int *Acols, const float *xcoefs, float *ycoefs,
+                          int n_rows, int n_cols, int nnz,
+                          cusparseHandle_t cusparse_handle,
+                          cublasHandle_t cublas_handle,
+                          cusparseMatDescr_t descr) {
   cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n_rows, n_cols, nnz,
               cusparse_handle, descr);
   float result;

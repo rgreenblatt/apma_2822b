@@ -76,8 +76,7 @@ void write_vector(const std::string &filename, const VectorType &vec) {
       }
 
       int first = vec.startIndex;
-      for (int i = 0; i < vec.local_size;
-           ++i) {
+      for (int i = 0; i < vec.local_size; ++i) {
         ofs << first + i << " " << coefs[i] << std::endl;
       }
     }
@@ -88,8 +87,7 @@ void write_vector(const std::string &filename, const VectorType &vec) {
 }
 
 template <typename VectorType>
-void sum_into_vector(size_t num_indices,
-                     int *indices,
+void sum_into_vector(size_t num_indices, int *indices,
                      const typename VectorType::ScalarType *coefs,
                      VectorType &vec) {
   typedef typename VectorType::ScalarType Scalar;
@@ -109,8 +107,7 @@ void sum_into_vector(size_t num_indices,
 
 #ifdef MINIFE_HAVE_TBB
 template <typename VectorType>
-void sum_into_vector(size_t num_indices,
-                     const int *indices,
+void sum_into_vector(size_t num_indices, const int *indices,
                      const typename VectorType::ScalarType *coefs,
                      LockingVector<VectorType> &vec) {
   vec.sum_in(num_indices, indices, coefs);
@@ -204,7 +201,7 @@ void fused_waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
 //
 template <typename Vector>
 typename TypeTraits<typename Vector::ScalarType>::magnitude_type
-dot(const Vector &x, const Vector &y, cublasHandle_t handle=0);
+dot(const Vector &x, const Vector &y, cublasHandle_t handle = 0);
 
 template <typename Vector>
 typename TypeTraits<typename Vector::ScalarType>::magnitude_type
@@ -226,7 +223,6 @@ dot(const Vector &x, const Vector &y, cublasHandle_t handle) {
   const Scalar *xcoefs = &x.coefs[0];
   const Scalar *ycoefs = &y.coefs[0];
   magnitude result = 0;
-
 
 #ifdef USE_CUDA
   cuda_dot(handle, xcoefs, ycoefs, &result, static_cast<unsigned>(n));

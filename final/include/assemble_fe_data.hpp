@@ -37,9 +37,8 @@
 namespace miniFE {
 
 template <typename MatrixType, typename VectorType>
-void assemble_FE_data(
-    const simple_mesh_description &mesh,
-    MatrixType &A, VectorType &b, Parameters &params) {
+void assemble_FE_data(const simple_mesh_description &mesh, MatrixType &A,
+                      VectorType &b, Parameters &params) {
 
   int global_elems_x = mesh.global_box[0][1];
   int global_elems_y = mesh.global_box[1][1];

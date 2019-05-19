@@ -96,8 +96,7 @@ public:
 
       for (int iz = minz; iz < maxz; ++iz) {
         for (int iy = miny; iy < maxy; ++iy) {
-          int nodeID = get_id(max_node_x, max_node_y,
-                                                       max_node_z, 0, iy, iz);
+          int nodeID = get_id(max_node_x, max_node_y, max_node_z, 0, iy, iz);
 #ifdef MINIFE_DEBUG
           std::cout << "x=0 BC, node " << nodeID << ", (0," << iy << "," << iz
                     << ")" << std::endl;
@@ -125,8 +124,7 @@ public:
 
       for (int iz = minz; iz < maxz; ++iz) {
         for (int ix = minx; ix < maxx; ++ix) {
-          int nodeID = get_id(max_node_x, max_node_y,
-                                                       max_node_z, ix, 0, iz);
+          int nodeID = get_id(max_node_x, max_node_y, max_node_z, ix, 0, iz);
 #ifdef MINIFE_DEBUG
           std::cout << "y=0 BC, node " << nodeID << ", (" << ix << ",0," << iz
                     << ")" << std::endl;
@@ -154,8 +152,7 @@ public:
 
       for (int iy = miny; iy < maxy; ++iy) {
         for (int ix = minx; ix < maxx; ++ix) {
-          int nodeID = get_id(max_node_x, max_node_y,
-                                                       max_node_z, ix, iy, 0);
+          int nodeID = get_id(max_node_x, max_node_y, max_node_z, ix, iy, 0);
 #ifdef MINIFE_DEBUG
           std::cout << "z=0 BC, node " << nodeID << ", (" << ix << "," << iy
                     << ",0)" << std::endl;
@@ -183,8 +180,7 @@ public:
 
       for (int iy = miny; iy < maxy; ++iy) {
         for (int iz = minz; iz < maxz; ++iz) {
-          int nodeID = get_id(max_node_x, max_node_y,
-                                                       max_node_z, x1, iy, iz);
+          int nodeID = get_id(max_node_x, max_node_y, max_node_z, x1, iy, iz);
           int row = map_id_to_row(nodeID);
 #ifdef MINIFE_DEBUG
           std::cout << "x=1 BC, node " << nodeID << ", row " << row << ", ("
@@ -213,8 +209,7 @@ public:
 
       for (int ix = minx; ix < maxx; ++ix) {
         for (int iz = minz; iz < maxz; ++iz) {
-          int nodeID = get_id(max_node_x, max_node_y,
-                                                       max_node_z, ix, y1, iz);
+          int nodeID = get_id(max_node_x, max_node_y, max_node_z, ix, y1, iz);
 #ifdef MINIFE_DEBUG
           std::cout << "y=1 BC, node " << nodeID << ", (" << ix << "," << y1
                     << "," << iz << ")" << std::endl;
@@ -242,8 +237,7 @@ public:
 
       for (int ix = minx; ix < maxx; ++ix) {
         for (int iy = miny; iy < maxy; ++iy) {
-          int nodeID = get_id(max_node_x, max_node_y,
-                                                       max_node_z, ix, iy, z1);
+          int nodeID = get_id(max_node_x, max_node_y, max_node_z, ix, iy, z1);
 #ifdef MINIFE_DEBUG
           std::cout << "z=1 BC, node " << nodeID << ", (" << ix << "," << iy
                     << "," << z1 << ")" << std::endl;

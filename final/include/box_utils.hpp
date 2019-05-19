@@ -95,8 +95,7 @@ int get_id(int nx, int ny, int nz, int x, int y, int z) {
   return tmp;
 }
 
-void get_ids(int nx, int ny, int nz, const Box &box,
-             std::vector<int> &ids,
+void get_ids(int nx, int ny, int nz, const Box &box, std::vector<int> &ids,
              bool include_ghost_layer = false) {
   ids.clear();
   int minz = box[2][0];
@@ -194,8 +193,7 @@ bool is_neighbor(const Box &box1, const Box &box2) {
 }
 
 void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
-                          const Box &box,
-                          std::map<int, int> &id_to_row) {
+                          const Box &box, std::map<int, int> &id_to_row) {
   int num_my_ids = get_num_ids(box);
 
   std::vector<int> all_ids;
@@ -233,8 +231,8 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
 
   for (size_t i = 1; i < all_ids.size(); ++i) {
     if (all_ids[i] != all_ids[i - 1] + 1) {
-      id_to_row.insert(std::make_pair(
-          all_ids[i], my_first_row + static_cast<int>(i)));
+      id_to_row.insert(
+          std::make_pair(all_ids[i], my_first_row + static_cast<int>(i)));
     }
   }
 
@@ -263,8 +261,8 @@ void create_map_id_to_row(int global_nx, int global_ny, int global_nz,
     }
     for (size_t j = 1; j < all_ids.size(); ++j) {
       if (all_ids[j] != all_ids[j - 1] + 1) {
-        id_to_row.insert(std::make_pair(
-            all_ids[j], first_row + static_cast<int>(j)));
+        id_to_row.insert(
+            std::make_pair(all_ids[j], first_row + static_cast<int>(j)));
       }
     }
   }

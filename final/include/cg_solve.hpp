@@ -31,15 +31,15 @@
 #pragma once
 
 #include <cmath>
-#include <limits>
 #include <iostream>
+#include <limits>
 #include <vector>
 
-#include "my_timer.hpp"
-#include "vector_functions.hpp"
-#include "sparse_matrix_functions.hpp"
 #include "cuda_utils.cuh"
 #include "cusparse.h"
+#include "my_timer.hpp"
+#include "sparse_matrix_functions.hpp"
+#include "vector_functions.hpp"
 
 #include "outstream.hpp"
 
@@ -180,7 +180,6 @@ void cg_solve(
       std::cout << "Iteration = " << k << "   Residual = " << normr
                 << std::endl;
     }
-
 
     magnitude_type alpha = 0;
     magnitude_type p_ap_dot = 0;

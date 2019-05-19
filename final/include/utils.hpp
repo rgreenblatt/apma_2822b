@@ -160,8 +160,7 @@ Scalar compute_std_dev_as_percentage(int local_nrows, Scalar avg_nrows) {
 }
 
 int find_row_for_id(int id, const std::map<int, int> &ids_to_rows) {
-  std::map<int, int>::const_iterator iter =
-      ids_to_rows.lower_bound(id);
+  std::map<int, int>::const_iterator iter = ids_to_rows.lower_bound(id);
 
   if (iter == ids_to_rows.end() || iter->first != id) {
     if (ids_to_rows.size() > 0) {

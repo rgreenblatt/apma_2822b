@@ -106,12 +106,11 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   ////////////////////////////////////////////////////////////////////////
 
   std::vector<int> tmp_buffer(static_cast<size_t>(numprocs),
-                                        0); // Temp buffer space needed below
+                              0); // Temp buffer space needed below
 
   // Build list of global index offset
 
-  std::vector<int> global_index_offsets(static_cast<size_t>(numprocs),
-                                                  0);
+  std::vector<int> global_index_offsets(static_cast<size_t>(numprocs), 0);
 
   tmp_buffer[static_cast<size_t>(myproc)] = start_row; // This is my start row
 
@@ -223,8 +222,7 @@ template <typename MatrixType> void make_local_matrix(MatrixType &A) {
   // decode the combined 'tmp_neighbors' (stored in tmp_buffer)
   // array from all the processors
 
-  int num_send_neighbors =
-      tmp_buffer[static_cast<size_t>(myproc)] % numprocs;
+  int num_send_neighbors = tmp_buffer[static_cast<size_t>(myproc)] % numprocs;
 
   /// decode 'tmp_buffer[myproc] to deduce total number of elements
   //  we must send

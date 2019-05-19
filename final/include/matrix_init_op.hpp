@@ -52,8 +52,7 @@ void sort_if_needed(int *list, int list_len) {
 
 template <typename MatrixType> struct MatrixInitOp {};
 
-template <>
-struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR>> {
+template <> struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR>> {
   typedef MINIFE_SCALAR ScalarType;
 
   const int *rows;
@@ -74,13 +73,12 @@ struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR>> {
 
   const miniFE::simple_mesh_description *mesh;
 
-  MatrixInitOp(
-      const std::vector<int> &rows_vec,
-      const std::vector<int> &row_offsets_vec,
-      const std::vector<int> &row_coords_vec, int global_nx, int global_ny,
-      int global_nz, int global_n_rows,
-      const miniFE::simple_mesh_description &input_mesh,
-      miniFE::CSRMatrix<MINIFE_SCALAR> &matrix)
+  MatrixInitOp(const std::vector<int> &rows_vec,
+               const std::vector<int> &row_offsets_vec,
+               const std::vector<int> &row_coords_vec, int global_nx,
+               int global_ny, int global_nz, int global_n_rows,
+               const miniFE::simple_mesh_description &input_mesh,
+               miniFE::CSRMatrix<MINIFE_SCALAR> &matrix)
       : rows(&rows_vec[0]), row_offsets(&row_offsets_vec[0]),
         row_coords(&row_coords_vec[0]), global_nodes_x(global_nx),
         global_nodes_y(global_ny), global_nodes_z(global_nz),
@@ -96,8 +94,7 @@ struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR>> {
     }
 
     int nnz = row_offsets_vec[n];
-    if (static_cast<int>(matrix.packed_cols.capacity()) <
-        nnz) {
+    if (static_cast<int>(matrix.packed_cols.capacity()) < nnz) {
       std::cout << "Warning, packed_cols.capacity ("
                 << matrix.packed_cols.capacity()
                 << ") < "
@@ -121,9 +118,9 @@ struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR>> {
     for (int sz = -1; sz <= 1; ++sz) {
       for (int sy = -1; sy <= 1; ++sy) {
         for (int sx = -1; sx <= 1; ++sx) {
-          int col_id = miniFE::get_id(
-              global_nodes_x, global_nodes_y, global_nodes_z, ix + sx, iy + sy,
-              iz + sz);
+          int col_id =
+              miniFE::get_id(global_nodes_x, global_nodes_y, global_nodes_z,
+                             ix + sx, iy + sy, iz + sz);
           if (col_id >= 0 && col_id < global_nrows) {
             int col = mesh->map_id_to_row(col_id);
             dest_cols[offset + nnz] = col;

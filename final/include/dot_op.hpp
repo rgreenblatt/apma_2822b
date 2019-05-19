@@ -30,7 +30,7 @@
 
 #pragma once
 
-#ifndef KERNEL_PREFIX 
+#ifndef KERNEL_PREFIX
 #define KERNEL_PREFIX
 #endif
 

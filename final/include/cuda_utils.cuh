@@ -52,7 +52,7 @@ static const char *cublas_get_error_string(cublasStatus_t error) {
   return "<unknown>";
 }
 
-#define cublas_error_chk(ans)                                                \
+#define cublas_error_chk(ans)                                                  \
   { cublas_assert((ans), __FILE__, __LINE__); }
 inline void cublas_assert(cublasStatus_t code, const char *file, int line) {
   if (code != CUBLAS_STATUS_SUCCESS) {
@@ -101,7 +101,7 @@ static const char *cusparse_get_error_string(cusparseStatus_t error) {
   return "<unknown>";
 }
 
-#define cusparse_error_chk(ans)                                              \
+#define cusparse_error_chk(ans)                                                \
   { cusparse_assert((ans), __FILE__, __LINE__); }
 inline void cusparse_assert(cusparseStatus_t code, const char *file, int line) {
   if (code != CUSPARSE_STATUS_SUCCESS) {

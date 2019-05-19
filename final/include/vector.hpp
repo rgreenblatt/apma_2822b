@@ -37,8 +37,7 @@
 
 namespace miniFE {
 
-template <typename Scalar>
-struct Vector {
+template <typename Scalar> struct Vector {
   typedef Scalar ScalarType;
 
   Vector(int startIdx, int local_sz)

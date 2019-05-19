@@ -45,7 +45,7 @@ template YAML_Element *YAML_Element::add(const std::string &key_arg,
 template YAML_Element *YAML_Element::add(const std::string &key_arg,
                                          const std::string value_arg);
 template YAML_Element *YAML_Element::add(const std::string &key_arg,
-                                         const char * value_arg);
+                                         const char *value_arg);
 template YAML_Element *YAML_Element::add(const std::string &key_arg,
                                          float value_arg);
 template YAML_Element *YAML_Element::add(const std::string &key_arg,
@@ -80,8 +80,7 @@ string YAML_Element::printYAML(std::string space) {
   return yaml_line;
 }
 
-template <class T> 
-string YAML_Element::convert_to_string(T value_arg) {
+template <class T> string YAML_Element::convert_to_string(T value_arg) {
   stringstream strm;
   strm << value_arg;
   return strm.str();

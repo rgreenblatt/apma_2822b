@@ -60,8 +60,8 @@ void perform_element_loop(const simple_mesh_description &mesh,
   BoxIterator end = BoxIterator::end(local_elem_box);
 
   for (size_t i = 0; iter != end; ++iter, ++i) {
-    elemIDs[i] = get_id(global_elems_x, global_elems_y,
-                                       global_elems_z, iter.x, iter.y, iter.z);
+    elemIDs[i] = get_id(global_elems_x, global_elems_y, global_elems_z, iter.x,
+                        iter.y, iter.z);
     //#ifdef MINIFE_DEBUG
     // std::cout << "elem ID " << elemIDs[i] << "
     // ("<<iter.x<<","<<iter.y<<","<<iter.z<<")"<<std::endl; #endif

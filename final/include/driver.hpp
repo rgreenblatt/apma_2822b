@@ -131,13 +131,11 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 #endif
 
   if (params.load_imbalance > 0) {
-    add_imbalance(global_box, my_box, params.load_imbalance,
-                                 ydoc);
+    add_imbalance(global_box, my_box, params.load_imbalance, ydoc);
   }
 
   double largest_imbalance = 0, std_dev = 0;
-  compute_imbalance(my_box, largest_imbalance, std_dev, ydoc,
-                                   true);
+  compute_imbalance(my_box, largest_imbalance, std_dev, ydoc, true);
 
   // Create a representation of the mesh:
   // Note that 'simple_mesh_description' is a virtual or conceptual
@@ -290,10 +288,8 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
   if (myproc == 0) {
     ydoc.get("Global Run Parameters")
         ->add("ScalarType", TypeTraits<Scalar>::name());
-    ydoc.get("Global Run Parameters")
-        ->add("intType", TypeTraits<int>::name());
-    ydoc.get("Global Run Parameters")
-        ->add("intType", TypeTraits<int>::name());
+    ydoc.get("Global Run Parameters")->add("intType", TypeTraits<int>::name());
+    ydoc.get("Global Run Parameters")->add("intType", TypeTraits<int>::name());
     ydoc.add(title, "");
     ydoc.get(title)->add("Iterations", num_iters);
     ydoc.get(title)->add("Final Resid Norm", rnorm);

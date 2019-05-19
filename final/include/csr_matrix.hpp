@@ -41,8 +41,7 @@
 
 namespace miniFE {
 
-template <typename Scalar>
-struct CSRMatrix {
+template <typename Scalar> struct CSRMatrix {
   CSRMatrix()
       : has_local_indices(false), rows(), row_offsets(), row_offsets_external(),
         packed_cols(), packed_coefs(), num_cols(0)
@@ -86,13 +85,14 @@ struct CSRMatrix {
     packed_coefs.reserve(static_cast<size_t>(nrows) * ncols_per_row);
   }
 
-  void get_row_pointers(int row, size_t &row_length,
-                        int *&cols, ScalarType *&coefs) {
+  void get_row_pointers(int row, size_t &row_length, int *&cols,
+                        ScalarType *&coefs) {
     ptrdiff_t local_row = -1;
     // first see if we can get the local-row index using fast direct lookup:
     if (rows.size() >= 1) {
       ptrdiff_t idx = row - rows[0];
-      if (idx < static_cast<ptrdiff_t>(rows.size()) && rows[static_cast<size_t>(idx)] == row) {
+      if (idx < static_cast<ptrdiff_t>(rows.size()) &&
+          rows[static_cast<size_t>(idx)] == row) {
         local_row = idx;
       }
     }

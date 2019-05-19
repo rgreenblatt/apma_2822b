@@ -95,8 +95,7 @@ int main(int argc, char **argv) {
 
   Box &my_box = local_boxes[static_cast<size_t>(myproc)];
 
-  int num_my_ids =
-      miniFE::get_num_ids(my_box);
+  int num_my_ids = miniFE::get_num_ids(my_box);
   int min_ids = num_my_ids;
 
 #ifdef HAVE_MPI

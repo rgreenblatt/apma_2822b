@@ -47,9 +47,8 @@
 namespace miniFE {
 
 template <typename MatrixType>
-int generate_matrix_structure(
-    const simple_mesh_description &mesh,
-    MatrixType &A) {
+int generate_matrix_structure(const simple_mesh_description &mesh,
+                              MatrixType &A) {
   int myproc = 0;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
@@ -100,8 +99,8 @@ int generate_matrix_structure(
     for (int iz = box[2][0]; iz < box[2][1]; ++iz) {
       for (int iy = box[1][0]; iy < box[1][1]; ++iy) {
         for (int ix = box[0][0]; ix < box[0][1]; ++ix) {
-          int row_id = get_id(
-              global_nodes_x, global_nodes_y, global_nodes_z, ix, iy, iz);
+          int row_id = get_id(global_nodes_x, global_nodes_y, global_nodes_z,
+                              ix, iy, iz);
           rows[roffset] = mesh.map_id_to_row(row_id);
           row_coords[roffset * 3] = ix;
           row_coords[roffset * 3 + 1] = iy;
@@ -111,9 +110,8 @@ int generate_matrix_structure(
           for (int sz = -1; sz <= 1; ++sz) {
             for (int sy = -1; sy <= 1; ++sy) {
               for (int sx = -1; sx <= 1; ++sx) {
-                int col_id = get_id(
-                    global_nodes_x, global_nodes_y, global_nodes_z, ix + sx,
-                    iy + sy, iz + sz);
+                int col_id = get_id(global_nodes_x, global_nodes_y,
+                                    global_nodes_z, ix + sx, iy + sy, iz + sz);
                 if (col_id >= 0 && col_id < global_nrows) {
                   ++nnz;
                 }

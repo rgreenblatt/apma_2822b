@@ -88,9 +88,8 @@ size_t compute_matrix_stats(const MatrixType &A, int myproc, int numprocs,
     //          + sizeof(Scalar)*global_nnz            for A.packed_coefs
 
     double invGB = 1.0 / (1024 * 1024 * 1024);
-    double memGB =
-        invGB * static_cast<double>(static_cast<size_t>(global_nrows) *
-                                    sizeof(int));
+    double memGB = invGB * static_cast<double>(
+                               static_cast<size_t>(global_nrows) * sizeof(int));
     memGB += invGB * static_cast<double>(static_cast<size_t>(global_nrows) *
                                          sizeof(int));
     memGB += invGB * static_cast<double>(global_nnz * sizeof(int));

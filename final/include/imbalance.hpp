@@ -69,11 +69,9 @@ void compute_imbalance(const Box &local_box, double &largest_imbalance,
 
   // largest_imbalance will be the difference between the min (or max)
   // rows-per-processor and avg_nrows, represented as a percentage:
-  largest_imbalance =
-      percentage_difference<double>(min_nrows, avg_nrows);
+  largest_imbalance = percentage_difference<double>(min_nrows, avg_nrows);
 
-  double tmp =
-      percentage_difference<double>(max_nrows, avg_nrows);
+  double tmp = percentage_difference<double>(max_nrows, avg_nrows);
   if (tmp > largest_imbalance)
     largest_imbalance = tmp;
 
@@ -180,8 +178,7 @@ void add_imbalance(const Box &global_box, Box &local_box, float imbalance,
   }
 
   double cur_imbalance = 0, cur_std_dev = 0;
-  compute_imbalance(local_box, cur_imbalance, cur_std_dev, doc,
-                                   false);
+  compute_imbalance(local_box, cur_imbalance, cur_std_dev, doc, false);
 
   while (cur_imbalance < imbalance) {
     int local_nrows = get_num_ids(local_box);
@@ -290,8 +287,7 @@ void add_imbalance(const Box &global_box, Box &local_box, float imbalance,
       }
     }
 
-    compute_imbalance(local_box, cur_imbalance, cur_std_dev, doc,
-                                     false);
+    compute_imbalance(local_box, cur_imbalance, cur_std_dev, doc, false);
   }
 }
 
