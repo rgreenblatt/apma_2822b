@@ -1,0 +1,18 @@
+clang
+%cpp -std=c++11
+-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi
+-I/usr/lib/x86_64-linux-gnu/openmpi/include
+-I/home/ryan/Documents/apma_2822b/final/include
+-I/usr/local/cuda-9.2/include
+-Wall
+-Wextra
+-Wconversion
+-DMINIFE_SCALAR=double
+-DMINIFE_LOCAL_ORDINAL=int
+"-DMINIFE_GLOBAL_ORDINAL=long long int"
+-DMINIFE_CSR_MATRIX
+-DMINIFE_INFO=1
+-DMINIFE_KERNELS=0
+-DHAVE_MPI
+--cuda-gpu-arch=sm_70
+--cuda-path=/usr/local/cuda-9.2

@@ -5,17 +5,26 @@ PROJECT(hw_3 C CXX)
 
 cmake_minimum_required(VERSION 2.8)
 
-add_definitions(-std=c++11 -Wall -Wextra -Wconversion)
-add_definitions("-DMINIFE_SCALAR=double" "-DMINIFE_LOCAL_ORDINAL=int"
-  "-DMINIFE_GLOBAL_ORDINAL=long long int" -DMINIFE_CSR_MATRIX
-  -DMINIFE_INFO=1 -DMINIFE_KERNELS=0 -DHAVE_MPI)
-add_definitions(-DMINIFE_FUSED)
-# add_definitions(-DMINIFE_DEBUG)
-# add_definitions(-g)
-add_definitions(-O3 -march=native)
-
+find_package(CUDA REQUIRED)
 find_package(MPI REQUIRED)
 find_package(OpenMP REQUIRED)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wconversion")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_SCALAR=double") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_LOCAL_ORDINAL=int")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \"-DMINIFE_GLOBAL_ORDINAL=long long int\"")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_CSR_MATRIX")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_INFO=1 -DMINIFE_KERNELS=0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_MPI")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_FUSED")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_DEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
+  
+# list(APPEND CUDA_NVCC_FLAGS 
+#   "-gencode arch=compute_70,code=sm_70;-std=c++11;-O3")
+list( APPEND CUDA_NVCC_FLAGS 
+  "-gencode arch=compute_70,code=sm_70;-std=c++11;-g;-G")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -29,9 +38,10 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 # The following folder will be included
 include_directories(${MPI_INCLUDE_PATH} "${PROJECT_SOURCE_DIR}/include")
 
-add_executable(
+cuda_add_executable(
   miniFE 
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
+  "${PROJECT_SOURCE_DIR}/src/vector_uvm.cu"
   "${PROJECT_SOURCE_DIR}/src/box_partition.cpp"
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
   "${PROJECT_SOURCE_DIR}/src/my_timer.cpp"
