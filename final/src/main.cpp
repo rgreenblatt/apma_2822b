@@ -101,11 +101,11 @@ int main(int argc, char **argv) {
   miniFE::broadcast_parameters(params);
 
   Box global_box = {0, params.nx, 0, params.ny, 0, params.nz};
-  std::vector<Box> local_boxes(numprocs);
+  std::vector<Box> local_boxes(static_cast<size_t>(numprocs));
 
   box_partition(0, numprocs, 2, global_box, &local_boxes[0]);
 
-  Box &my_box = local_boxes[myproc];
+  Box &my_box = local_boxes[static_cast<size_t>(myproc)];
 
   MINIFE_GLOBAL_ORDINAL num_my_ids =
       miniFE::get_num_ids<MINIFE_GLOBAL_ORDINAL>(my_box);
@@ -133,8 +133,9 @@ int main(int argc, char **argv) {
   osstr << ".P" << numprocs;
 #endif
   osstr << ".";
-  if (params.name != "")
+  if (params.name != "") {
     osstr << params.name << ".";
+  }
 
   YAML_Doc doc("miniFE", MINIFE_VERSION, ".", osstr.str());
   if (myproc == 0) {

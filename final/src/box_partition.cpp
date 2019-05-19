@@ -31,8 +31,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <box.hpp>
-#include <box_partition.hpp>
+#include "box.hpp"
+#include "box_partition.hpp"
 
 /*--------------------------------------------------------------------*/
 
@@ -133,9 +133,9 @@ static void resize_int(int **a, int *allocLen, int newLen) {
     k <<= 1;
   }
   if (NULL == *a) {
-    *a = (int *)malloc(sizeof(int) * (*allocLen = k));
+    *a = (int *)malloc(sizeof(int) * static_cast<size_t>(*allocLen = k));
   } else if (*allocLen < k) {
-    *a = (int *)realloc(*a, sizeof(int) * (*allocLen = k));
+    *a = (int *)realloc(*a, sizeof(int) * static_cast<size_t>(*allocLen = k));
   }
 }
 
@@ -158,9 +158,9 @@ static void box_partition_maps(const int np, const int my_p, const Box *pbox,
 
   const int id_length = my_use_nx * my_use_ny * my_use_nz;
 
-  int *local_id = (int *)malloc(id_length * sizeof(int));
-  int *recv_pc = (int *)malloc((np + 1) * sizeof(int));
-  int *send_pc = (int *)malloc((np + 1) * sizeof(int));
+  int *local_id = (int *)malloc(static_cast<size_t>(id_length) * sizeof(int));
+  int *recv_pc = (int *)malloc(static_cast<size_t>(np + 1) * sizeof(int));
+  int *send_pc = (int *)malloc(static_cast<size_t>(np + 1) * sizeof(int));
 
   int *send_id = NULL;
   int send_id_size = 0;
