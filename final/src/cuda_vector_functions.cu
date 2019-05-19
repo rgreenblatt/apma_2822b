@@ -1,4 +1,4 @@
-#include "cuda_utils.cuh"
+#include "cuda_utils.hpp"
 #include "cuda_vector_functions.hpp"
 #include "waxpby_op.cuh"
 

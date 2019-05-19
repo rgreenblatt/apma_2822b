@@ -35,7 +35,7 @@
 #include <limits>
 #include <vector>
 
-#include "cuda_utils.cuh"
+#include "cuda_utils.hpp"
 #include "cusparse.h"
 #include "my_timer.hpp"
 #include "sparse_matrix_functions.hpp"

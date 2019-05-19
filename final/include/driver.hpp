@@ -128,6 +128,9 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 #ifdef HAVE_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myproc);
+#ifdef USE_CUDA
+  select_cuda_device(myproc);
+#endif
 #endif
 
   if (params.load_imbalance > 0) {

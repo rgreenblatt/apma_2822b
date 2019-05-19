@@ -41,6 +41,7 @@ cuda_add_executable(
   miniFE 
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
   "${PROJECT_SOURCE_DIR}/src/vector_uvm.cu"
+  "${PROJECT_SOURCE_DIR}/src/cuda_utils.cu"
   "${PROJECT_SOURCE_DIR}/src/cuda_vector_functions.cu"
   "${PROJECT_SOURCE_DIR}/src/box_partition.cpp"
   "${PROJECT_SOURCE_DIR}/src/main.cpp"

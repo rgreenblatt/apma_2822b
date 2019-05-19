@@ -107,3 +107,7 @@ inline void cusparse_assert(cusparseStatus_t code, const char *file, int line) {
     exit(code);
   }
 }
+
+namespace miniFE {
+  void select_cuda_device(int mpi_rank);
+}
