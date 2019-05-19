@@ -5,4 +5,4 @@
 
 # Run a command
 
-srun --mpi=pmi2 ./bin/test
+srun --mpi=pmi2 ./bin/miniFE
