@@ -101,11 +101,11 @@ int generate_matrix_structure(const simple_mesh_description &mesh,
         for (int ix = box[0][0]; ix < box[0][1]; ++ix) {
           int row_id = get_id(global_nodes_x, global_nodes_y, global_nodes_z,
                               ix, iy, iz);
-          rows[roffset] = mesh.map_id_to_row(row_id);
-          row_coords[roffset * 3] = ix;
-          row_coords[roffset * 3 + 1] = iy;
-          row_coords[roffset * 3 + 2] = iz;
-          row_offsets[roffset++] = nnz;
+          rows[static_cast<size_t>(roffset)] = mesh.map_id_to_row(row_id);
+          row_coords[static_cast<size_t>(roffset * 3)] = ix;
+          row_coords[static_cast<size_t>(roffset * 3 + 1)] = iy;
+          row_coords[static_cast<size_t>(roffset * 3 + 2)] = iz;
+          row_offsets[static_cast<size_t>(roffset++)] = nnz;
 
           for (int sz = -1; sz <= 1; ++sz) {
             for (int sy = -1; sy <= 1; ++sy) {
@@ -126,7 +126,7 @@ int generate_matrix_structure(const simple_mesh_description &mesh,
       throw std::runtime_error(
           "ERROR in generate_matrix_structure, roffset != nrows.");
     }
-    row_offsets[roffset] = nnz;
+    row_offsets[static_cast<size_t>(roffset)] = nnz;
 
     init_matrix(A, rows, row_offsets, row_coords, global_nodes_x,
                 global_nodes_y, global_nodes_z, global_nrows, mesh);

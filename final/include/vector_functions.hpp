@@ -139,7 +139,7 @@ void waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
   }
 #endif
 
-  unsigned n = static_cast<unsigned>(x.coefs.size());
+  int n = static_cast<int>(x.coefs.size());
   const ScalarType *xcoefs = &x.coefs[0];
   const ScalarType *ycoefs = &y.coefs[0];
   ScalarType *wcoefs = &w.coefs[0];
@@ -225,7 +225,7 @@ dot(const Vector &x, const Vector &y, cublasHandle_t handle) {
   magnitude result = 0;
 
 #ifdef USE_CUDA
-  cuda_dot(handle, xcoefs, ycoefs, &result, static_cast<unsigned>(n));
+  cuda_dot(handle, xcoefs, ycoefs, &result, static_cast<int>(n));
 #else
 #pragma omp parallel for reduction(+ : result)
   for (size_t i = 0; i < n; ++i) {
