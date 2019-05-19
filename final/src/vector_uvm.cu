@@ -1,6 +1,4 @@
 #include "vector_uvm.hpp"
-#include <cuda.h>
-#include <cuda_runtime.h>
 
 template <class T> T *UMAllocator<T>::allocate(size_t n) {
   T *ptr;

@@ -91,9 +91,6 @@ static const char *cusparse_get_error_string(cusparseStatus_t error) {
   case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
     return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
 
-  case CUSPARSE_STATUS_NOT_SUPPORTED:
-    return "CUSPARSE_STATUS_NOT_SUPPORTED";
-
   case CUSPARSE_STATUS_ZERO_PIVOT:
     return "CUSPARSE_STATUS_ZERO_PIVOT";
   }
