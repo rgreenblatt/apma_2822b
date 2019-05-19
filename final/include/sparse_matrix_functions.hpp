@@ -499,9 +499,10 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y,
   magnitude result = 0;
 
 #ifdef USE_CUDA
-  result =
-      cuda_matvec_and_dot(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n, A.num_cols,
-                          A.num_nonzeros(), cusparse_handle, cublas_handle, descr);
+  result = cuda_matvec_and_dot(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs,
+                       static_cast<int>(n), static_cast<int>(A.num_cols),
+                       static_cast<int>(A.num_nonzeros()), cusparse_handle,
+                       cublas_handle, descr);
 #else
 #pragma omp parallel for reduction(+ : result)
   for (size_t row = 0; row < n; ++row) {
@@ -551,8 +552,9 @@ template <typename MatrixType, typename VectorType> struct matvec_std {
     size_t n = A.rows.size();
 
 #ifdef USE_CUDA
-    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n, A.num_cols,
-                          A.num_nonzeros(), cusparse_handle, descr);
+    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, static_cast<int>(n),
+                static_cast<int>(A.num_cols),
+                static_cast<int>(A.num_nonzeros()), cusparse_handle, descr);
 #else
 #pragma omp parallel for
     for (size_t row = 0; row < n; ++row) {
@@ -596,8 +598,9 @@ template <typename MatrixType, typename VectorType> struct matvec_overlap {
     ScalarType beta = 0;
 
 #ifdef USE_CUDA
-    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, n, A.num_cols,
-                A.num_nonzeros(), cusparse_handle, descr);
+    cuda_matvec(Acoefs, Arowoffsets, Acols, xcoefs, ycoefs, static_cast<int>(n),
+                static_cast<int>(A.num_cols),
+                static_cast<int>(A.num_nonzeros()), cusparse_handle, descr);
 #else
     for (size_t row = 0; row < n; ++row) {
       ScalarType sum = beta * ycoefs[row];

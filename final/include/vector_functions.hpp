@@ -68,7 +68,7 @@ void write_vector(const std::string &filename, const VectorType &vec) {
 
   typedef typename VectorType::ScalarType ScalarType;
 
-  const std::vector<ScalarType> &coefs = vec.coefs;
+  const AllocVec<ScalarType> &coefs = vec.coefs;
   for (int p = 0; p < numprocs; ++p) {
     if (p == myproc) {
       if (p == 0) {

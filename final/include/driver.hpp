@@ -248,24 +248,6 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 
   int verify_result = 0;
 
-#if MINIFE_KERNELS != 0
-  if (myproc == 0) {
-    std::cout.width(30);
-    std::cout << "Starting kernel timing loops ..." << std::endl;
-  }
-
-  max_iters = 500;
-  x.coefs[0] = 0.9;
-  if (matvec_with_comm_overlap) {
-    time_kernels(A, b, x, matvec_overlap<MatrixType, VectorType>(), max_iters,
-                 rnorm, cg_times);
-  } else {
-    time_kernels(A, b, x, matvec_std<MatrixType, VectorType>(), max_iters,
-                 rnorm, cg_times);
-  }
-  num_iters = max_iters;
-  std::string title("Kernel timings");
-#else
   if (myproc == 0) {
     std::cout << "Starting CG solver ... " << std::endl;
   }
@@ -302,7 +284,6 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
   write_vector("x.vec", x);
 #endif
   std::string title("CG solve");
-#endif
 
   if (myproc == 0) {
     ydoc.get("Global Run Parameters")
@@ -323,19 +304,9 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
     double dot_flops = static_cast<double>(global_nrows) * 2.0;
     double waxpy_flops = static_cast<double>(global_nrows) * 3.0;
 
-#if MINIFE_KERNELS == 0
-    // if MINIFE_KERNELS == 0 then we did a CG solve, and in that case
-    // there were num_iters+1 matvecs, num_iters*2 dots, and num_iters*3+2
-    // waxpys.
     mv_flops *= (num_iters + 1);
     dot_flops *= (2 * num_iters);
     waxpy_flops *= (3 * num_iters + 2);
-#else
-    // if MINIFE_KERNELS then we did one of each operation per iteration.
-    mv_flops *= num_iters;
-    dot_flops *= num_iters;
-    waxpy_flops *= num_iters;
-#endif
 
     double total_flops = mv_flops + dot_flops + waxpy_flops;
 
@@ -385,7 +356,6 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
       ydoc.get(title)->add("MATVECDOT Mflops", "inf");
 #endif
 
-#if MINIFE_KERNELS == 0
     ydoc.get(title)->add("Total", "");
     ydoc.get(title)->get("Total")->add("Total CG Time", cg_times[TOTAL]);
     ydoc.get(title)->get("Total")->add("Total CG Flops", total_flops);
@@ -394,7 +364,6 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
     else
       ydoc.get(title)->get("Total")->add("Total CG Mflops", "inf");
     ydoc.get(title)->add("Time per iteration", cg_times[TOTAL] / num_iters);
-#endif
   }
 
   return verify_result;
