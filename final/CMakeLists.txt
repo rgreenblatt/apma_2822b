@@ -11,6 +11,7 @@ find_package(OpenMP REQUIRED)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wconversion")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_SCALAR=double") 
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_SCALAR=float") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_INFO=1")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_MPI")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CUDA")
@@ -35,24 +36,6 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 # The following folder will be included
 include_directories(${MPI_INCLUDE_PATH} "${PROJECT_SOURCE_DIR}/include")
-
-cuda_add_executable(
-  vec_test 
-  "${PROJECT_SOURCE_DIR}/src/vector_uvm.cu"
-  "${PROJECT_SOURCE_DIR}/src/vec_test.cu"
-  )
-
-if(MPI_COMPILE_FLAGS)
-  set_target_properties(vec_test PROPERTIES
-    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
-endif()
-
-if(MPI_LINK_FLAGS)
-  set_target_properties(vec_test PROPERTIES
-    LINK_FLAGS "${MPI_LINK_FLAGS}")
-endif()
-  
-target_link_libraries(vec_test ${MPI_LIBRARIES})
 
 cuda_add_executable(
   miniFE 
