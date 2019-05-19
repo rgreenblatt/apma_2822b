@@ -86,7 +86,7 @@ void exchange_externals(MatrixType &A, VectorType &x) {
   // Externals are at end of locals
   //
 
-  std::vector<Scalar> &x_coefs = x.coefs;
+  AllocVec<Scalar> &x_coefs = x.coefs;
   Scalar *x_external = &(x_coefs[local_nrow]);
 
   MPI_Datatype mpi_dtype = TypeTraits<Scalar>::mpi_type();
@@ -205,7 +205,7 @@ void begin_exchange_externals(MatrixType &A, VectorType &x) {
   // Externals are at end of locals
   //
 
-  std::vector<Scalar> &x_coefs = x.coefs;
+  AllocVec<Scalar> &x_coefs = x.coefs;
   Scalar *x_external = &(x_coefs[local_nrow]);
 
   MPI_Datatype mpi_dtype = TypeTraits<Scalar>::mpi_type();

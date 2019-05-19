@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <vector>
 
 template <class T> struct UMAllocator {
   typedef T value_type;
@@ -16,3 +17,5 @@ template <class T, class U>
 bool operator==(const UMAllocator<T> &, const UMAllocator<U> &);
 template <class T, class U>
 bool operator!=(const UMAllocator<T> &, const UMAllocator<U> &);
+
+template <class T> using AllocVec = std::vector<T, UMAllocator<T>>;

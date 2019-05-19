@@ -32,6 +32,8 @@
 
 #include <cmath>
 #include <limits>
+#include <iostream>
+#include <vector>
 
 #include "my_timer.hpp"
 #include "vector_functions.hpp"
@@ -40,12 +42,12 @@
 
 namespace miniFE {
 
-template <typename Scalar>
-void print_vec(const std::vector<Scalar> &vec, const std::string &name) {
-  for (size_t i = 0; i < vec.size(); ++i) {
-    std::cout << name << "[" << i << "]: " << vec[i] << std::endl;
-  }
-}
+/* template <typename Scalar> */
+/* void print_vec(const std::vector<Scalar> &vec, const std::string &name) { */
+/*   for (size_t i = 0; i < vec.size(); ++i) { */
+/*     std::cout << name << "[" << i << "]: " << vec[i] << std::endl; */
+/*   } */
+/* } */
 
 template <typename VectorType>
 bool breakdown(typename VectorType::ScalarType inner, const VectorType &v,
@@ -109,10 +111,12 @@ void cg_solve(
   magnitude_type oldrtrans = 0;
 
   LocalOrdinalType print_freq = max_iter / 10;
-  if (print_freq > 50)
+  if (print_freq > 50) {
     print_freq = 50;
-  if (print_freq < 1)
+  }
+  if (print_freq < 1) {
     print_freq = 1;
+  }
 
   ScalarType one = 1.0;
   ScalarType zero = 0.0;

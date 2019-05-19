@@ -30,11 +30,9 @@
 
 #pragma once
 
-#include <box_utils.hpp>
-#include <simple_mesh_description.hpp>
-
-#include <csr_matrix.hpp>
-#include <ell_matrix.hpp>
+#include "box_utils.hpp"
+#include "simple_mesh_description.hpp"
+#include "csr_matrix.hpp"
 
 #include <algorithm>
 
@@ -141,70 +139,6 @@ struct MatrixInitOp<miniFE::CSRMatrix<MINIFE_SCALAR, MINIFE_LOCAL_ORDINAL,
         }
       }
     }
-
-    sort_if_needed(&dest_cols[offset], nnz);
-  }
-};
-
-template <>
-struct MatrixInitOp<miniFE::ELLMatrix<MINIFE_SCALAR, MINIFE_LOCAL_ORDINAL,
-                                      MINIFE_GLOBAL_ORDINAL>> {
- 
-  typedef MINIFE_GLOBAL_ORDINAL GlobalOrdinalType;
-  typedef MINIFE_LOCAL_ORDINAL LocalOrdinalType;
-  typedef MINIFE_SCALAR ScalarType;
-
-  const GlobalOrdinalType *rows;
-  const int *row_coords;
-
-  int global_nodes_x;
-  int global_nodes_y;
-  int global_nodes_z;
-
-  GlobalOrdinalType global_nrows;
-
-  GlobalOrdinalType *dest_rows;
-  GlobalOrdinalType *dest_cols;
-  ScalarType *dest_coefs;
-  size_t n;
-  size_t ncols_per_row;
-
-  const miniFE::simple_mesh_description<GlobalOrdinalType> *mesh;
-  MatrixInitOp(
-      const std::vector<MINIFE_GLOBAL_ORDINAL> &rows_vec,
-      const std::vector<MINIFE_LOCAL_ORDINAL> & /*row_offsets_vec*/,
-      const std::vector<int> &row_coords_vec, int global_nx, int global_ny,
-      int global_nz, MINIFE_GLOBAL_ORDINAL global_n_rows,
-      const miniFE::simple_mesh_description<MINIFE_GLOBAL_ORDINAL> &input_mesh,
-      miniFE::ELLMatrix<MINIFE_SCALAR, MINIFE_LOCAL_ORDINAL,
-                        MINIFE_GLOBAL_ORDINAL> &matrix)
-      : rows(&rows_vec[0]), row_coords(&row_coords_vec[0]),
-        global_nodes_x(global_nx), global_nodes_y(global_ny),
-        global_nodes_z(global_nz), global_nrows(global_n_rows),
-        dest_rows(&matrix.rows[0]), dest_cols(&matrix.cols[0]),
-        dest_coefs(&matrix.coefs[0]), n(matrix.rows.size()),
-        ncols_per_row(matrix.num_cols_per_row), mesh(&input_mesh) {}
-
-  inline void operator()(size_t i) {
-    dest_rows[i] = rows[i];
-    size_t offset = i * ncols_per_row;
-    int ix = row_coords[i * 3];
-    int iy = row_coords[i * 3 + 1];
-    int iz = row_coords[i * 3 + 2];
-    GlobalOrdinalType nnz = 0;
-    for (int sz = -1; sz <= 1; ++sz)
-      for (int sy = -1; sy <= 1; ++sy)
-        for (int sx = -1; sx <= 1; ++sx) {
-          GlobalOrdinalType col_id = miniFE::get_id<GlobalOrdinalType>(
-              global_nodes_x, global_nodes_y, global_nodes_z, ix + sx, iy + sy,
-              iz + sz);
-          if (col_id >= 0 && col_id < global_nrows) {
-            GlobalOrdinalType col = mesh->map_id_to_row(col_id);
-            dest_cols[offset + nnz] = col;
-            dest_coefs[offset + nnz] = 0;
-            ++nnz;
-          }
-        }
 
     sort_if_needed(&dest_cols[offset], nnz);
   }

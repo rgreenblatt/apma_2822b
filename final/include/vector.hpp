@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "mem_init_op.hpp"
+#include "vector_uvm.hpp"
 
 namespace miniFE {
 
@@ -58,7 +59,7 @@ struct Vector {
 
   GlobalOrdinal startIndex;
   LocalOrdinal local_size;
-  std::vector<Scalar> coefs;
+  AllocVec<Scalar> coefs;
 };
 
 } // namespace miniFE

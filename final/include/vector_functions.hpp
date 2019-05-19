@@ -45,7 +45,11 @@
 #include "dot_op.hpp"
 #include "type_traits.hpp"
 #include "vector.hpp"
-#include "waxpby_op.hpp"
+#include "waxpby_op.cuh"
+
+#ifdef USE_CUDA
+#include "cuda_vector_functions.hpp"
+#endif
 
 namespace miniFE {
 
@@ -94,7 +98,7 @@ void sum_into_vector(size_t num_indices,
   GlobalOrdinal first = vec.startIndex;
   GlobalOrdinal last = first + vec.local_size - 1;
 
-  std::vector<Scalar> &vec_coefs = vec.coefs;
+  AllocVec<Scalar> &vec_coefs = vec.coefs;
 
   for (size_t i = 0; i < num_indices; ++i) {
     if (indices[i] < first || indices[i] > last)
@@ -146,7 +150,7 @@ void waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
 
 #pragma omp parallel for
   for (size_t i = 0; i < n; ++i) {
-    wcoefs[i] = alpha * xcoefs[i] + beta * ycoefs[i];
+    waxpby_op(wcoefs, alpha, xcoefs, beta, ycoefs, i);
   }
 }
 
@@ -168,7 +172,7 @@ void fused_waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
   }
 #endif
 
-  size_t n = x.coefs.size();
+  unsigned n = static_cast<unsigned>(x.coefs.size());
   const ScalarType *xcoefs = &x.coefs[0];
   const ScalarType *ycoefs = &y.coefs[0];
   ScalarType *wcoefs = &w.coefs[0];
@@ -177,11 +181,16 @@ void fused_waxpby(typename VectorType::ScalarType alpha, const VectorType &x,
   const ScalarType *y2coefs = &y2.coefs[0];
   ScalarType *w2coefs = &w2.coefs[0];
 
+#ifdef USE_CUDA
+  cuda_waxpby_fused(wcoefs, w2coefs, alpha, alpha2, xcoefs, x2coefs, beta,
+                    beta2, ycoefs, y2coefs, n);
+#else
 #pragma omp parallel for
   for (size_t i = 0; i < n; ++i) {
-    wcoefs[i] = alpha * xcoefs[i] + beta * ycoefs[i];
-    w2coefs[i] = alpha2 * x2coefs[i] + beta2 * y2coefs[i];
+    waxpby_op(wcoefs, alpha, xcoefs, beta, ycoefs, i);
+    waxpby_op(w2coefs, alpha2, x2coefs, beta2, y2coefs, i);
   }
+#endif
 }
 
 //-----------------------------------------------------------

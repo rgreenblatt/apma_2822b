@@ -9,10 +9,10 @@ clang
 -Wconversion
 -DMINIFE_SCALAR=double
 -DMINIFE_LOCAL_ORDINAL=int
-"-DMINIFE_GLOBAL_ORDINAL=long long int"
--DMINIFE_CSR_MATRIX
+-DMINIFE_GLOBAL_ORDINAL=long long int
 -DMINIFE_INFO=1
 -DMINIFE_KERNELS=0
 -DHAVE_MPI
+-DUSE_CUDA
 --cuda-gpu-arch=sm_70
 --cuda-path=/usr/local/cuda-9.2

@@ -40,13 +40,7 @@
 #include "box_utils.hpp"
 #include "vector.hpp"
 
-#ifdef MINIFE_CSR_MATRIX
 #include "csr_matrix.hpp"
-#elif defined(MINIFE_ELL_MATRIX)
-#include "ell_matrix.hpp"
-#else
-#include "csr_matrix.hpp"
-#endif
 
 #include "simple_mesh_description.hpp"
 
@@ -71,6 +65,12 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#endif
+
+#ifdef USE_CUDA
+#ifndef MINIFE_FUSED
+#define MINIFE_FUSED
+#endif
 #endif
 
 #define RUN_TIMED_FUNCTION(msg, fn, time_inc, time_total)                      \
@@ -168,11 +168,7 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
 
   // Declare matrix object:
 
-#if defined(MINIFE_ELL_MATRIX)
-  typedef ELLMatrix<Scalar, LocalOrdinal, GlobalOrdinal> MatrixType;
-#else
   typedef CSRMatrix<Scalar, LocalOrdinal, GlobalOrdinal> MatrixType;
-#endif
 
   MatrixType A;
 
@@ -278,15 +274,9 @@ int driver(const Box &global_box, Box &my_box, Parameters &params,
   }
 
   if (matvec_with_comm_overlap) {
-#ifdef MINIFE_CSR_MATRIX
     rearrange_matrix_local_external(A);
     cg_solve(A, b, x, matvec_overlap<MatrixType, VectorType>(), max_iters, tol,
              num_iters, rnorm, cg_times);
-#else
-    std::cout << "ERROR, matvec with overlapping comm/comp only works with CSR "
-                 "matrix."
-              << std::endl;
-#endif
   } else {
     cg_solve(A, b, x, matvec_std<MatrixType, VectorType>(), max_iters, tol,
              num_iters, rnorm, cg_times);

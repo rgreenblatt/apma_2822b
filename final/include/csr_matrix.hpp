@@ -37,6 +37,8 @@
 #include <mpi.h>
 #endif
 
+#include "vector_uvm.hpp"
+
 namespace miniFE {
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal>
@@ -59,11 +61,11 @@ struct CSRMatrix {
   typedef GlobalOrdinal GlobalOrdinalType;
 
   bool has_local_indices;
-  std::vector<GlobalOrdinal> rows;
-  std::vector<LocalOrdinal> row_offsets;
-  std::vector<LocalOrdinal> row_offsets_external;
-  std::vector<GlobalOrdinal> packed_cols;
-  std::vector<Scalar> packed_coefs;
+  AllocVec<GlobalOrdinal> rows;
+  AllocVec<LocalOrdinal> row_offsets;
+  AllocVec<LocalOrdinal> row_offsets_external;
+  AllocVec<GlobalOrdinal> packed_cols;
+  AllocVec<Scalar> packed_coefs;
   LocalOrdinal num_cols;
 
 #ifdef HAVE_MPI
@@ -100,7 +102,7 @@ struct CSRMatrix {
     // if we didn't get the local-row index using direct lookup, try a
     // more expensive binary-search:
     if (local_row == -1) {
-      typename std::vector<GlobalOrdinal>::iterator row_iter =
+      auto row_iter =
           std::lower_bound(rows.begin(), rows.end(), row);
 
       // if we still haven't found row, it's not local so jump out:

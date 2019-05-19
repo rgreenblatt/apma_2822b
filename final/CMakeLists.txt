@@ -13,18 +13,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wconversion")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_SCALAR=double") 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_LOCAL_ORDINAL=int")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \"-DMINIFE_GLOBAL_ORDINAL=long long int\"")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_CSR_MATRIX")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_INFO=1 -DMINIFE_KERNELS=0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DHAVE_MPI")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_FUSED")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_CUDA")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_FUSED")
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMINIFE_DEBUG")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
-  
-# list(APPEND CUDA_NVCC_FLAGS 
-#   "-gencode arch=compute_70,code=sm_70;-std=c++11;-O3")
-list( APPEND CUDA_NVCC_FLAGS 
-  "-gencode arch=compute_70,code=sm_70;-std=c++11;-g;-G")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
+
+list(APPEND CUDA_NVCC_FLAGS 
+  "-gencode arch=compute_70,code=sm_70;-std=c++11;-O3")
+# list( APPEND CUDA_NVCC_FLAGS 
+#   "-gencode arch=compute_70,code=sm_70;-std=c++11;-g;-G")
 
 set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -39,9 +39,28 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 include_directories(${MPI_INCLUDE_PATH} "${PROJECT_SOURCE_DIR}/include")
 
 cuda_add_executable(
+  vec_test 
+  "${PROJECT_SOURCE_DIR}/src/vector_uvm.cu"
+  "${PROJECT_SOURCE_DIR}/src/vec_test.cu"
+  )
+
+if(MPI_COMPILE_FLAGS)
+  set_target_properties(vec_test PROPERTIES
+    COMPILE_FLAGS "${MPI_COMPILE_FLAGS}")
+endif()
+
+if(MPI_LINK_FLAGS)
+  set_target_properties(vec_test PROPERTIES
+    LINK_FLAGS "${MPI_LINK_FLAGS}")
+endif()
+  
+target_link_libraries(vec_test ${MPI_LIBRARIES})
+
+cuda_add_executable(
   miniFE 
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
   "${PROJECT_SOURCE_DIR}/src/vector_uvm.cu"
+  "${PROJECT_SOURCE_DIR}/src/cuda_vector_functions.cu"
   "${PROJECT_SOURCE_DIR}/src/box_partition.cpp"
   "${PROJECT_SOURCE_DIR}/src/main.cpp"
   "${PROJECT_SOURCE_DIR}/src/my_timer.cpp"

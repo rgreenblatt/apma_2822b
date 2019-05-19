@@ -26,3 +26,7 @@ template <class T> void UMAllocator<T>::deallocate(T *p, size_t) {
   delete p;
 #endif
 }
+
+template struct UMAllocator<MINIFE_LOCAL_ORDINAL>;
+template struct UMAllocator<MINIFE_GLOBAL_ORDINAL>;
+template struct UMAllocator<MINIFE_SCALAR>;
