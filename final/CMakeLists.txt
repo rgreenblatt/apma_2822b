@@ -60,5 +60,18 @@ if(MPI_LINK_FLAGS)
   set_target_properties(miniFE PROPERTIES
     LINK_FLAGS "${MPI_LINK_FLAGS}")
 endif()
-  
-target_link_libraries(miniFE ${MPI_LIBRARIES} -lcublas ${CUDA_cusparse_LIBRARY} )
+
+set(CUDA_TOOLKIT_INCLUDE CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES)
+find_library(CUBLAS_LIB cublas
+                        HINTS
+                        "${CUDA_TOOLKIT_ROOT_DIR}/lib64"
+                        "${CUDA_TOOLKIT_ROOT_DIR}/lib"
+                        "${CUDA_TOOLKIT_ROOT_DIR}"
+                        )
+find_library(CUSPARSE_LIB cusparse
+                        HINTS
+                        "${CUDA_TOOLKIT_ROOT_DIR}/lib64"
+                        "${CUDA_TOOLKIT_ROOT_DIR}/lib"
+                        "${CUDA_TOOLKIT_ROOT_DIR}"
+                        )
+target_link_libraries(miniFE ${MPI_LIBRARIES} ${CUBLAS_LIB} ${CUSPARSE_LIB})
