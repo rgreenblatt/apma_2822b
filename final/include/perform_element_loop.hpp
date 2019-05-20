@@ -62,9 +62,6 @@ void perform_element_loop(const simple_mesh_description &mesh,
   for (size_t i = 0; iter != end; ++iter, ++i) {
     elemIDs[i] = get_id(global_elems_x, global_elems_y, global_elems_z, iter.x,
                         iter.y, iter.z);
-    //#ifdef MINIFE_DEBUG
-    // std::cout << "elem ID " << elemIDs[i] << "
-    // ("<<iter.x<<","<<iter.y<<","<<iter.z<<")"<<std::endl; #endif
   }
 
   // Now do the actual finite-element assembly loop:
@@ -96,9 +93,6 @@ void perform_element_loop(const simple_mesh_description &mesh,
     sum_into_global_linear_system(elem_data, A, b);
     TOCK(t_si);
   }
-  // std::cout << std::endl<<"get-nodes: " << t_gn << std::endl;
-  // std::cout << "compute-elems: " << t_ce << std::endl;
-  // std::cout << "sum-in: " << t_si << std::endl;
 }
 
 } // namespace miniFE

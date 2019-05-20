@@ -1,4 +1,4 @@
-clang
+clang++-8
 %cpp -std=c++11
 -I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi
 -I/usr/lib/x86_64-linux-gnu/openmpi/include

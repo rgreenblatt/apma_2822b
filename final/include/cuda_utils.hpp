@@ -2,6 +2,8 @@
 
 #include <cublas_v2.h>
 #include <cusparse_v2.h>
+#include <cuda_runtime_api.h>
+
 #include <stdio.h>
 
 #ifdef __CUDACC__
@@ -94,9 +96,10 @@ static const char *cusparse_get_error_string(cusparseStatus_t error) {
   case CUSPARSE_STATUS_ZERO_PIVOT:
     return "CUSPARSE_STATUS_ZERO_PIVOT";
 
-  //added in cuda 10.1
-  /* case CUSPARSE_STATUS_NOT_SUPPORTED: */
-  /*   return "CUSPARSE_STATUS_NOT_SUPPORTED"; */
+#if CUDART_VERSION >= 10010
+  case CUSPARSE_STATUS_NOT_SUPPORTED:
+    return "CUSPARSE_STATUS_NOT_SUPPORTED";
+#endif
   }
 
   return "<unknown>";
