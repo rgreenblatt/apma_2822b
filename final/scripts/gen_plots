@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def plot_condition(data, select_rows, x_var, y_var, **kwargs):
+    legend = []
+    for name, df in data.items():
+        legend.append(name)
+        df = select_rows(df)
+        plt.plot(df[x_var], df[y_var], **kwargs)
+    plt.legend(legend)
+    plt.xlabel(x_var)
+    plt.ylabel(y_var)
+    plt.show()
+
+def main():
+
+    data = {
+        "double_gpu": pd.read_csv("double_gpu/data.csv"),
+        "single_gpu": pd.read_csv("single_gpu/data.csv"),
+        "double_cpu": pd.read_csv("double_cpu/data.csv"),
+        "single_cpu": pd.read_csv("single_cpu/data.csv"),
+    }
+
+    plot_condition(
+        data,
+        lambda df: df.loc[(df['dimension'] == 240) & (df['gpus'] <= 4)],
+        "gpus",
+        "time_per_iteration"
+    )
+
+    flops_per_gpu = data["double_gpu"]["Mflops"] / data["double_gpu"]["gpus"]
+    print(flops_per_gpu)
+    print(data["double_gpu"]["gpus"])
+
+if __name__ == '__main__':
+    main()
+
+
