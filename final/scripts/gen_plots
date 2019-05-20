@@ -2,17 +2,17 @@
 
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
-def plot_condition(data, select_rows, x_var, y_var, **kwargs):
+def plot_condition(data, select_rows, x_var, y_var, x_label, y_label, **kwargs):
     legend = []
     for name, df in data.items():
         legend.append(name)
         df = select_rows(df)
         plt.plot(df[x_var], df[y_var], **kwargs)
     plt.legend(legend)
-    plt.xlabel(x_var)
-    plt.ylabel(y_var)
-    plt.show()
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
 
 def main():
 
@@ -27,14 +27,45 @@ def main():
         data,
         lambda df: df.loc[(df['dimension'] == 240) & (df['gpus'] <= 4)],
         "gpus",
-        "time_per_iteration"
+        "time_per_iteration",
+        "number of processes",
+        "time per iteration",
     )
 
+    plt.savefig("gpu_cpu.png")
+    plt.clf()
+
+    def plot_dim(dim):
+        df = data["double_gpu"]
+        df = df.loc[(df['dimension'] == dim) & (df['gpus'] <= 4)]
+        plt.loglog(df["gpus"], df["time_per_iteration"])
+
+    plot_dim(160)
+    plot_dim(200)
+    plot_dim(240)
+    plot_dim(280)
+    plot_dim(320)
+
+    plt.legend(["dimension 160",
+                "dimension 200",
+                "dimension 240",
+                "dimension 280",
+                "dimension 320"])
+
+    plt.xlabel("number of gpus")
+    plt.ylabel("time per iteration")
+    plt.tight_layout()
+
+    plt.savefig("strong_scaling.png")
+    plt.clf()
+
     flops_per_gpu = data["double_gpu"]["Mflops"] / data["double_gpu"]["gpus"]
-    print(flops_per_gpu)
-    print(data["double_gpu"]["gpus"])
+
+    # weak =H
+    # plt.plot(list(range(1, len(weak) + 1)), weak)
+    # plt.clf()
+
+
 
 if __name__ == '__main__':
     main()
-
-
