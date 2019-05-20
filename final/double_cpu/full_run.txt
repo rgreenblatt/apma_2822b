@@ -1,0 +1,940 @@
+      creating/filling mesh...0.00184298s, total time: 0.00184298
+generating matrix structure...0.029114s, total time: 0.030957
+         assembling FE data...0.109255s, total time: 0.140212
+      imposing Dirichlet BC...0.0218079s, total time: 0.16202
+      imposing Dirichlet BC...0.018656s, total time: 0.180676
+making matrix indices local...9.53674e-07s, total time: 0.180677
+total vector size: 68921
+Starting CG solver ... 
+Initial Residual = 41.011
+Iteration = 20   Residual = 0.0349906
+Iteration = 40   Residual = 0.00385671
+Iteration = 60   Residual = 2.13749e-05
+Iteration = 80   Residual = 6.22288e-08
+Iteration = 100   Residual = 6.15663e-11
+Iteration = 120   Residual = 1.83698e-14
+Final Resid Norm: 1.6553e-16
+      creating/filling mesh...0.00943613s, total time: 0.00943613
+generating matrix structure...0.140279s, total time: 0.149715
+         assembling FE data...0.855328s, total time: 1.00504
+      imposing Dirichlet BC...0.170625s, total time: 1.17567
+      imposing Dirichlet BC...0.1463s, total time: 1.32197
+making matrix indices local...9.53674e-07s, total time: 1.32197
+total vector size: 531441
+Starting CG solver ... 
+Initial Residual = 81.0059
+Iteration = 20   Residual = 0.0442652
+Iteration = 40   Residual = 0.0157808
+Iteration = 60   Residual = 0.00630431
+Iteration = 80   Residual = 0.00209035
+Iteration = 100   Residual = 0.000158638
+Iteration = 120   Residual = 1.9804e-05
+Iteration = 140   Residual = 4.21756e-06
+Iteration = 160   Residual = 6.31154e-08
+Iteration = 180   Residual = 2.31083e-09
+Iteration = 200   Residual = 1.04973e-10
+Final Resid Norm: 1.04973e-10
+      creating/filling mesh...0.022254s, total time: 0.022254
+generating matrix structure...0.440845s, total time: 0.463099
+         assembling FE data...2.89167s, total time: 3.35477
+      imposing Dirichlet BC...0.616392s, total time: 3.97116
+      imposing Dirichlet BC...0.511315s, total time: 4.48247
+making matrix indices local...9.53674e-07s, total time: 4.48247
+total vector size: 1771561
+Starting CG solver ... 
+Initial Residual = 121.004
+Iteration = 20   Residual = 0.175267
+Iteration = 40   Residual = 0.0209895
+Iteration = 60   Residual = 0.0109329
+Iteration = 80   Residual = 0.00591781
+Iteration = 100   Residual = 0.00303652
+Iteration = 120   Residual = 0.00154546
+Iteration = 140   Residual = 0.000780528
+Iteration = 160   Residual = 0.000143281
+Iteration = 180   Residual = 2.92412e-05
+Iteration = 200   Residual = 2.8521e-06
+Final Resid Norm: 2.8521e-06
+      creating/filling mesh...0.047256s, total time: 0.047256
+generating matrix structure...1.02349s, total time: 1.07075
+         assembling FE data...6.84543s, total time: 7.91618
+      imposing Dirichlet BC...1.98219s, total time: 9.89837
+      imposing Dirichlet BC...1.2614s, total time: 11.1598
+making matrix indices local...1.19209e-06s, total time: 11.1598
+total vector size: 4173281
+Starting CG solver ... 
+Initial Residual = 161.003
+Iteration = 20   Residual = 0.0547879
+Iteration = 40   Residual = 0.0230874
+Iteration = 60   Residual = 0.013068
+Iteration = 80   Residual = 0.00814305
+Iteration = 100   Residual = 0.00517016
+Iteration = 120   Residual = 0.00316954
+Iteration = 140   Residual = 0.00191027
+Iteration = 160   Residual = 0.00115197
+Iteration = 180   Residual = 0.000691192
+Iteration = 200   Residual = 0.000110295
+Final Resid Norm: 0.000110295
+      creating/filling mesh...0.0913689s, total time: 0.0913689
+generating matrix structure...2.0117s, total time: 2.10307
+         assembling FE data...13.4257s, total time: 15.5288
+      imposing Dirichlet BC...5.36281s, total time: 20.8916
+      imposing Dirichlet BC...2.61205s, total time: 23.5037
+making matrix indices local...9.53674e-07s, total time: 23.5037
+total vector size: 8120601
+Starting CG solver ... 
+Initial Residual = 201.002
+Iteration = 20   Residual = 0.0562403
+Iteration = 40   Residual = 0.0244262
+Iteration = 60   Residual = 0.0147469
+Iteration = 80   Residual = 0.00963918
+Iteration = 100   Residual = 0.00676675
+Iteration = 120   Residual = 0.00471672
+Iteration = 140   Residual = 0.00330026
+Iteration = 160   Residual = 0.00221541
+Iteration = 180   Residual = 0.00151133
+Iteration = 200   Residual = 0.00101196
+Final Resid Norm: 0.00101196
+      creating/filling mesh...0.152725s, total time: 0.152725
+generating matrix structure...3.42798s, total time: 3.58071
+         assembling FE data...22.8212s, total time: 26.4019
+      imposing Dirichlet BC...9.23909s, total time: 35.641
+      imposing Dirichlet BC...4.60608s, total time: 40.2471
+making matrix indices local...9.53674e-07s, total time: 40.2471
+total vector size: 13997521
+Starting CG solver ... 
+Initial Residual = 241.002
+Iteration = 20   Residual = 0.0572439
+Iteration = 40   Residual = 0.0289597
+Iteration = 60   Residual = 0.0156136
+Iteration = 80   Residual = 0.0107137
+Iteration = 100   Residual = 0.0241454
+Iteration = 120   Residual = 0.00568303
+Iteration = 140   Residual = 0.0042816
+Iteration = 160   Residual = 0.0101336
+Iteration = 180   Residual = 0.00231208
+Iteration = 200   Residual = 0.00168558
+Final Resid Norm: 0.00168558
+      creating/filling mesh...0.00112391s, total time: 0.00112391
+generating matrix structure...0.0225301s, total time: 0.023654
+         assembling FE data...0.0678949s, total time: 0.0915489
+      imposing Dirichlet BC...0.0104778s, total time: 0.102027
+      imposing Dirichlet BC...0.00823188s, total time: 0.110259
+making matrix indices local...0.00257301s, total time: 0.112832
+total vector size: 35301
+total vector size: 33620
+Starting CG solver ... 
+Initial Residual = 41.011
+Iteration = 20   Residual = 0.0362989
+Iteration = 40   Residual = 0.00385711
+Iteration = 60   Residual = 2.13749e-05
+Iteration = 80   Residual = 6.22288e-08
+Iteration = 100   Residual = 6.15663e-11
+Iteration = 120   Residual = 1.83627e-14
+Final Resid Norm: 1.6745e-16
+      creating/filling mesh...0.00502896s, total time: 0.00502896
+generating matrix structure...0.0938239s, total time: 0.0988529
+         assembling FE data...0.453001s, total time: 0.551854
+      imposing Dirichlet BC...0.0879569s, total time: 0.639811
+      imposing Dirichlet BC...0.068789s, total time: 0.7086
+making matrix indices local...0.016818s, total time: 0.725418
+total vector size: 269001
+total vector size: 262440
+Starting CG solver ... 
+Initial Residual = 81.0059
+Iteration = 20   Residual = 0.0442652
+Iteration = 40   Residual = 0.0157809
+Iteration = 60   Residual = 0.00586223
+Iteration = 80   Residual = 0.00208836
+Iteration = 100   Residual = 0.000158656
+Iteration = 120   Residual = 1.6711e-05
+Iteration = 140   Residual = 1.10938e-06
+Iteration = 160   Residual = 6.352e-08
+Iteration = 180   Residual = 2.44581e-09
+Iteration = 200   Residual = 8.31654e-11
+Final Resid Norm: 8.31654e-11
+      creating/filling mesh...0.0147221s, total time: 0.0147221
+generating matrix structure...0.285985s, total time: 0.300707
+         assembling FE data...1.52643s, total time: 1.82714
+      imposing Dirichlet BC...0.326462s, total time: 2.1536
+      imposing Dirichlet BC...0.252756s, total time: 2.40636
+making matrix indices local...0.053863s, total time: 2.46022
+total vector size: 893101
+total vector size: 878460
+Starting CG solver ... 
+Initial Residual = 121.004
+Iteration = 20   Residual = 0.0488134
+Iteration = 40   Residual = 0.0200664
+Iteration = 60   Residual = 0.0309159
+Iteration = 80   Residual = 0.00549022
+Iteration = 100   Residual = 0.00280839
+Iteration = 120   Residual = 0.00137466
+Iteration = 140   Residual = 0.000299316
+Iteration = 160   Residual = 5.57064e-05
+Iteration = 180   Residual = 1.15274e-05
+Iteration = 200   Residual = 1.73006e-06
+Final Resid Norm: 1.73006e-06
+      creating/filling mesh...0.0382621s, total time: 0.0382621
+generating matrix structure...0.686051s, total time: 0.724313
+         assembling FE data...3.76997s, total time: 4.49429
+      imposing Dirichlet BC...0.780843s, total time: 5.27513
+      imposing Dirichlet BC...0.579386s, total time: 5.85451
+making matrix indices local...0.122576s, total time: 5.97709
+total vector size: 2099601
+total vector size: 2073680
+Starting CG solver ... 
+Initial Residual = 161.003
+Iteration = 20   Residual = 0.333919
+Iteration = 40   Residual = 0.0238268
+Iteration = 60   Residual = 0.013106
+Iteration = 80   Residual = 0.00817248
+Iteration = 100   Residual = 0.00518145
+Iteration = 120   Residual = 0.0031738
+Iteration = 140   Residual = 0.00191164
+Iteration = 160   Residual = 0.00115262
+Iteration = 180   Residual = 0.000691363
+Iteration = 200   Residual = 0.000110293
+Final Resid Norm: 0.000110293
+      creating/filling mesh...0.051863s, total time: 0.051863
+generating matrix structure...1.26298s, total time: 1.31484
+         assembling FE data...6.82683s, total time: 8.14167
+      imposing Dirichlet BC...1.68053s, total time: 9.8222
+      imposing Dirichlet BC...1.20749s, total time: 11.0297
+making matrix indices local...0.227431s, total time: 11.2571
+total vector size: 4080501
+total vector size: 4040100
+Starting CG solver ... 
+Initial Residual = 201.002
+Iteration = 20   Residual = 0.0562411
+Iteration = 40   Residual = 0.0244262
+Iteration = 60   Residual = 0.0143501
+Iteration = 80   Residual = 0.0191116
+Iteration = 100   Residual = 0.0066252
+Iteration = 120   Residual = 0.00461781
+Iteration = 140   Residual = 0.00333517
+Iteration = 160   Residual = 0.00216345
+Iteration = 180   Residual = 0.00144185
+Iteration = 200   Residual = 0.000965328
+Final Resid Norm: 0.000965328
+      creating/filling mesh...0.087476s, total time: 0.087476
+generating matrix structure...2.16334s, total time: 2.25082
+         assembling FE data...11.8962s, total time: 14.147
+      imposing Dirichlet BC...3.19938s, total time: 17.3464
+      imposing Dirichlet BC...2.11447s, total time: 19.4608
+making matrix indices local...0.393714s, total time: 19.8546
+total vector size: 6969720
+Starting CG solver ... 
+total vector size: 7027801
+Initial Residual = 241.002
+Iteration = 20   Residual = 0.0572442
+Iteration = 40   Residual = 0.0253408
+Iteration = 60   Residual = 0.0318355
+Iteration = 80   Residual = 0.0104895
+Iteration = 100   Residual = 0.00955235
+Iteration = 120   Residual = 0.00558355
+Iteration = 140   Residual = 0.00413427
+Iteration = 160   Residual = 0.00341475
+Iteration = 180   Residual = 0.00222417
+Iteration = 200   Residual = 0.00195853
+Final Resid Norm: 0.00195853
+      creating/filling mesh...0.141199s, total time: 0.1412
+generating matrix structure...3.44542s, total time: 3.58662
+         assembling FE data...18.7212s, total time: 22.3079
+      imposing Dirichlet BC...7.31193s, total time: 29.6198
+      imposing Dirichlet BC...3.52372s, total time: 33.1435
+making matrix indices local...0.616836s, total time: 33.7604
+total vector size: 11133501
+total vector size: 11054540
+Starting CG solver ... 
+Initial Residual = 281.002
+Iteration = 20   Residual = 0.0579702
+Iteration = 40   Residual = 0.0269494
+Iteration = 60   Residual = 0.0192745
+Iteration = 80   Residual = 0.0113278
+Iteration = 100   Residual = 0.00837684
+Iteration = 120   Residual = 0.00629554
+Iteration = 140   Residual = 0.00489841
+Iteration = 160   Residual = 0.031883
+Iteration = 180   Residual = 0.00296074
+Iteration = 200   Residual = 0.00228725
+Final Resid Norm: 0.00228725
+      creating/filling mesh...0.141467s, total time: 0.141467
+generating matrix structure...3.68179s, total time: 3.82326
+         assembling FE data...18.7825s, total time: 22.6058
+      imposing Dirichlet BC...7.23331s, total time: 29.8391
+      imposing Dirichlet BC...3.55176s, total time: 33.3909
+making matrix indices local...0.621943s, total time: 34.0128
+total vector size: 11133501
+total vector size: 11054540
+Starting CG solver ... 
+Initial Residual = 281.002
+Iteration = 20   Residual = 0.0579702
+Iteration = 40   Residual = 0.0269359
+Iteration = 60   Residual = 0.0398498
+Iteration = 80   Residual = 0.0115312
+Iteration = 100   Residual = 0.00836951
+Iteration = 120   Residual = 0.00639245
+Iteration = 140   Residual = 0.00498272
+Iteration = 160   Residual = 0.0217358
+Iteration = 180   Residual = 0.00300756
+Iteration = 200   Residual = 0.00232229
+Final Resid Norm: 0.00232229
+      creating/filling mesh...0.197117s, total time: 0.197117
+generating matrix structure...5.14317s, total time: 5.34029
+         assembling FE data...30.0927s, total time: 35.433
+      imposing Dirichlet BC...12.482s, total time: 47.9149
+      imposing Dirichlet BC...5.34915s, total time: 53.2641
+making matrix indices local...0.942616s, total time: 54.2067
+total vector size: 16589601
+total vector size: 16486560
+Starting CG solver ... 
+Initial Residual = 321.002
+Iteration = 20   Residual = 0.05852
+Iteration = 40   Residual = 0.0274463
+Iteration = 60   Residual = 0.0171488
+Iteration = 80   Residual = 0.0156112
+Iteration = 100   Residual = 0.0409186
+Iteration = 120   Residual = 0.00685199
+Iteration = 140   Residual = 0.00542925
+Iteration = 160   Residual = 0.00436178
+Iteration = 180   Residual = 0.00352596
+Iteration = 200   Residual = 0.00286299
+Final Resid Norm: 0.00286299
+      creating/filling mesh...0.00115085s, total time: 0.00115085
+generating matrix structure...0.02458s, total time: 0.0257308
+         assembling FE data...0.041225s, total time: 0.0669558
+      imposing Dirichlet BC...0.00741386s, total time: 0.0743697
+      imposing Dirichlet BC...0.00544405s, total time: 0.0798137
+making matrix indices local...0.0021379s, total time: 0.0819516
+total vector size: 23534
+Starting CG solver ... 
+total vector size: 22140
+total vector size: 23247
+Initial Residual = 41.011
+Iteration = 20   Residual = 0.0549531
+Iteration = 40   Residual = 0.00386977
+Iteration = 60   Residual = 2.13749e-05
+Iteration = 80   Residual = 6.22288e-08
+Iteration = 100   Residual = 6.15663e-11
+Iteration = 120   Residual = 1.83627e-14
+Final Resid Norm: 1.69849e-16
+      creating/filling mesh...0.00439811s, total time: 0.00439811
+generating matrix structure...0.0962911s, total time: 0.100689
+         assembling FE data...0.308145s, total time: 0.408834
+      imposing Dirichlet BC...0.0669172s, total time: 0.475751
+      imposing Dirichlet BC...0.0485742s, total time: 0.524326
+making matrix indices local...0.0161729s, total time: 0.540498
+total vector size: 174960total vector size: 179334
+
+total vector size: 177147
+Starting CG solver ... 
+Initial Residual = 81.0059
+Iteration = 20   Residual = 0.0442652
+Iteration = 40   Residual = 0.0157819
+Iteration = 60   Residual = 0.00576657
+Iteration = 80   Residual = 0.00208836
+Iteration = 100   Residual = 0.000164437
+Iteration = 120   Residual = 1.66981e-05
+Iteration = 140   Residual = 1.10938e-06
+Iteration = 160   Residual = 2.30474e-07
+Iteration = 180   Residual = 2.44577e-09
+Iteration = 200   Residual = 8.31655e-11
+Final Resid Norm: 8.31655e-11
+      creating/filling mesh...0.012285s, total time: 0.0122859
+generating matrix structure...0.286309s, total time: 0.298595
+         assembling FE data...1.02921s, total time: 1.32781
+      imposing Dirichlet BC...0.204905s, total time: 1.53271
+      imposing Dirichlet BC...0.153316s, total time: 1.68603
+making matrix indices local...0.0467911s, total time: 1.73282
+total vector size: 588060total vector size: 597861
+
+total vector size: 585640
+Starting CG solver ... 
+Initial Residual = 121.004
+Iteration = 20   Residual = 0.0488169
+Iteration = 40   Residual = 0.0200664
+Iteration = 60   Residual = 0.0105585
+Iteration = 80   Residual = 0.00570056
+Iteration = 100   Residual = 0.00292018
+Iteration = 120   Residual = 0.00148633
+Iteration = 140   Residual = 0.000727509
+Iteration = 160   Residual = 6.17023e-05
+Iteration = 180   Residual = 2.97394e-05
+Iteration = 200   Residual = 6.85021e-06
+Final Resid Norm: 6.85021e-06
+      creating/filling mesh...0.026073s, total time: 0.026073
+generating matrix structure...0.671804s, total time: 0.697877
+         assembling FE data...2.34675s, total time: 3.04463
+      imposing Dirichlet BC...0.502584s, total time: 3.54722
+      imposing Dirichlet BC...0.375929s, total time: 3.92314
+making matrix indices local...0.120683s, total time: 4.04383
+total vector size: 1378160
+total vector size: 1395387
+total vector size: 1399734
+Starting CG solver ... 
+Initial Residual = 161.003
+Iteration = 20   Residual = 0.0559983
+Iteration = 40   Residual = 0.0230868
+Iteration = 60   Residual = 0.013068
+Iteration = 80   Residual = 0.00814308
+Iteration = 100   Residual = 0.00849236
+Iteration = 120   Residual = 0.00333915
+Iteration = 140   Residual = 0.00196719
+Iteration = 160   Residual = 0.0011863
+Iteration = 180   Residual = 0.000712115
+Iteration = 200   Residual = 0.000304382
+Final Resid Norm: 0.000304382
+      creating/filling mesh...0.047034s, total time: 0.047034
+generating matrix structure...1.28116s, total time: 1.3282
+         assembling FE data...4.65974s, total time: 5.98793
+      imposing Dirichlet BC...1.0933s, total time: 7.08123
+      imposing Dirichlet BC...0.790755s, total time: 7.87199
+making matrix indices local...0.182191s, total time: 8.05418
+total vector size: 2693400
+total vector size: total vector size: 2720334
+2706867
+Starting CG solver ... 
+Initial Residual = 201.002
+Iteration = 20   Residual = 0.0562404
+Iteration = 40   Residual = 0.0244262
+Iteration = 60   Residual = 0.0155172
+Iteration = 80   Residual = 0.00964119
+Iteration = 100   Residual = 0.00662514
+Iteration = 120   Residual = 0.00463739
+Iteration = 140   Residual = 0.00323699
+Iteration = 160   Residual = 0.00216285
+Iteration = 180   Residual = 0.00144219
+Iteration = 200   Residual = 0.00104807
+Final Resid Norm: 0.00104807
+      creating/filling mesh...0.0795269s, total time: 0.0795269
+generating matrix structure...2.2482s, total time: 2.32772
+         assembling FE data...8.09424s, total time: 10.422
+      imposing Dirichlet BC...2.45836s, total time: 12.8803
+      imposing Dirichlet BC...1.37741s, total time: 14.2577
+making matrix indices local...0.300824s, total time: 14.5586
+total vector size: 4656120total vector size: 4694921
+
+total vector size: 4646480
+Starting CG solver ... 
+Initial Residual = 241.002
+Iteration = 20   Residual = 0.0572466
+Iteration = 40   Residual = 0.0253408
+Iteration = 60   Residual = 0.0623751
+Iteration = 80   Residual = 0.0104895
+Iteration = 100   Residual = 0.00747736
+Iteration = 120   Residual = 0.00548603
+Iteration = 140   Residual = 0.00406257
+Iteration = 160   Residual = 0.0226512
+Iteration = 180   Residual = 0.00218168
+Iteration = 200   Residual = 0.0015579
+Final Resid Norm: 0.0015579
+      creating/filling mesh...0.174274s, total time: 0.174275
+generating matrix structure...3.48931s, total time: 3.66358
+         assembling FE data...13.0692s, total time: 16.7327
+      imposing Dirichlet BC...4.17384s, total time: 20.9066
+      imposing Dirichlet BC...2.31521s, total time: 23.2218
+making matrix indices local...0.463862s, total time: 23.6856
+total vector size: 7356580total vector size: 7409127
+total vector size: 7422334
+Starting CG solver ... 
+
+Initial Residual = 281.002
+Iteration = 20   Residual = 0.0579702
+Iteration = 40   Residual = 0.202393
+Iteration = 60   Residual = 0.0162466
+Iteration = 80   Residual = 0.0113278
+Iteration = 100   Residual = 0.00839435
+Iteration = 120   Residual = 0.0105902
+Iteration = 140   Residual = 0.00489841
+Iteration = 160   Residual = 0.00384255
+Iteration = 180   Residual = 0.00307936
+Iteration = 200   Residual = 0.00261339
+Final Resid Norm: 0.00261339
+      creating/filling mesh...0.194434s, total time: 0.194435
+generating matrix structure...5.42927s, total time: 5.62371
+         assembling FE data...19.0811s, total time: 24.7048
+      imposing Dirichlet BC...7.67382s, total time: 32.3786
+      imposing Dirichlet BC...3.39333s, total time: 35.772
+making matrix indices local...0.672429s, total time: 36.4444
+total vector size: 10991040
+total vector size: 11059734
+total vector size: 11025387
+Starting CG solver ... 
+Initial Residual = 321.002
+Iteration = 20   Residual = 0.05852
+Iteration = 40   Residual = 0.0459564
+Iteration = 60   Residual = 0.0281678
+Iteration = 80   Residual = 0.011795
+Iteration = 100   Residual = 0.0088269
+Iteration = 120   Residual = 0.0068466
+Iteration = 140   Residual = 0.00542962
+Iteration = 160   Residual = 0.00976009
+Iteration = 180   Residual = 0.00461665
+Iteration = 200   Residual = 0.00281337
+Final Resid Norm: 0.00281337
+      creating/filling mesh...0.249557s, total time: 0.249558
+generating matrix structure...7.52403s, total time: 7.77359
+         assembling FE data...27.4559s, total time: 35.2295
+      imposing Dirichlet BC...10.821s, total time: 46.0504
+      imposing Dirichlet BC...4.87646s, total time: 50.9269
+making matrix indices local...0.978085s, total time: 51.905
+total vector size: 15660180
+total vector size: 15747181
+total vector size: 15638520
+Starting CG solver ... 
+Initial Residual = 361.001
+Iteration = 20   Residual = 0.0589507
+Iteration = 40   Residual = 0.0278483
+Iteration = 60   Residual = 0.0175281
+Iteration = 80   Residual = 0.0968422
+Iteration = 100   Residual = 0.00919495
+Iteration = 120   Residual = 0.00720094
+Iteration = 140   Residual = 0.00578223
+Iteration = 160   Residual = 0.00471627
+Iteration = 180   Residual = 0.00388569
+Iteration = 200   Residual = 0.00807848
+Final Resid Norm: 0.00807848
+      creating/filling mesh...0.326584s, total time: 0.326584
+generating matrix structure...10.3722s, total time: 10.6988
+         assembling FE data...37.2852s, total time: 47.9839
+      imposing Dirichlet BC...19.1342s, total time: 67.1181
+      imposing Dirichlet BC...7.02375s, total time: 74.1419
+making matrix indices local...1.34356s, total time: 75.4854
+total vector size: 21413400
+total vector size: 21520467
+total vector size: 21547334
+Starting CG solver ... 
+Initial Residual = 401.001
+Iteration = 20   Residual = 0.0592972
+Iteration = 40   Residual = 0.0281733
+Iteration = 60   Residual = 0.0178384
+Iteration = 80   Residual = 0.0126961
+Iteration = 100   Residual = 0.00962684
+Iteration = 120   Residual = 0.00759045
+Iteration = 140   Residual = 0.00614138
+Iteration = 160   Residual = 0.00505844
+Iteration = 180   Residual = 0.00451454
+Iteration = 200   Residual = 0.0202122
+Final Resid Norm: 0.0202122
+      creating/filling mesh...0.000582933s, total time: 0.000582933
+generating matrix structure...0.0330219s, total time: 0.0336049
+         assembling FE data...0.046526s, total time: 0.0801308
+      imposing Dirichlet BC...0.00622296s, total time: 0.0863538
+      imposing Dirichlet BC...0.00465608s, total time: 0.0910099
+making matrix indices local...0.00270486s, total time: 0.0937147
+total vector size: 17220total vector size: 17220
+total vector size: 18081
+
+total vector size: 16400
+Starting CG solver ... 
+Initial Residual = 41.011
+Iteration = 20   Residual = 0.0836377
+Iteration = 40   Residual = 0.00664492
+Iteration = 60   Residual = 2.14563e-05
+Iteration = 80   Residual = 6.22311e-08
+Iteration = 100   Residual = 6.15663e-11
+Iteration = 120   Residual = 1.83627e-14
+Final Resid Norm: 1.69841e-16
+      creating/filling mesh...0.00368404s, total time: 0.00368404
+generating matrix structure...0.102242s, total time: 0.105926
+         assembling FE data...0.235744s, total time: 0.34167
+      imposing Dirichlet BC...0.0389171s, total time: 0.380587
+      imposing Dirichlet BC...0.0319099s, total time: 0.412497
+making matrix indices local...0.0689902s, total time: 0.481487
+total vector size: 129600total vector size: 132840
+total vector size: 132840
+total vector size: 136161
+
+Starting CG solver ... 
+Initial Residual = 81.0059
+Iteration = 20   Residual = 0.0442652
+Iteration = 40   Residual = 0.0157861
+Iteration = 60   Residual = 0.00576464
+Iteration = 80   Residual = 0.00208836
+Iteration = 100   Residual = 0.000426032
+Iteration = 120   Residual = 1.66981e-05
+Iteration = 140   Residual = 1.10938e-06
+Iteration = 160   Residual = 5.47235e-08
+Iteration = 180   Residual = 2.44577e-09
+Iteration = 200   Residual = 8.40052e-11
+Final Resid Norm: 8.40052e-11
+      creating/filling mesh...0.0153761s, total time: 0.0153761
+generating matrix structure...0.303167s, total time: 0.318543
+         assembling FE data...0.781023s, total time: 1.09957
+      imposing Dirichlet BC...0.132541s, total time: 1.23211
+      imposing Dirichlet BC...0.110565s, total time: 1.34267
+making matrix indices local...0.120217s, total time: 1.46289
+total vector size: 435600
+Starting CG solver ... 
+total vector size: 442860
+total vector size: 442860
+total vector size: 450241
+Initial Residual = 121.004
+Iteration = 20   Residual = 0.0488114
+Iteration = 40   Residual = 0.0200664
+Iteration = 60   Residual = 0.0105585
+Iteration = 80   Residual = 0.00570073
+Iteration = 100   Residual = 0.00520528
+Iteration = 120   Residual = 0.00152825
+Iteration = 140   Residual = 0.000252255
+Iteration = 160   Residual = 5.6513e-05
+Iteration = 180   Residual = 1.45003e-05
+Iteration = 200   Residual = 2.09904e-06
+Final Resid Norm: 2.09904e-06
+      creating/filling mesh...0.036896s, total time: 0.036896
+generating matrix structure...0.652307s, total time: 0.689203
+         assembling FE data...1.84689s, total time: 2.53609
+      imposing Dirichlet BC...0.335162s, total time: 2.87125
+      imposing Dirichlet BC...0.270951s, total time: 3.14221
+making matrix indices local...0.239929s, total time: 3.38214
+total vector size: 1043280total vector size: 1043280
+total vector size: 1056321
+
+total vector size: 1030400
+Starting CG solver ... 
+Initial Residual = 161.003
+Iteration = 20   Residual = 0.0579005
+Iteration = 40   Residual = 0.0230868
+Iteration = 60   Residual = 0.013068
+Iteration = 80   Residual = 0.00814328
+Iteration = 100   Residual = 0.0288853
+Iteration = 120   Residual = 0.00326377
+Iteration = 140   Residual = 0.00196719
+Iteration = 160   Residual = 0.0011863
+Iteration = 180   Residual = 0.000721646
+Iteration = 200   Residual = 0.000149053
+Final Resid Norm: 0.000149053
+      creating/filling mesh...0.036458s, total time: 0.036458
+generating matrix structure...1.20679s, total time: 1.24325
+         assembling FE data...3.55496s, total time: 4.7982
+      imposing Dirichlet BC...0.676209s, total time: 5.47441
+      imposing Dirichlet BC...0.578569s, total time: 6.05298
+making matrix indices local...0.210791s, total time: 6.26377
+total vector size: 2030100total vector size: 2030100
+total vector size: 2050401
+total vector size: 2010000
+Starting CG solver ... 
+
+Initial Residual = 201.002
+Iteration = 20   Residual = 0.0562428
+Iteration = 40   Residual = 0.0244262
+Iteration = 60   Residual = 0.0143501
+Iteration = 80   Residual = 0.00942233
+Iteration = 100   Residual = 0.007073
+Iteration = 120   Residual = 0.00482996
+Iteration = 140   Residual = 0.00315297
+Iteration = 160   Residual = 0.00211253
+Iteration = 180   Residual = 0.00140847
+Iteration = 200   Residual = 0.00638214
+Final Resid Norm: 0.00638214
+      creating/filling mesh...0.106096s, total time: 0.106096
+generating matrix structure...2.09049s, total time: 2.19659
+         assembling FE data...6.20336s, total time: 8.39995
+      imposing Dirichlet BC...1.2073s, total time: 9.60725
+      imposing Dirichlet BC...1.01012s, total time: 10.6174
+making matrix indices local...0.457511s, total time: 11.0749
+total vector size: 3470400
+Starting CG solver ... total vector size: 3499320
+total vector size: 3499320
+total vector size: 3528481
+
+Initial Residual = 241.002
+Iteration = 20   Residual = 0.0572444
+Iteration = 40   Residual = 0.0253408
+Iteration = 60   Residual = 0.0159257
+Iteration = 80   Residual = 0.0105245
+Iteration = 100   Residual = 0.00747736
+Iteration = 120   Residual = 0.00548603
+Iteration = 140   Residual = 0.0040624
+Iteration = 160   Residual = 0.00297946
+Iteration = 180   Residual = 0.0111917
+Iteration = 200   Residual = 0.00155794
+Final Resid Norm: 0.00155794
+      creating/filling mesh...0.107028s, total time: 0.107028
+generating matrix structure...3.28664s, total time: 3.39367
+         assembling FE data...9.83755s, total time: 13.2312
+      imposing Dirichlet BC...2.00127s, total time: 15.2325
+      imposing Dirichlet BC...1.69101s, total time: 16.9235
+making matrix indices local...0.589988s, total time: 17.5135
+total vector size: 5546940total vector size: 5546940
+total vector size: 5586561
+total vector size: 5507600
+
+Starting CG solver ... 
+Initial Residual = 281.002
+Iteration = 20   Residual = 0.0579702
+Iteration = 40   Residual = 0.0260074
+Iteration = 60   Residual = 0.0162466
+Iteration = 80   Residual = 0.0111024
+Iteration = 100   Residual = 0.00822459
+Iteration = 120   Residual = 0.00621029
+Iteration = 140   Residual = 0.0048247
+Iteration = 160   Residual = 0.00926391
+Iteration = 180   Residual = 0.00291461
+Iteration = 200   Residual = 0.0104631
+Final Resid Norm: 0.0104631
+      creating/filling mesh...0.137014s, total time: 0.137014
+generating matrix structure...4.94764s, total time: 5.08466
+         assembling FE data...14.4618s, total time: 19.5465
+      imposing Dirichlet BC...3.12131s, total time: 22.6678
+      imposing Dirichlet BC...2.47402s, total time: 25.1418
+making matrix indices local...1.02569s, total time: 26.1675
+total vector size: 8268960total vector size: 8268960
+total vector size: 8320641
+
+total vector size: 8217600
+Starting CG solver ... 
+Initial Residual = 321.002
+Iteration = 20   Residual = 0.05852
+Iteration = 40   Residual = 0.0494062
+Iteration = 60   Residual = 0.0167297
+Iteration = 80   Residual = 0.0117945
+Iteration = 100   Residual = 0.00891473
+Iteration = 120   Residual = 0.0204225
+Iteration = 140   Residual = 0.00535447
+Iteration = 160   Residual = 0.00430412
+Iteration = 180   Residual = 0.00348001
+Iteration = 200   Residual = 0.00680107
+Final Resid Norm: 0.00680107
+      creating/filling mesh...0.201512s, total time: 0.201512
+generating matrix structure...7.19494s, total time: 7.39645
+         assembling FE data...20.8419s, total time: 28.2383
+      imposing Dirichlet BC...4.36908s, total time: 32.6074
+      imposing Dirichlet BC...3.6249s, total time: 36.2323
+making matrix indices local...2.20094s, total time: 38.4332
+total vector size: 11761380total vector size: 11761380
+total vector size: 11826721
+total vector size: 11696400
+Starting CG solver ... 
+
+Initial Residual = 361.001
+Iteration = 20   Residual = 0.0589507
+Iteration = 40   Residual = 0.0278484
+Iteration = 60   Residual = 0.0180913
+Iteration = 80   Residual = 0.0593504
+Iteration = 100   Residual = 0.00924189
+Iteration = 120   Residual = 0.007201
+Iteration = 140   Residual = 0.00578223
+Iteration = 160   Residual = 0.00471627
+Iteration = 180   Residual = 0.00388411
+Iteration = 200   Residual = 0.0032146
+Final Resid Norm: 0.0032146
+      creating/filling mesh...0.288858s, total time: 0.288858
+generating matrix structure...9.81767s, total time: 10.1065
+         assembling FE data...28.4212s, total time: 38.5277
+      imposing Dirichlet BC...6.61781s, total time: 45.1455
+      imposing Dirichlet BC...5.16055s, total time: 50.3061
+making matrix indices local...2.93869s, total time: 53.2448
+total vector size: 16120200
+total vector size: 16120200
+total vector size: 16200801
+total vector size: 16040000
+Starting CG solver ... 
+Initial Residual = 401.001
+Iteration = 20   Residual = 0.0592972
+Iteration = 40   Residual = 0.0281733
+Iteration = 60   Residual = 0.0178383
+Iteration = 80   Residual = 0.0126961
+Iteration = 100   Residual = 0.00962684
+Iteration = 120   Residual = 0.00759045
+Iteration = 140   Residual = 0.00614137
+Iteration = 160   Residual = 0.00505701
+Iteration = 180   Residual = 0.00421393
+Iteration = 200   Residual = 0.00353857
+Final Resid Norm: 0.00353857
+      creating/filling mesh...0.379065s, total time: 0.379065
+generating matrix structure...13.0223s, total time: 13.4014
+         assembling FE data...38.4516s, total time: 51.853
+      imposing Dirichlet BC...9.94969s, total time: 61.8027
+      imposing Dirichlet BC...7.12609s, total time: 68.9288
+making matrix indices local...2.20565s, total time: 71.1344
+total vector size: total vector size: 21441420total vector size: 21538881
+21441420
+
+total vector size: 21344400
+Starting CG solver ... 
+Initial Residual = 441.001
+Iteration = 20   Residual = 0.0595821
+Iteration = 40   Residual = 0.0284415
+Iteration = 60   Residual = 0.0180949
+Iteration = 80   Residual = 0.0129446
+Iteration = 100   Residual = 0.00987159
+Iteration = 120   Residual = 0.00782752
+Iteration = 140   Residual = 0.00637447
+Iteration = 160   Residual = 0.00528903
+Iteration = 180   Residual = 0.00445063
+Iteration = 200   Residual = 0.00380694
+Final Resid Norm: 0.00380694
+      creating/filling mesh...0.44061s, total time: 0.44061
+generating matrix structure...17.0547s, total time: 17.4953
+         assembling FE data...50.129s, total time: 67.6244
+      imposing Dirichlet BC...11.5684s, total time: 79.1928
+      imposing Dirichlet BC...9.19467s, total time: 88.3874
+making matrix indices local...2.53919s, total time: 90.9266
+total vector size: 27821040
+total vector size: 27821040
+total vector size: 27936961
+total vector size: 27705600
+Starting CG solver ... 
+Initial Residual = 481.001
+Iteration = 20   Residual = 0.0598204
+Iteration = 40   Residual = 0.0286666
+Iteration = 60   Residual = 0.0183556
+Iteration = 80   Residual = 0.135371
+Iteration = 100   Residual = 0.0104529
+Iteration = 120   Residual = 0.00813165
+Iteration = 140   Residual = 0.00664748
+Iteration = 160   Residual = 0.00554105
+Iteration = 180   Residual = 0.00619125
+Iteration = 200   Residual = 0.0105232
+Final Resid Norm: 0.0105232
+      creating/filling mesh...0.000746012s, total time: 0.000746012
+generating matrix structure...0.031503s, total time: 0.032249
+         assembling FE data...0.0323861s, total time: 0.064635
+      imposing Dirichlet BC...0.00383687s, total time: 0.0684719
+      imposing Dirichlet BC...0.00292206s, total time: 0.071394
+making matrix indices local...0.0238471s, total time: 0.0952411
+total vector size: 13776
+total vector size: 14350
+total vector size: 13500
+total vector size: 14175
+total vector size: 13120
+Starting CG solver ... 
+Initial Residual = 41.011
+Iteration = 20   Residual = 0.0699533
+Iteration = 40   Residual = 0.00489387
+Iteration = 60   Residual = 0.000171893
+Iteration = 80   Residual = 7.98865e-06
+Iteration = 100   Residual = 9.45766e-07
+Iteration = 120   Residual = 2.15171e-07
+Iteration = 140   Residual = 1.05702e-08
+Iteration = 160   Residual = 1.41372e-09
+Iteration = 180   Residual = 1.85606e-10
+Iteration = 200   Residual = 1.04282e-11
+Final Resid Norm: 1.04282e-11
+      creating/filling mesh...0.00328803s, total time: 0.00328803
+generating matrix structure...0.120263s, total time: 0.123551
+         assembling FE data...0.281838s, total time: 0.405389
+      imposing Dirichlet BC...0.0320611s, total time: 0.43745
+      imposing Dirichlet BC...0.026273s, total time: 0.463723
+making matrix indices local...0.065347s, total time: 0.52907
+total vector size: 106272
+total vector size: 107163
+total vector size: 105840
+total vector size: 108486
+total vector size: 103680
+Starting CG solver ... 
+Initial Residual = 81.0059
+Iteration = 20   Residual = 0.0669199
+Iteration = 40   Residual = 0.0199474
+Iteration = 60   Residual = 0.00752238
+Iteration = 80   Residual = 0.00529183
+Iteration = 100   Residual = 0.00291753
+Iteration = 120   Residual = 0.000126192
+Iteration = 140   Residual = 2.80934e-05
+Iteration = 160   Residual = 1.27096e-05
+Iteration = 180   Residual = 1.80648e-06
+Iteration = 200   Residual = 1.52294e-06
+Final Resid Norm: 1.52294e-06
+      creating/filling mesh...0.00815582s, total time: 0.00815582
+generating matrix structure...0.363445s, total time: 0.371601
+         assembling FE data...0.989748s, total time: 1.36135
+      imposing Dirichlet BC...0.147325s, total time: 1.50867
+      imposing Dirichlet BC...0.122012s, total time: 1.63069
+making matrix indices local...0.0428801s, total time: 1.67357
+total vector size: 354288total vector size: 353320
+total vector size: 354780
+total vector size: 360693
+
+total vector size: 348480
+Starting CG solver ... 
+Initial Residual = 121.004
+Iteration = 20   Residual = 0.0567992
+Iteration = 40   Residual = 0.0344006
+Iteration = 60   Residual = 0.0126163
+Iteration = 80   Residual = 0.0103517
+Iteration = 100   Residual = 0.0149455
+Iteration = 120   Residual = 0.00201855
+Iteration = 140   Residual = 0.00106337
+Iteration = 160   Residual = 0.00193884
+Iteration = 180   Residual = 9.43669e-05
+Iteration = 200   Residual = 0.000197929
+Final Resid Norm: 0.000197929
+      creating/filling mesh...0.0220029s, total time: 0.0220039
+generating matrix structure...0.780423s, total time: 0.802427
+         assembling FE data...1.5005s, total time: 2.30292
+      imposing Dirichlet BC...0.26637s, total time: 2.56929
+      imposing Dirichlet BC...0.220164s, total time: 2.78946
+making matrix indices local...1.47473s, total time: 4.26418
+total vector size: 834624total vector size: 843318
+total vector size: 830320
+total vector size: 840699
+total vector size: 824320
+
+Starting CG solver ... 
+Initial Residual = 161.003
+Iteration = 20   Residual = 0.0585952
+Iteration = 40   Residual = 0.104681
+[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.0304098s, total time: 0.0304098
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.050457s, total time: 0.050457
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.0838289s, total time: 0.0838289
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.112351s, total time: 0.112351
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.00128317s, total time: 0.00128412
+generating matrix structure...0.0416191s, total time: 0.0429032
+         assembling FE data...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.00610304s, total time: 0.00610304
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.0167298s, total time: 0.0167298
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.036885s, total time: 0.036885
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...0.045408s, total time: 0.045408
+generating matrix structure...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort
+      creating/filling mesh...[mpiexec@00cdf050bb3b] Sending Ctrl-C to processes as requested
+[mpiexec@00cdf050bb3b] Press Ctrl-C again to force abort

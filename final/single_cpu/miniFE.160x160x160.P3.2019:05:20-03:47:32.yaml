@@ -1,0 +1,56 @@
+Mini-Application Name: miniFE
+Mini-Application Version: 1.4
+Global Run Parameters: 
+  dimensions: 
+    nx: 160
+    ny: 160
+    nz: 160
+  load_imbalance: 0
+  mv_overlap_comm_comp: 0 (no)
+  number of processors: 3
+  ScalarType: float
+  intType: int
+  intType: int
+Build: 
+  OMP_NUM_THREADS: 8
+  using MPI: yes
+Run Date/Time: 2019-05-20, 03-47-17
+Rows-per-proc Load Imbalance: 
+  Largest (from avg, %): 1.25
+  Std Dev (%): 122.474
+Matrix structure generation: 
+  Mat-struc-gen Time: 0.630822
+FE assembly: 
+  FE assembly Time: 2.37553
+Matrix attributes: 
+  Global Nrows: 4173281
+  Global NNZ: 111284641
+  Global Memory (GB): 0.860229
+  Pll Memory Overhead (MB): 0.991333
+  Rows per proc MIN: 1378160
+  Rows per proc MAX: 1399734
+  Rows per proc AVG: 1.39109e+06
+  NNZ per proc MIN: 36786880
+  NNZ per proc MAX: 37249121
+  NNZ per proc AVG: 3.70949e+07
+CG solve: 
+  Iterations: 200
+  Final Resid Norm: 0.00314379
+  WAXPY Time: 1.72331
+  WAXPY Flops: 7.39738e+09
+  WAXPY Mflops: 4292.54
+  DOT Time: 2.03844
+  DOT Flops: 3.2768e+09
+  DOT Mflops: 1607.5
+  MATVEC Time: 0.033762
+  MATVEC Flops: 4.47364e+10
+  MATVEC Mflops: 1.32505e+06
+  MATVECDOT Time: 7.2781
+  MATVECDOT Flops: 4.47364e+10
+  MATVECDOT Mflops: 1.32505e+06
+  Total: 
+    Total CG Time: 11.1221
+    Total CG Flops: 5.54106e+10
+    Total CG Mflops: 4982.01
+  Time per iteration: 0.0556107
+Total Program Time: 15.4193
