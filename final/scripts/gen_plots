@@ -61,11 +61,10 @@ def main():
 
     flops_per_gpu = data["double_gpu"]["Mflops"] / data["double_gpu"]["gpus"]
 
-    # weak =H
-    # plt.plot(list(range(1, len(weak) + 1)), weak)
-    # plt.clf()
-
-
+    weak = [0.0413027, 0.0448045, 0.0602991, 0.0667321]
+    plt.plot(list(range(1, len(weak) + 1)), weak)
+    plt.savefig("weak_scaling.png")
+    plt.clf()
 
 if __name__ == '__main__':
     main()
