@@ -110,7 +110,7 @@ void exchange_externals(MatrixType &A, VectorType &x) {
   os << "total_to_be_sent: " << total_to_be_sent << std::endl;
 #endif
 
-#ifdef USE_CUDA
+#if defined(USE_CUDA) && !defined(NO_OPTIMIZED_EXCHANGE)
   copy_to_buffer(send_buffer.data(), x.coefs.data(), elements_to_send.data(),
                  total_to_be_sent);
 #else
