@@ -40,7 +40,6 @@
 #include "outstream.hpp"
 
 #include "type_traits.hpp"
-#include "my_timer.hpp"
 
 namespace miniFE {
 
@@ -90,18 +89,12 @@ void exchange_externals(MatrixType &A, VectorType &x) {
 
   MPI_Datatype mpi_dtype = TypeTraits<Scalar>::mpi_type();
 
-  {
-    timer_type t0 = my_timer();
-
-    // Post receives first
-    for (size_t i = 0; i < num_neighbors; ++i) {
-      int n_recv = recv_length[i];
-      MPI_Irecv(x_external, n_recv, mpi_dtype, neighbors[i], MPI_MY_TAG,
-                MPI_COMM_WORLD, &request[i]);
-      x_external += n_recv;
-    }
-
-    std::cout << "post receive time is :" << my_timer() - t0 << std::endl;
+  // Post receives first
+  for (size_t i = 0; i < num_neighbors; ++i) {
+    int n_recv = recv_length[i];
+    MPI_Irecv(x_external, n_recv, mpi_dtype, neighbors[i], MPI_MY_TAG,
+              MPI_COMM_WORLD, &request[i]);
+    x_external += n_recv;
   }
 
 #ifdef MINIFE_DEBUG
@@ -117,20 +110,16 @@ void exchange_externals(MatrixType &A, VectorType &x) {
   os << "total_to_be_sent: " << total_to_be_sent << std::endl;
 #endif
 
-  {
-    timer_type t0 = my_timer();
-    for (size_t i = 0; i < total_to_be_sent; ++i) {
+  for (size_t i = 0; i < total_to_be_sent; ++i) {
 #ifdef MINIFE_DEBUG
-      // expensive index range-check:
-      if (elements_to_send[i] < 0 ||
-          elements_to_send[i] > static_cast<int>(x.coefs.size())) {
-        os << "error, out-of-range. x.coefs.size()==" << x.coefs.size()
-          << ", elements_to_send[i]==" << elements_to_send[i] << std::endl;
-      }
-#endif
-      send_buffer[i] = x.coefs[static_cast<size_t>(elements_to_send[i])];
+    // expensive index range-check:
+    if (elements_to_send[i] < 0 ||
+        elements_to_send[i] > static_cast<int>(x.coefs.size())) {
+      os << "error, out-of-range. x.coefs.size()==" << x.coefs.size()
+         << ", elements_to_send[i]==" << elements_to_send[i] << std::endl;
     }
-    std::cout << "copy time is :" << my_timer() - t0 << std::endl;
+#endif
+    send_buffer[i] = x.coefs[static_cast<size_t>(elements_to_send[i])];
   }
 
   //
@@ -139,15 +128,11 @@ void exchange_externals(MatrixType &A, VectorType &x) {
 
   Scalar *s_buffer = &send_buffer[0];
 
-  {
-    timer_type t0 = my_timer();
-    for (size_t i = 0; i < num_neighbors; ++i) {
-      int n_send = send_length[i];
-      MPI_Send(s_buffer, n_send, mpi_dtype, neighbors[i], MPI_MY_TAG,
-               MPI_COMM_WORLD);
-      s_buffer += n_send;
-    }
-    std::cout << "send time is :" << my_timer() - t0 << std::endl;
+  for (size_t i = 0; i < num_neighbors; ++i) {
+    int n_send = send_length[i];
+    MPI_Send(s_buffer, n_send, mpi_dtype, neighbors[i], MPI_MY_TAG,
+             MPI_COMM_WORLD);
+    s_buffer += n_send;
   }
 
 #ifdef MINIFE_DEBUG
@@ -159,15 +144,12 @@ void exchange_externals(MatrixType &A, VectorType &x) {
   //
 
   MPI_Status status;
-  {
-    timer_type t0 = my_timer();
-    for (size_t i = 0; i < num_neighbors; ++i) {
-      if (MPI_Wait(&request[i], &status) != MPI_SUCCESS) {
-        std::cerr << "MPI_Wait error\n" << std::endl;
-        MPI_Abort(MPI_COMM_WORLD, -1);
-      }
+
+  for (size_t i = 0; i < num_neighbors; ++i) {
+    if (MPI_Wait(&request[i], &status) != MPI_SUCCESS) {
+      std::cerr << "MPI_Wait error\n" << std::endl;
+      MPI_Abort(MPI_COMM_WORLD, -1);
     }
-    std::cout << "finish receive time is :" << my_timer() - t0 << std::endl;
   }
 
 #ifdef MINIFE_DEBUG
