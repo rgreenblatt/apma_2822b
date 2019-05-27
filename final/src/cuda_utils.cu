@@ -21,5 +21,6 @@ void copy_to_buffer(MINIFE_SCALAR *buffer, const MINIFE_SCALAR *from,
   copy_to_buffer_kernel<<<(total_to_be_sent + thread_num - 1) / thread_num,
                           thread_num>>>(buffer, from, elements_to_copy,
                                         total_to_be_sent);
+  cuda_error_chk(cudaDeviceSynchronize());
 }
 } // namespace miniFE
