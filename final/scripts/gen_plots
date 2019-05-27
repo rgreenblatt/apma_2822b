@@ -23,6 +23,9 @@ def main():
         "single_cpu": pd.read_csv("single_cpu/data.csv"),
     }
 
+    double_gpu_fixed_data = pd.read_csv("double_gpu_fixed/data.csv")
+    double_gpu_original_data = pd.read_csv("double_gpu_original/data.csv")
+
     plot_condition(
         data,
         lambda df: df.loc[(df['dimension'] == 240) & (df['gpus'] <= 4)],
@@ -59,11 +62,53 @@ def main():
     plt.savefig("strong_scaling.png")
     plt.clf()
 
+    def plot_dim_fixed(dim):
+        df = double_gpu_fixed_data
+        df = df.loc[(df['dimension'] == dim)]
+        plt.loglog(df["gpus"], df["time_per_iteration"])
+
+    def plot_dim_original(dim):
+        df = double_gpu_original_data
+        df = df.loc[(df['dimension'] == dim)]
+        plt.loglog(df["gpus"], df["time_per_iteration"])
+
+    plot_dim_fixed(240)
+    plot_dim_fixed(320)
+    plot_dim_fixed(520)
+
+    plot_dim_original(240)
+    plot_dim_original(320)
+    plot_dim_original(520)
+
+    plt.legend(["dimension 240 optimized copy",
+                "dimension 320 optimized copy",
+                "dimension 520 optimized copy",
+                "dimension 240 original copy",
+                "dimension 320 original copy",
+                "dimension 520 original copy"])
+
+    plt.xlabel("number of gpus")
+    plt.ylabel("time per iteration")
+    plt.tight_layout()
+
+    plt.savefig("strong_scaling_fixed.png")
+    plt.clf()
+
     flops_per_gpu = data["double_gpu"]["Mflops"] / data["double_gpu"]["gpus"]
 
     weak = [0.0413027, 0.0448045, 0.0602991, 0.0667321]
     plt.plot(list(range(1, len(weak) + 1)), weak)
     plt.savefig("weak_scaling.png")
+    plt.clf()
+
+    weak_fixed = [0.100043, 0.11142, 0.119073, 0.128022,
+                  0.136696, 0.143928, 0.151878, 0.159253]
+    plt.plot(list(range(1, len(weak_fixed) + 1)), weak_fixed)
+    weak_broken = [0.100043, 0.11142, 0.119073,
+                   0.128022, 0.136696, 0.143928, 0.151878, 0.159253]
+    plt.plot(list(range(1, len(weak_broken) + 1)), weak_broken)
+    plt.legend(["optimized copy", "original copy"])
+    plt.savefig("weak_scaling_fixed.png")
     plt.clf()
 
 if __name__ == '__main__':
