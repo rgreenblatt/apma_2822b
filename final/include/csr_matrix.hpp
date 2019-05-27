@@ -68,11 +68,11 @@ template <typename Scalar> struct CSRMatrix {
 #ifdef HAVE_MPI
   std::vector<int> external_index;
   std::vector<int> external_local_index;
-  std::vector<int> elements_to_send;
+  AllocVec<int> elements_to_send;
   std::vector<int> neighbors;
   std::vector<int> recv_length;
   std::vector<int> send_length;
-  std::vector<Scalar> send_buffer;
+  AllocVec<Scalar> send_buffer;
   std::vector<MPI_Request> request;
 #endif
 

@@ -117,4 +117,6 @@ inline void cusparse_assert(cusparseStatus_t code, const char *file, int line) {
 
 namespace miniFE {
 void select_cuda_device(int mpi_rank);
-}
+void copy_to_buffer(MINIFE_SCALAR *buffer, const MINIFE_SCALAR *from,
+                    const int *elements_to_copy, size_t total_to_be_sent);
+} // namespace miniFE

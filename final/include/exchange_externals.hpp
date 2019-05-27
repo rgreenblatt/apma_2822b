@@ -66,9 +66,9 @@ void exchange_externals(MatrixType &A, VectorType &x) {
   const std::vector<int> &recv_length = A.recv_length;
   const std::vector<int> &send_length = A.send_length;
   const std::vector<int> &neighbors = A.neighbors;
-  const std::vector<int> &elements_to_send = A.elements_to_send;
+  const AllocVec<int> &elements_to_send = A.elements_to_send;
 
-  std::vector<Scalar> &send_buffer = A.send_buffer;
+  AllocVec<Scalar> &send_buffer = A.send_buffer;
 
   //
   // first post receives, these are immediate receives
@@ -105,11 +105,15 @@ void exchange_externals(MatrixType &A, VectorType &x) {
   // Fill up send buffer
   //
 
-  size_t total_to_be_sent = elements_to_send.size();
+  size_t total_to_be_sent = static_cast<int>(elements_to_send.size());
 #ifdef MINIFE_DEBUG
   os << "total_to_be_sent: " << total_to_be_sent << std::endl;
 #endif
 
+#ifdef USE_CUDA
+  copy_to_buffer(send_buffer.data(), x.coefs.data(), elements_to_send.data(),
+                 total_to_be_sent);
+#else
   for (size_t i = 0; i < total_to_be_sent; ++i) {
 #ifdef MINIFE_DEBUG
     // expensive index range-check:
@@ -121,6 +125,7 @@ void exchange_externals(MatrixType &A, VectorType &x) {
 #endif
     send_buffer[i] = x.coefs[static_cast<size_t>(elements_to_send[i])];
   }
+#endif
 
   //
   // Send to each neighbor
@@ -184,7 +189,7 @@ void begin_exchange_externals(MatrixType &A, VectorType &x) {
   const std::vector<int> &recv_length = A.recv_length;
   const std::vector<int> &send_length = A.send_length;
   const std::vector<int> &neighbors = A.neighbors;
-  const std::vector<int> &elements_to_send = A.elements_to_send;
+  const AllocVec<int> &elements_to_send = A.elements_to_send;
 
   std::vector<Scalar> send_buffer(elements_to_send.size(), 0);
 
