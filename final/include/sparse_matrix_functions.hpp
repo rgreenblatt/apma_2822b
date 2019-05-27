@@ -457,7 +457,10 @@ matvec_and_dot(MatrixType &A, VectorType &x, VectorType &y,
                cusparseMatDescr_t descr) {
   timer_type t0 = my_timer();
   exchange_externals(A, x);
-  exchtime += my_timer() - t0;
+  timer_type exchange_time = my_timer() - t0;
+  
+  exchtime += exchange_time;
+  std::cout << "exchange time is :" << exchange_time << std::endl;
 
   typedef typename TypeTraits<typename VectorType::ScalarType>::magnitude_type
       magnitude;
