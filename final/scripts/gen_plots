@@ -24,7 +24,7 @@ def main():
     }
 
     double_gpu_fixed_data = pd.read_csv("double_gpu_fixed/data.csv")
-    double_gpu_original_data = pd.read_csv("double_gpu_original/data.csv")
+    double_gpu_original_data = pd.read_csv("double_gpu_orig/data.csv")
 
     plot_condition(
         data,
@@ -77,15 +77,11 @@ def main():
     plot_dim_fixed(520)
 
     plot_dim_original(240)
-    plot_dim_original(320)
-    plot_dim_original(520)
 
     plt.legend(["dimension 240 optimized copy",
                 "dimension 320 optimized copy",
                 "dimension 520 optimized copy",
-                "dimension 240 original copy",
-                "dimension 320 original copy",
-                "dimension 520 original copy"])
+                "dimension 240 original copy"])
 
     plt.xlabel("number of gpus")
     plt.ylabel("time per iteration")
